@@ -1,0 +1,32 @@
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net1.net.xml"/>
+        <route-files value="scriptroute.rou.xml"/>
+        <additional-files value="52State.add.xml"/>
+    </input>
+
+    <processing>
+        <ignore-route-errors value="true"/>
+    </processing>
+
+    <time>
+			<step-length value="0.1"/>
+	</time>
+
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <gui_only>
+        <gui-settings-file value="52State.view.xml"/>
+    </gui_only>
+
+</configuration>
