@@ -1,9 +1,8 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net1.net.xml"/>
-        <route-files value="scriptroute.rou.xml"/>
-        <additional-files value="52State.add.xml"/>
+        <net-file value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/toy_net1.net.xml"/>
+        <route-files value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/toy_netOD.rou.xml"/>
     </input>
 
     <processing>
@@ -11,6 +10,8 @@
     </processing>
 
     <time>
+            <begin value="0"/>
+            <end value="600"/>
 			<step-length value="0.1"/>
 	</time>
 
@@ -26,7 +27,7 @@
     </report>
 
     <gui_only>
-        <gui-settings-file value="52State.view.xml"/>
+        <gui-settings-file value="toy_net.view.xml"/>
     </gui_only>
 
 </configuration>
