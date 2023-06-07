@@ -15,6 +15,5 @@ else:
 
 import traci
 
-
-if __name__== '__main__':
+if __name__ == '__main__':
     traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1"])
