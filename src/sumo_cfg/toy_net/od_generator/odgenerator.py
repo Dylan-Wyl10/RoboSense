@@ -17,17 +17,18 @@ def od_generator(filepath, time, size, linkflow):
                  6: 'F'
                  }  # this node restore index of the network node from number to letter
     # write od pair
+    flow = round(linkflow * time/3600)
     with open(filepath, "w") as od:
         print('$O;D2', file=od)
-        print('0.00 {}'.format(str(time / 3600)), file=od)
+        print('0.00 {}'.format(str(round((time / 3600), 2))), file=od)
         print('1.00', file=od)
         for nx in range(size):
             for ny in range(size):
                 if nx == 0 or ny == 0 or nx == 5 or ny == 5:
                     if nx == ny or nx+ny == 5:
-                        veh_num = 2 * linkflow
+                        veh_num = 2 * flow
                     else:
-                        veh_num = linkflow
+                        veh_num = flow
                     print(nx, ny, '\t')
                     print('{}{}_in {}{}_out {}'.format(node_dict[nx + 1], node_dict[ny + 1],
                                                 node_dict[6 - nx], node_dict[6 - ny],
