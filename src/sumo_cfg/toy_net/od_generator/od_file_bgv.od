@@ -1,0 +1,23 @@
+$O;D2
+0.00 0.17
+1.00
+AA_in FF_out 164
+AB_in FE_out 82
+AC_in FD_out 82
+AD_in FC_out 82
+AE_in FB_out 82
+AF_in FA_out 164
+BA_in EF_out 82
+BF_in EA_out 82
+CA_in DF_out 82
+CF_in DA_out 82
+DA_in CF_out 82
+DF_in CA_out 82
+EA_in BF_out 82
+EF_in BA_out 82
+FA_in AF_out 164
+FB_in AE_out 82
+FC_in AD_out 82
+FD_in AC_out 82
+FE_in AB_out 82
+FF_in AA_out 164

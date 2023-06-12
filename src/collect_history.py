@@ -1,7 +1,7 @@
 """
 Date: May 26, 2023
 Author: Yilin Wang
-Note: this script is the main script that simulates the CAV rerouting with TSC
+Note: this script is the script that used to collect historical travel information for
 """
 # Status check for Sumo environment
 import sys

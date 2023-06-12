@@ -2,11 +2,17 @@
 
     <input>
         <net-file value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/toy_net1.net.xml"/>
-        <route-files value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/toy_netOD.rou.xml"/>
+        <route-files value="od_file_cav.odtrips.xml, od_bgv.rou.xml"/>
+        <additional-files value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/v_type.add.xml"/>
     </input>
 
     <processing>
         <ignore-route-errors value="true"/>
+        <route-steps value="200"/>
+        <no-internal-links value="False"/>
+        <time-to-teleport value="300"/>
+        <time-to-teleport.highways value="0"/>
+        <eager-insert value="False"/>
     </processing>
 
     <time>
