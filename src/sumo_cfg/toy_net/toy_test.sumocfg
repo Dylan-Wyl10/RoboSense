@@ -2,7 +2,7 @@
 
     <input>
         <net-file value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/toy_net1.net.xml"/>
-        <route-files value="od_file_cav.odtrips.xml, od_bgv.rou.xml"/>
+        <route-files value="od_cav.odtrips.xml, od_bgv.rou.xml"/>
         <additional-files value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/v_type.add.xml"/>
     </input>
 
