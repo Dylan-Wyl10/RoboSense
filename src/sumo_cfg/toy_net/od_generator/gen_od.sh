@@ -1,5 +1,5 @@
-python3 gen_od.py --timeframe 600 --savepath 'od_file_bgv.od' --size 6 --linkflow 490
-python3 gen_od.py --timeframe 600 --savepath 'od_file_cav.od' --size 6 --linkflow 10
+python3 gen_od.py --timeframe 3600 --savepath 'od_file_bgv.od' --size 6 --linkflow 490
+python3 gen_od.py --timeframe 3600 --savepath 'od_file_cav.od' --size 6 --linkflow 10
 od2trips -n  taz_all.taz.xml -d od_file_bgv.od -o od_file_bgv.odtrips.xml --vtype 'bgv' --prefix 'bgv'
 od2trips -n  taz_all.taz.xml -d od_file_cav.od -o od_file_cav.odtrips.xml --vtype 'cav' --prefix 'cav'
 scp od_file_cav.odtrips.xml ../od_cav.odtrips.xml
