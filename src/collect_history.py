@@ -25,9 +25,11 @@ if __name__ == '__main__':
     # argparser = argparse.ArgumentParser(description=__doc__)
     max_step = 36000  # define the maximum steps for the simulation
     path = "sumo_cfg/toy_net/toy_test.sumocfg"
+    lf_table_path = "../result/link_flow.json"
     s = Simulation(max_time=30000, link_num=60, resolution=0.1, config=path)
     # s.sim()
     s.get_LF_table()
+    s.save_lf(lf_table_path)
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
 
     # start simulation
