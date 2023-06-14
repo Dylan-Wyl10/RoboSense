@@ -16,5 +16,3 @@ def gen_LF_table(link_num):
         table['E' + str(idx + 1)] = []
         table['-E' + str(idx + 1)] = []
     return table
-
-update_LF_table
