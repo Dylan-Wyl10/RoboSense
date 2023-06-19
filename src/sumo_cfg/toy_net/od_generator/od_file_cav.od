@@ -1,23 +1,23 @@
 $O;D2
 0.00 1.0
 1.00
-AA_in FF_out 20
-AB_in FE_out 10
-AC_in FD_out 10
-AD_in FC_out 10
-AE_in FB_out 10
-AF_in FA_out 20
-BA_in EF_out 10
-BF_in EA_out 10
-CA_in DF_out 10
-CF_in DA_out 10
-DA_in CF_out 10
-DF_in CA_out 10
-EA_in BF_out 10
-EF_in BA_out 10
-FA_in AF_out 20
-FB_in AE_out 10
-FC_in AD_out 10
-FD_in AC_out 10
-FE_in AB_out 10
-FF_in AA_out 20
+AA_in FF_out 14
+AB_in FE_out 7
+AC_in FD_out 7
+AD_in FC_out 7
+AE_in FB_out 7
+AF_in FA_out 14
+BA_in EF_out 7
+BF_in EA_out 7
+CA_in DF_out 7
+CF_in DA_out 7
+DA_in CF_out 7
+DF_in CA_out 7
+EA_in BF_out 7
+EF_in BA_out 7
+FA_in AF_out 14
+FB_in AE_out 7
+FC_in AD_out 7
+FD_in AC_out 7
+FE_in AB_out 7
+FF_in AA_out 14

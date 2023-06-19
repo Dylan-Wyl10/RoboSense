@@ -10,7 +10,7 @@
         <ignore-route-errors value="true"/>
         <route-steps value="200"/>
         <no-internal-links value="False"/>
-        <time-to-teleport value="300"/>
+        <time-to-teleport value="200"/>
         <time-to-teleport.highways value="0"/>
         <eager-insert value="False"/>
     </processing>
