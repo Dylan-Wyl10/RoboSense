@@ -27,7 +27,7 @@ if __name__ == '__main__':
     max_step = 36000  # define the maximum steps for the simulation
     path = "sumo_cfg/toy_net/toy_test.sumocfg"
     lf_table_path = "../result/link_flow_3600.json"
-    s = Simulation(max_time=3600, link_num=60, resolution=0.1, config=path, time_interval=10)
+    s = Simulation(max_time=3600, link_num=60, resolution=0.1, config=path, time_interval=10, lfHisPath=lf_table_path)
     # s.sim()
     s.get_LF_table()
     print('yesyes')

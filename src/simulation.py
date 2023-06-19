@@ -21,7 +21,7 @@ class Simulation:
         self.MAXSTEP = int(max_time / resolution)
         self.resolution = resolution
         self.link_flows_table = gen_LF_table(link_num)  # link flow table for all edges
-        self.link_flows = {}
+        self.link_flows_num = {}
         self.config = config  # 06/14/2023: temporaryly set sumo config path
         self.time_interval = 10  # 06/18/2023: plan cav route in every 10s
         self.Graph = Graph(6, 6)
@@ -33,13 +33,14 @@ class Simulation:
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         self.step = 0
+        self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
         while True:
             # the following steps only apply in a GIVEN TIME Interval
-            if self.time % self.time_interval == 0:  # plan for the start of every time interval
+            if self.step % (self.time_interval*10) == 0:  # plan for the start of every time interval
                 # step1: get cav information from the network, update cav list
                 self.getCAVinfo()
 
-                # step2: check observation and update link-flow table (value only); then the output also caculate
+                # step2: check observation and update link-flow table (value only); then the output also calculate
                 # link-cost with observed data or historical data
                 self.updateNetwork()
 
@@ -91,8 +92,19 @@ class Simulation:
         """
         step2: check observation and update link-flow table (value only); then the output also calculate
         link-cost with observed data or historical data
+        self.link_flows_table = current link-flow information
         :return:
         """
+        # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
+        for cav_id in self.cav_list:
+            cav_edge = traci.vehicle.getRoadID(cav_id)
+            link_flow_num = traci.edge.getLastStepVehicleNumber(cav_edge)
+            link_idx = re.findall(r'[0-9]+|[a-z]+', cav_edge)
+            if int(link_idx[0]) <= 60:
+                self.link_flows_table[cav_edge] = link_flow_num
+            print('yes')
+
+
 
 
     def update_lf_table(self):
@@ -106,13 +118,13 @@ class Simulation:
         :param self.link_flow_table
         :return:
         """
-        self.link_flows = {}
+        self.link_flows_num = {}
         for k, v in self.link_flows_table.items():
             for id in v:
                 tmp = re.findall(r'[0-9]+|[a-z]+', id)
                 if re.findall(r'[0-9]+|[a-z]+', id)[0] == 'cav':
                     v.remove(id)
-            self.link_flows[k] = (3600 * len(v)) / self.time
+            self.link_flows_num[k] = (3600 * len(v)) / self.time
             """od_i, n = re.findall(r'[0-9]+|[a-z]+', id)  # od_idx, v_idx"""
             # v.append(ttmp)
 
@@ -127,9 +139,9 @@ class Simulation:
 
     def save_lf(self, path):  # save link flow table to file, this is designed for history collection
         with open(path, "w") as outfile:
-            json.dump(self.link_flows, outfile)
+            json.dump(self.link_flows_num, outfile)
             print('nn')
 
-    def load_lf(self, path):
+    def load_lf(self, path):  # this load link flow history
         with open(path, "r") as infile:
-            self.link_flows = json.load(infile)
+            self.link_flows_hisNum = json.load(infile)

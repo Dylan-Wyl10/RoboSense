@@ -26,7 +26,8 @@ if __name__ == '__main__':
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
 
     path = "sumo_cfg/toy_net/toy_test.sumocfg"
-    s = Simulation(max_time=3600, link_num=60, resolution=0.1, config=path, time_interval=10)
+    lf_table_path = "../result/link_flow_3600.json"
+    s = Simulation(max_time=3600, link_num=60, resolution=0.1, config=path, time_interval=10, lfHisPath=lf_table_path)
     s.sim()
 
     for i in range(36000):
