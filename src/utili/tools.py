@@ -11,6 +11,11 @@ import numpy as np
 
 
 def gen_LF_table(link_num):
+    '''
+    Note: this function generate a blank link flow table with list space
+    :param link_num: total number of links
+    :return:
+    '''
     table = {}
     for idx in range(link_num):
         table['E' + str(idx + 1)] = []
