@@ -10,18 +10,26 @@ import numpy as np
 import sumolib
 
 
-class Intersection():
+class Intersection:
     def __init__(self, inter_id):
         self.id = inter_id
+        self.link_idx = {'in':[],
+                                 'out':[]}
+        self.link_flow = {}
 
     # get necessary information about intersections
-    def getLinkInfo(self):
+    def getLinkInfo(self, link_flow_table):
         '''
         1. get related edge index
-        2. get historical link flow
+        2. update current link flow
         :return:
         '''
         self.position = traci.junction.getPosition(self.id)
+        # 1.get related edge index
+
+        # 2.update link flow
+        for in_edge_idx in self.link_idx['in']:
+            self.link_flow[in_edge_idx] = link_flow_table[in_edge_idx]
 
         print('yes')
     # def getLinkDelay(self, edge_id, time_interval, start_time, end_time):
@@ -44,9 +52,9 @@ class Graph:
         print('yes')
         return node_list
 
-    def updateIntersection(self):
+    def updateIntersection(self, link_flows_table):
         for n_id, inter in self.node_list.items():
-            inter.getLinkInfo()
+            inter.getLinkInfo(link_flows_table)  # update link flow for each intersection
 
     def getNextNode(self, edge_id):
         """

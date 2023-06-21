@@ -13,11 +13,13 @@ import traci
 
 
 class Vehicle:
+    """
+    this class is a method class, that means there are no data stored in this class
+    """
 
-    def __init__(self, v_id, k):
+    def __init__(self, v_id):
         self.my_route = None
         self.v_id = v_id
-        self.k = k  # k is the input variables for k-shortest path
         self.v_type = re.findall(r'[0-9]+|[a-z]+', self.v_id)[0]
         self._sequential_id = re.findall(r'[0-9]+|[a-z]+', self.v_id)[1]
         self.v_ori_edge = None
@@ -33,8 +35,9 @@ class Vehicle:
     def getMyEdge(self):
         self.v_current_edge = traci.vehicle.getRoadID(self.v_id)
 
-    def getNewRoute(self, Graph, time_interval):
+    def getNewRoute(self, Graph, time_interval, k):
         '''
+        # k is the input variables for k-shortest path
         find the new route and update through traci
         input: Graph -- network class that contains the network information and methods
         '''
@@ -44,7 +47,7 @@ class Vehicle:
         desti_node = Graph.getNextNode(self.route_with_edge[-1])
         if len(self.route_with_edge) > 1:
             next_node = Graph.getNextNode(self.v_current_edge)  # next closest node.
-            k_shortest_path = Graph.findKShortPath(self.k, next_node. desti_node)  # the output here has to be a list of k-shortest path, the length is k
+            k_shortest_path = Graph.findKShortPath(k, next_node. desti_node)  # the output here has to be a list of k-shortest path, the length is k
             # best_path = Graph.getBestPath(k_shortest_path)
         else:
             k_shortest_path = [self.v_current_edge]
