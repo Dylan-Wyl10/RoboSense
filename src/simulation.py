@@ -14,7 +14,7 @@ import json
 
 
 class Simulation:
-    def __init__(self, max_time, link_num, resolution, config, lfHisPath, time_interval):
+    def __init__(self, max_time, link_num, resolution, config, lfHisPath, net_file, time_interval):
         self.step = 0
         self.time = 0
         self.time_interval = time_interval
@@ -24,7 +24,7 @@ class Simulation:
         self.link_flows_num = {}
         self.config = config  # 06/14/2023: temporaryly set sumo config path
         self.time_interval = 10  # 06/18/2023: plan cav route in every 10s
-        self.Graph = Graph(6, 6)
+        self.Graph = Graph(6, 6, net_file)
         self.cav_list = []
         self.load_lf(lfHisPath)  # 06/18/2023: load link-flow table from given path
 
@@ -49,7 +49,7 @@ class Simulation:
                 # -3A: enumerate all cav that close enough to the intersection, get k-shortest path
                 # -3B: calculate cover rate in next 2 time interval, the inputs are signal timing plan and given k-sp
                 # -3C: choose the best route and apply accordingly
-                self.update_route()
+                self.updateRoute()
 
                 """
                 # stepXXXX: (this will be added on next): adjust signal time plan. 
@@ -95,6 +95,7 @@ class Simulation:
         self.link_flows_table = current link-flow information
         :return:
         """
+        self.Graph.updateIntersection()
         # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
         for cav_id in self.cav_list:
             cav_edge = traci.vehicle.getRoadID(cav_id)
@@ -103,9 +104,6 @@ class Simulation:
             if int(link_idx[0]) <= 60:
                 self.link_flows_table[cav_edge] = link_flow_num
             print('yes')
-
-
-
 
     def update_lf_table(self):
         for k, v in self.link_flows_table.items():
@@ -128,13 +126,18 @@ class Simulation:
             """od_i, n = re.findall(r'[0-9]+|[a-z]+', id)  # od_idx, v_idx"""
             # v.append(ttmp)
 
-    def update_route(self):
-        return
+    def updateRoute(self):
+        """
+        # step3: enumerate all cav from list, choose proper route and update vehicle information
+                # -steps:
+                # -3A: enumerate all cav that close enough to the intersection, get k-shortest path
+                # -3B: calculate cover rate in next 2 time interval, the inputs are signal timing plan and given k-sp
+                # -3C: choose the best route and apply accordingly
+        :return:
+        """
+        tmp = self.Graph.getNextNode('E1')
 
-    def update_tsc(self):
-        return
-
-    def update_veh(self):
+        # 0620 update: to be continued
         return
 
     def save_lf(self, path):  # save link flow table to file, this is designed for history collection
