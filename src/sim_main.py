@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     path = "sumo_cfg/toy_net/toy_test.sumocfg"
     lf_table_path = "../result/link_flow_3600.json"
-    s = Simulation(max_time=3600, link_num=60, resolution=0.1, config=path, time_interval=10, lfHisPath=lf_table_path)
+    s = Simulation(max_time=3600, link_num=60, resolution=0.1, config=path, net_file='sumo_cfg/toy_net/toy_net1.net.xml', time_interval=10, lfHisPath=lf_table_path)
     s.sim()
 
     for i in range(36000):
