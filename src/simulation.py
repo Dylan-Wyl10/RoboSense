@@ -95,7 +95,6 @@ class Simulation:
         self.link_flows_table = current link-flow information
         :return:
         """
-        self.Graph.updateIntersection()
         # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
         for cav_id in self.cav_list:
             cav_edge = traci.vehicle.getRoadID(cav_id)
@@ -104,6 +103,10 @@ class Simulation:
             if int(link_idx[0]) <= 60:
                 self.link_flows_table[cav_edge] = link_flow_num
             print('yes')
+
+        # 06/20/2023_Notes: self.link_flow_table is realtime updated table, this still have
+        # problem for this case. 
+        self.Graph.updateIntersection(self.link_flows_table)
 
     def update_lf_table(self):
         for k, v in self.link_flows_table.items():
@@ -119,7 +122,6 @@ class Simulation:
         self.link_flows_num = {}
         for k, v in self.link_flows_table.items():
             for id in v:
-                tmp = re.findall(r'[0-9]+|[a-z]+', id)
                 if re.findall(r'[0-9]+|[a-z]+', id)[0] == 'cav':
                     v.remove(id)
             self.link_flows_num[k] = (3600 * len(v)) / self.time
@@ -135,6 +137,8 @@ class Simulation:
                 # -3C: choose the best route and apply accordingly
         :return:
         """
+        for cav_id in self.cav_list:
+            cav_edgeID = traci.vehicle.getRoadID(cav_id)
         tmp = self.Graph.getNextNode('E1')
 
         # 0620 update: to be continued
