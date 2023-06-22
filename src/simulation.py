@@ -7,7 +7,7 @@ Structures:
 """
 from utili.tools import *
 from utili.vehicle import *
-from utili.network import Graph
+from utili.network import Network
 import traci
 import re
 import json
@@ -24,7 +24,7 @@ class Simulation:
         self.link_flows_num = {}
         self.config = config  # 06/14/2023: temporaryly set sumo config path
         self.time_interval = 10  # 06/18/2023: plan cav route in every 10s
-        self.Graph = Graph(6, 6, net_file)
+        self.Network = Network(6, 6, net_file)
         self.cav_list = []
         self.load_lf(lfHisPath)  # 06/18/2023: load link-flow table from given path
 
@@ -33,6 +33,7 @@ class Simulation:
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         self.step = 0
+        self.Network.netInit(6, 6)
         self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
         while True:
             # the following steps only apply in a GIVEN TIME Interval
@@ -40,16 +41,18 @@ class Simulation:
                 # step1: get cav information from the network, update cav list
                 self.getCAVinfo()
 
-                # step2: check observation and update link-flow table (value only); then the output also calculate
-                # link-cost with observed data or historical data
-                self.updateNetwork()
-
-                # step3: enumerate all cav from list, choose proper route and update vehicle information
+                # step2: enumerate all cav from list, choose proper route and update vehicle information
                 # -steps:
-                # -3A: enumerate all cav that close enough to the intersection, get k-shortest path
-                # -3B: calculate cover rate in next 2 time interval, the inputs are signal timing plan and given k-sp
-                # -3C: choose the best route and apply accordingly
+                # -2A: enumerate all cav. for each cav.
+                #       -2AA: get k-shortest path considering distance
+                #       -2AB: calculate travel time and cover rate for each candidate route
+                #       -2AC: choose the best route and apply accordingly
+                #       -2AD: update CAV routing table
                 self.updateRoute()
+
+                # # step2: check observation and update link-flow table (value only); then the output also calculate
+                # # link-cost with observed data or historical data
+                # self.updateNetwork()
 
                 """
                 # stepXXXX: (this will be added on next): adjust signal time plan. 
@@ -88,25 +91,26 @@ class Simulation:
             if re.findall(r'[0-9]+|[a-z]+', v_id)[0] == "cav":
                 self.cav_list.append(v_id)
 
-    def updateNetwork(self):
-        """
-        step2: check observation and update link-flow table (value only); then the output also calculate
-        link-cost with observed data or historical data
-        self.link_flows_table = current link-flow information
-        :return:
-        """
-        # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
-        for cav_id in self.cav_list:
-            cav_edge = traci.vehicle.getRoadID(cav_id)
-            link_flow_num = traci.edge.getLastStepVehicleNumber(cav_edge)
-            link_idx = re.findall(r'[0-9]+|[a-z]+', cav_edge)
-            if int(link_idx[0]) <= 60:
-                self.link_flows_table[cav_edge] = link_flow_num
-            print('yes')
-
-        # 06/20/2023_Notes: self.link_flow_table is realtime updated table, this still have
-        # problem for this case. 
-        self.Graph.updateIntersection(self.link_flows_table)
+    # def updateNetwork(self):
+    #     """
+    #     06/21/2023 update: this function is abandoned temporarily
+    #     step2: check observation and update link-flow table (value only); then the output also calculate
+    #     link-cost with observed data or historical data
+    #     self.link_flows_table = current link-flow information
+    #     :return:
+    #     """
+    #     # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
+    #     for cav_id in self.cav_list:
+    #         cav_edge = traci.vehicle.getRoadID(cav_id)
+    #         link_flow_num = traci.edge.getLastStepVehicleNumber(cav_edge)
+    #         link_idx = re.findall(r'[0-9]+|[a-z]+', cav_edge)
+    #         if int(link_idx[0]) <= 60:
+    #             self.link_flows_table[cav_edge] = link_flow_num
+    #         print('yes')
+    #
+    #     # 06/20/2023_Notes: self.link_flow_table is realtime updated table, this still have
+    #     # problem for this case.
+    #     self.Graph.updateIntersection(self.link_flows_table)
 
     def update_lf_table(self):
         for k, v in self.link_flows_table.items():
@@ -128,18 +132,43 @@ class Simulation:
             """od_i, n = re.findall(r'[0-9]+|[a-z]+', id)  # od_idx, v_idx"""
             # v.append(ttmp)
 
-    def updateRoute(self):
+    def updateRoute(self, k=32):
         """
-        # step3: enumerate all cav from list, choose proper route and update vehicle information
+        step2: enumerate all cav from list, choose proper route and update vehicle information
                 # -steps:
-                # -3A: enumerate all cav that close enough to the intersection, get k-shortest path
-                # -3B: calculate cover rate in next 2 time interval, the inputs are signal timing plan and given k-sp
-                # -3C: choose the best route and apply accordingly
+                # -2A: enumerate all cav. for each cav.
+                #       -2AA: get k-shortest path considering distance
+                #       -2AB: calculate travel time and cover rate for each candidate route
+                #       -2AC: choose the best route and apply accordingly
+                #       -2AD: update CAV routing table
         :return:
         """
         for cav_id in self.cav_list:
+            # 1.get k shortest path considering distance
             cav_edgeID = traci.vehicle.getRoadID(cav_id)
-        tmp = self.Graph.getNextNode('E1')
+            my_nextNode = self.Network.getNextNode(cav_edgeID)
+            my_desNode = self.Network.getLastNode(traci.vehicle.getRoute(cav_id)[-1])
+            k_shortest_path = self.Network.findKShortPath(k, my_nextNode, my_desNode)
+
+            # 2. calculate travel time and cover rate for each candidate route
+            for sp in k_shortest_path:
+                route = [cav_edgeID]
+                for node_idx in range(len(sp)-1):
+                    node2edge = self.Network.node_list[sp[node_idx+1]].getEdgeByUpperNode(sp[node_idx])
+                    route.append(node2edge)
+                route.append(traci.vehicle.getRoute(cav_id)[-1])
+                tmp = sp
+                """
+                06/21/2023: 
+                -  route is the cav route for each shortest path, 
+                - next step is to calculate arrival time for each node in sp with route[:-1]
+                - another input is an if table about if the edge is observed currently
+                """
+                traci.vehicle.setRoute(cav_id, route)
+
+                print('lll')
+
+        tmp = self.Network.getNextNode('E1')
 
         # 0620 update: to be continued
         return
