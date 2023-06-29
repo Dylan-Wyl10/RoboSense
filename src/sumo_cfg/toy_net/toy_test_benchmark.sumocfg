@@ -1,0 +1,44 @@
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/toy_net1.net.xml"/>
+        <route-files value="od_cav.odtrips.xml, od_bgv.rou.xml"/>
+        <additional-files value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/v_type.add.xml"/>
+    </input>
+
+    <processing>
+        <ignore-route-errors value="true"/>
+        <route-steps value="200"/>
+        <no-internal-links value="False"/>
+        <time-to-teleport value="200"/>
+        <time-to-teleport.highways value="0"/>
+        <eager-insert value="False"/>
+    </processing>
+
+    <output>
+        <summary-output value="summary_benchmark.xml"/>
+        <tripinfo-output value="tripinfo_benchmark.xml"/>
+    </output>
+
+    <time>
+            <begin value="0"/>
+            <end value="3600"/>
+			<step-length value="0.1"/>
+	</time>
+
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <gui_only>
+        <gui-settings-file value="toy_net.view.xml"/>
+    </gui_only>
+
+</configuration>
