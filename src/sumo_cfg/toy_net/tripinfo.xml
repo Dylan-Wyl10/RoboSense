@@ -1,30 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-06-28 21:39:22 by Eclipse SUMO GUI Version 1.17.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
         <net-file value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/toy_net1.net.xml"/>
-        <route-files value="od_cav.odtrips.xml, od_bgv.rou.xml"/>
+        <route-files value="sumo_cfg/toy_net/od_cav.odtrips.xml,sumo_cfg/toy_net/ od_bgv.rou.xml"/>
         <additional-files value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/v_type.add.xml"/>
     </input>
 
+    <output>
+        <summary-output value="sumo_cfg/toy_net/summary.xml"/>
+        <tripinfo-output value="sumo_cfg/toy_net/tripinfo.xml"/>
+    </output>
+
+    <time>
+        <begin value="0"/>
+        <end value="3600"/>
+        <step-length value="0.1"/>
+    </time>
+
     <processing>
-        <ignore-route-errors value="true"/>
+        <lateral-resolution value="0.1"/>
         <route-steps value="200"/>
         <no-internal-links value="False"/>
+        <ignore-route-errors value="true"/>
         <time-to-teleport value="200"/>
         <time-to-teleport.highways value="0"/>
         <eager-insert value="False"/>
     </processing>
-
-    <output>
-        <summary-output value="summary.xml"/>
-        <tripinfo-output value="tripinfo.xml"/>
-    </output>
-
-    <time>
-            <begin value="0"/>
-            <end value="3600"/>
-			<step-length value="0.1"/>
-	</time>
 
     <routing>
         <device.rerouting.adaptation-steps value="18"/>
@@ -37,8 +41,16 @@
         <no-step-log value="true"/>
     </report>
 
+    <traci_server>
+        <remote-port value="37809"/>
+    </traci_server>
+
     <gui_only>
-        <gui-settings-file value="toy_net.view.xml"/>
+        <gui-settings-file value="sumo_cfg/toy_net/toy_net.view.xml"/>
     </gui_only>
 
 </configuration>
+-->
+
+<tripinfos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tripinfo_file.xsd">
+</tripinfos>

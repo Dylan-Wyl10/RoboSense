@@ -9,6 +9,7 @@ import traci
 import numpy as np
 import sumolib
 import networkx as nx
+import re
 
 
 class Intersection:
@@ -18,7 +19,19 @@ class Intersection:
         self.link_idx = {'in': self.net.getNode(self.id).getIncoming(),
                          'out': self.net.getNode(self.id).getOutgoing()}
         self.link_flow = {}
+        self.link_phaseIdx_table = {}
+        self.phase_split_time = [20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2]
         # self.position = traci.junction.getPosition(self.id)
+
+    def setLinkPhaseIndex(self):
+        inbounds = [e.getID() for e in self.link_idx['in']]  # inbound edges
+        for e_in in inbounds:
+            self.link_phaseIdx_table[e_in] = []
+        self.tls_id = self.net.getEdge(inbounds[0]).getTLS().getID()
+        all_links = traci.trafficlight.getControlledLinks(self.tls_id)
+        for i in range(len(all_links)):
+            edge_idx = self.net.getLane(all_links[i][0][0]).getEdge().getID()
+            self.link_phaseIdx_table[edge_idx].append(i)
 
     def getEdgeByUpperNode(self, upper_node):
         """
@@ -30,8 +43,6 @@ class Intersection:
             if edg.getFromNode().getID() == upper_node:
                 tt = edg.getID
                 return edg.getID()
-
-    # def getTravelTime
 
     def getPosition(self):
         self.position = traci.junction.getPosition(self.id)
@@ -45,13 +56,76 @@ class Intersection:
         '''
         # self.position = traci.junction.getPosition(self.id)
         # 1.get related edge index
-
         # 2.update link flow
         for in_edge_idx in self.link_idx['in']:
             self.link_flow[in_edge_idx] = link_flow_table[in_edge_idx]
+        # print('yes')
 
-        print('yes')
-    # def getLinkDelay(self, edge_id, time_interval, start_time, end_time):
+    def getEdgeTravelTime(self, v_id, edge_id, time, link_input, mode):
+        """
+        :param cav_id: current v_id (type = cav)
+        :param edge_id:
+        :param time: should be the absolute time that start the link
+        :param link_input:
+        :param mode:
+        :return:
+        """
+        ff_speed = self.net.getEdge(edge_id).getSpeed()
+        edge_length = self.net.getEdge(edge_id).getLength()
+        self.setLinkPhaseIndex()
+        self.SPaT = []
+        time_onStopBar = time + edge_length / ff_speed
+        current_time = traci.simulation.getTime()
+        phase_current = traci.trafficlight.getRedYellowGreenState(self.tls_id)
+        self.phase_split_time = [20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2]
+        cycle_length = sum(self.phase_split_time[:12])
+
+        if phase_current[self.link_phaseIdx_table[edge_id][0]] == 'G':
+            green_time = traci.trafficlight.getNextSwitch(self.tls_id) - current_time  # current phase remain time
+            self.SPaT = [phase_current[self.link_phaseIdx_table[edge_id][0]], green_time]
+            est_arriveTime = (
+                                   cycle_length - green_time + time_onStopBar - current_time) % cycle_length  # future time local coordinate in cycle
+        else:
+            # SPaT = [phase_current[self.link_phaseIdx_table[edge_id][0]], traci.trafficlight.getNextSwitch(self.tls_id)]
+            # self.phase_split_time = [20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2]
+            edge_phaseSeq = self.link_phaseIdx_table[edge_id][0] // 4
+            phase_id = traci.trafficlight.getPhase(self.tls_id)  # current phase id
+            if phase_id < 3 * edge_phaseSeq:
+                red_time = traci.trafficlight.getNextSwitch(self.tls_id) - current_time + sum(
+                    self.phase_split_time[phase_id + 1:edge_phaseSeq * 3])
+            elif phase_id > 3 * edge_phaseSeq:
+                # tmp = self.phase_split_time[phase_id+1: 12 +edge_phaseSeq*3]
+                red_time = traci.trafficlight.getNextSwitch(self.tls_id) - current_time + sum(
+                    self.phase_split_time[phase_id + 1: 12 + edge_phaseSeq * 3])
+            self.SPaT = [phase_current[self.link_phaseIdx_table[edge_id][0]], red_time]  # SPaT here is current status
+            est_arriveTime = (80 - red_time + time_onStopBar - current_time) % cycle_length  # predicted arrive time in cycle
+        if mode == "history":
+            q_0 = 3600 / 3600
+            q_1 = link_input / 3600
+            x_pr = 80 * q_0 / (q_0 - q_1)  # time that clear the queue
+            # y_pr = q_1 * x_pr
+            if est_arriveTime > x_pr:  # no queue
+                return time_onStopBar, time_onStopBar
+            elif est_arriveTime <= x_pr:
+                y_1 = q_1 * est_arriveTime
+                x_0 = y_1 / q_0 + 80
+                return time_onStopBar, time_onStopBar + x_0
+        elif mode == "detect":
+            dis_tmp = {}
+            for v in link_input:
+                dis_tmp[v] = self.net.getEdge(edge_id).getLength() - traci.vehicle.getLanePosition(v)
+            dis_tmp = dict(sorted(dis_tmp.items(), key=lambda x: x[1], reverse=False))
+            queue_seq = list(dis_tmp.keys()).index(v_id)  # sequence in queue for given v_id
+            link_tt = dis_tmp[v_id]/ff_speed  # link travel time
+            if self.SPaT[0] == 'G':
+                est_arriveTime = (cycle_length - self.SPaT[1] + (link_tt + time) - current_time) % cycle_length
+            elif self.SPaT[0] == 'r':
+                est_arriveTime = (80 - self.SPaT[1] + (link_tt + time) - current_time) % cycle_length
+            x_pr = max(80 + 2 * (queue_seq+1), 100)
+            if est_arriveTime > x_pr:
+                return link_tt + time, link_tt + time
+            elif est_arriveTime <= x_pr:
+                return link_tt + time, link_tt + time + 2 * (queue_seq+1)  # 0628 YW: hardcoding time headway=2s
 
 
 class Network:
@@ -144,6 +218,55 @@ class Network:
         # paths = list(nx.all_shortest_paths(self.G, 'AA', 'FF'))
         # paths = list(nx.bidirectional_shortest_path(self.G, 'AA', 'FF'))
         return paths[:k]
+
+    def getNodeArrTime(self, route_OnEdge, route_OnNode, current_time, cav_id, lf_history):
+        """
+        :param route_OnEdge: route that indicate edges
+        :param route_OnNode: route that indicate nodes
+        :param current_time: current simulation time
+        :param cav_id: a binary observed table(edge-dict) for link-flow [0: history, 1:observation]
+        :param lf_history: historical link-flow table(edge-dict)
+        :return:
+        """
+        route_NodeTime = []  # this will record the time that leave each node
+        time = current_time # for current edge, edge_start time = current time
+        for idx in range(len(route_OnNode)):
+            edge = route_OnEdge[idx]
+            node = route_OnNode[idx]
+            # edge is the in bound link for each node
+            # tmp = int(re.findall(r'[0-9]+|[a-z]+', edge)[0])
+            """
+            edge_time: absolute time that on stop bar
+            edge_leave_time: time that leaves the edge --> time that arrive this node
+             """
+            if idx == 0:  # defaultly, the first edge in edge list is the current edge
+                link_input = traci.lane.getLastStepVehicleIDs(
+                    traci.vehicle.getLaneID(cav_id))  # this is the veh_id list on link
+                edge_time, edge_leave_time = self.node_list[node].getEdgeTravelTime(cav_id, edge, time, link_input,
+                                                                                    mode="detect")
+            else:
+                link_input = lf_history[edge]
+                edge_time, edge_leave_time = self.node_list[node].getEdgeTravelTime(cav_id, edge, time, link_input,
+                                                                                    mode='history')
+            time = edge_leave_time
+            route_NodeTime.append(edge_leave_time)
+            # if int(re.findall(r'[0-9]+|[a-z]+', edge)[0]) > 60:
+            #     link_input = traci.edge.getLastStepVehicleIDs(edge)  # this is an id list on link
+            #     edge_time, edge_leave_time = self.node_list[node].getEdgeTravelTime(edge, time, link_input,
+            #                                                                         mode="detect")
+            #     if lf_observ[edge] == 1:
+            #         link_input = traci.edge.getLastStepVehicleIDs(edge)  # this is an id list on link
+            #         edge_time, edge_leave_time = self.node_list[node].getEdgeTravelTime(edge, time, link_input,
+            #                                                                             mode="detect")
+            #     elif lf_observ[edge] == 0:  # use historical data to estimate
+            #         link_input = lf_history[edge]
+            #         edge_time, edge_leave_time = self.node_list[node].getEdgeTravelTime(edge, time, link_input,
+            #                                                                             mode='history')
+            # route_NodeTime.append(edge_time)
+            # the node must be end node for edge
+
+        # self.node_list
+        return route_NodeTime
 
     def getBestPath(self, k_shortest_path, time_interval):
         '''
