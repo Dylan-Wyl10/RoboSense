@@ -32,9 +32,19 @@ class Simulation:
         self.Network = Network(6, 6, net_file)
         self.cav_list = []
         self.load_lf(lfHisPath)  # 06/18/2023: load link-flow table from given path
-        self.cover_timeSpace = np.zeros((120, 20000))  # hardcoding binary space for cover rate
+        self.cover_LinkTimeVeh = np.zeros((120, 20000, 250))  # index = [link, time, veh], value is hardcoded as 0 (binary)
 
-    def sim(self):
+        # # build a time-space table for vehicle index
+        # self.cover_idTable = []
+        # for i in range(self.cover_LinkTimeVeh.shape[0]):
+        #     t = []
+        #     for j in range(self.cover_LinkTimeVeh.shape[1]):
+        #         t.append([])
+        #     self.cover_idTable.append(t)
+        # self.cover_idTable = np.array(self.cover_idTable)
+        self.cav_route = {}
+
+    def sim(self, save_path, k=32, parameters=(1, 1000)):
         traci.start(["sumo-gui", "-c", self.config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
@@ -42,6 +52,7 @@ class Simulation:
         self.Network.netInit(6, 6)
         # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
         while True:
+
             # the following steps only apply in a GIVEN TIME Interval
             # step1: get cav information from the network, update cav list
             if self.step % 10 == 0:
@@ -58,11 +69,7 @@ class Simulation:
                 #       -2AB: calculate travel time and cover rate for each candidate route
                 #       -2AC: choose the best route and apply accordingly
                 #       -2AD: update CAV routing table
-                self.updateRoute()
-
-                # # step2: check observation and update link-flow table (value only); then the output also calculate
-                # # link-cost with observed data or historical data
-                # self.updateNetwork()
+                self.updateRoute(k, parameters)
 
                 """
                 # stepXXXX: (this will be added on next): adjust signal time plan. 
@@ -73,7 +80,36 @@ class Simulation:
             self.step += 1
             self.time = self.step * self.resolution
             traci.simulationStep()
+            # the following steps only apply in a GIVEN TIME Interval
+            # step1: get cav information from the network, update cav list
+            if self.step % 10 == 0:
+                self.getCAVinfo()
+                # update observation
+                self.updateObsv()
+
+            # step2: enumerate all cav from list, choose proper route and update vehicle information
+            if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
+
+                # -steps:
+                # -2A: enumerate all cav. for each cav.
+                #       -2AA: get k-shortest path considering distance
+                #       -2AB: calculate travel time and cover rate for each candidate route
+                #       -2AC: choose the best route and apply accordingly
+                #       -2AD: update CAV routing table
+                self.updateRoute(k, parameters)
+
+                """
+                # stepXXXX: (this will be added on next): adjust signal time plan. 
+                self.update_tsc()
+                self.update_veh()
+                """
+            # step4: push simulation and update information
+            self.step += 1
+
+            # stop and save the results
             if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
+                path = save_path['cover_table']
+                np.savetxt(path, self.cover_LinkTimeVeh, delimiter=",")
                 print("Simulation has ended due to no enough vehicle")
                 break
 
@@ -113,20 +149,23 @@ class Simulation:
         """
         # for k, v in self.link_flows_table.items():
         #     self.link_flows_observation[k] = 0  # get history link-flow table
-        for cav_id in self.cav_list:
-            cav_edge = traci.vehicle.getRoadID(cav_id)
-            link_idx = re.findall(r'[0-9]+|[a-z]+', cav_edge)
-            if int(link_idx[0]) <= 60:
-                # self.link_flows_observation[cav_edge] = 1
-                time_idx = round(self.time)
-                if cav_edge[0] == '-':
-                    self.cover_timeSpace[int(link_idx[0]) + 59, time_idx] = 1
-                else:
-                    self.cover_timeSpace[int(link_idx[0]) -1 , time_idx] = 1
-
-        # 06/20/2023_Notes: self.link_flow_table is realtime updated table, this still have
-        # problem for this case.
-        # self.Graph.updateIntersection(self.link_flows_table)
+        # tmp = traci.edge.getIDList()
+        time_idx = round(self.time)
+        for edge in traci.edge.getIDList():
+            edge_idx = int(re.findall(r'[0-9]+|[a-z]+', edge)[0]) - 1
+            # vv_id = traci.edge.getLastStepVehicleIDs(edge)
+            # if time_idx == 40:
+            #     print('llll')
+            if edge_idx < 60:
+                v_id = traci.edge.getLastStepVehicleIDs(edge)  # vehicle id list
+                for v in v_id:
+                    v_tem = re.findall(r'[0-9]+|[a-z]+', v)  # [type, num]
+                    if v_tem[0] == 'cav':
+                        cav_idx = int(v_tem[1]) - 1 # cav index = cav numbber - 1
+                        if edge[0] == '-':
+                            self.cover_LinkTimeVeh[edge_idx + 60, time_idx, cav_idx] = 1
+                        else:
+                            self.cover_LinkTimeVeh[edge_idx, time_idx, cav_idx] = 1
 
     def update_lf_table(self):
         for k, v in self.link_flows_table.items():
@@ -148,7 +187,7 @@ class Simulation:
             """od_i, n = re.findall(r'[0-9]+|[a-z]+', id)  # od_idx, v_idx"""
             # v.append(ttmp)
 
-    def updateRoute(self, k=32, parameters=(1, 1000)):
+    def updateRoute(self, k, parameters):
         """
         step2: enumerate all cav from list, choose proper route and update vehicle information
                 # -steps:
@@ -161,19 +200,24 @@ class Simulation:
         """
         for cav_id in self.cav_list:
             # 1.get k shortest path considering distance
+            veh_idx = int(re.findall(r'[0-9]+|[a-z]+', cav_id)[1]) - 1  # [num = actual number -1]
             cav_edgeID = traci.vehicle.getRoadID(cav_id)
             my_nextNode = self.Network.getNextNode(cav_edgeID)
             my_desNode = self.Network.getLastNode(traci.vehicle.getRoute(cav_id)[-1])
-            # if my_desNode == 'AD_1' or my_desNode == 'AD_1':
-            #     print(cav_id, cav_edgeID)
-            #     print("@@@@@@@@@@@")
-            print(cav_id, my_nextNode, my_desNode)
+
             k_shortest_path = self.Network.findKShortPath(k, my_nextNode, my_desNode)
 
             # 2. calculate travel time and cover rate for each candidate route
             # 3. get delta_cover for each candidate path
             arrive_time_table = []  # store the node arrive time for each path selection
             delta_cover_table = []  # store the change of cover rate for each candidate path
+            veh_cover_table = []  # store the current coverage for each candidate path
+
+            # remove current vehicle in the futrual cover matrix
+            # shape = self.cover_LinkTimeVeh.shape
+            for l in range(self.cover_LinkTimeVeh.shape[0]):
+                for t in range(int(self.time), self.cover_LinkTimeVeh.shape[1]):
+                    self.cover_LinkTimeVeh[l, t, veh_idx] = 0
             for sp in k_shortest_path:
                 route = [cav_edgeID]
                 for node_idx in range(len(sp) - 1):
@@ -190,13 +234,17 @@ class Simulation:
                                                         self.link_flows_hisNum)  # arrive time on each node for given path route
                 arrive_time_table.append(node_time[-1])
 
+                # 0630update: 4. We need to remove the current veh from current time to the future.
+
                 # this is the end of arrive time calculation, next is the change of cover rate
-                cover_ts_pre = copy.deepcopy(self.cover_timeSpace)  # get a tmp matrix to calculate cover
+                # cover_ts_pre = copy.deepcopy(self.cover_LinkTimeVeh)  # get a tmp matrix to calculate cover
+                cover_ts_pre = np.copy(self.cover_LinkTimeVeh)
+
                 for idx in range(len(route[:-1])):
                     node_timeTmp = copy.deepcopy(node_time)
                     node_timeTmp.insert(0, self.time)
                     edge_idx_num = int(re.findall(r'[0-9]+|[a-z]+', route[:-1][idx])[0])
-                    if edge_idx_num <= 60:
+                    if edge_idx_num < 60:
                         # # determine the start and end time point for each occupation
                         # start_idx = node_timeTmp[1]
                         # end_idx = int(node_timeTmp[2])
@@ -205,26 +253,33 @@ class Simulation:
                         else:
                             link_pos = edge_idx_num
                         for k in range(round(node_timeTmp[idx]), round(node_timeTmp[idx + 1])):
-                            cover_ts_pre[link_pos - 1, k] = 1
+                            cover_ts_pre[link_pos - 1, k, veh_idx] = 1
                 # calculate cover rate from NEXT NODE to the END
                 duration = round(node_time[-1]) - round(node_time[0])
-                cover_delta = (np.sum(cover_ts_pre) - np.sum(self.cover_timeSpace)) / duration
+
+                # get the time-space cover table
+                cover_pre = np.where(np.sum(cover_ts_pre, axis=2) > 0, 1, 0)
+                cover_now = np.where(np.sum(self.cover_LinkTimeVeh, axis=2) > 0, 1, 0)
+
+                cover_delta = (np.sum(cover_pre) - np.sum(cover_now)) / duration
                 delta_cover_table.append(cover_delta)
+                veh_cover_table.append(cover_ts_pre)
 
             # 4. calculate objective and get best route, update the routing prediction table
             path_obj_table = copy.deepcopy(delta_cover_table)
             for i in range(len(arrive_time_table)):
                 path_obj_table[i] = - parameters[0] * arrive_time_table[i] + parameters[1] * delta_cover_table[i]
-            best_route_node = k_shortest_path[path_obj_table.index(max(path_obj_table))]
+            best_idx = path_obj_table.index(max(path_obj_table))  # get best route idx
+            best_route_node = k_shortest_path[best_idx]  # get best route idx and path(node)
             best_route = [cav_edgeID]
+            self.cover_LinkTimeVeh = veh_cover_table[best_idx]  # update predicted cover table
+
+            # convert node path to edge path
             for node_idx in range(len(best_route_node) - 1):
                 node2edge = self.Network.node_list[best_route_node[node_idx + 1]].getEdgeByUpperNode(best_route_node[node_idx])
                 best_route.append(node2edge)
             best_route.append(traci.vehicle.getRoute(cav_id)[-1])
             traci.vehicle.setRoute(cav_id, best_route)
-            # print('lplpl')
-        # traci.vehicle.setRoute(cav_id, route)
-        # tmp = self.Network.getNextNode('E1')
         return
 
     def save_lf(self, path):  # save link flow table to file, this is designed for history collection

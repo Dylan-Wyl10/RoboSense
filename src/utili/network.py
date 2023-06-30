@@ -229,7 +229,7 @@ class Network:
         :return:
         """
         route_NodeTime = []  # this will record the time that leave each node
-        time = current_time # for current edge, edge_start time = current time
+        time = current_time  # for current edge, edge_start time = current time
         for idx in range(len(route_OnNode)):
             edge = route_OnEdge[idx]
             node = route_OnNode[idx]
@@ -240,8 +240,7 @@ class Network:
             edge_leave_time: time that leaves the edge --> time that arrive this node
              """
             if idx == 0:  # defaultly, the first edge in edge list is the current edge
-                link_input = traci.lane.getLastStepVehicleIDs(
-                    traci.vehicle.getLaneID(cav_id))  # this is the veh_id list on link
+                link_input = traci.lane.getLastStepVehicleIDs(traci.vehicle.getLaneID(cav_id))  # this is the veh_id list on link
                 edge_time, edge_leave_time = self.node_list[node].getEdgeTravelTime(cav_id, edge, time, link_input,
                                                                                     mode="detect")
             else:
@@ -250,6 +249,7 @@ class Network:
                                                                                     mode='history')
             time = edge_leave_time
             route_NodeTime.append(edge_leave_time)
+
             # if int(re.findall(r'[0-9]+|[a-z]+', edge)[0]) > 60:
             #     link_input = traci.edge.getLastStepVehicleIDs(edge)  # this is an id list on link
             #     edge_time, edge_leave_time = self.node_list[node].getEdgeTravelTime(edge, time, link_input,
@@ -268,11 +268,11 @@ class Network:
         # self.node_list
         return route_NodeTime
 
-    def getBestPath(self, k_shortest_path, time_interval):
-        '''
-        get best path from k-shortest path candidate considering other component.
-        This function can be replaced with optimization formulation in the future.
-        :param k_shortest_path:
-        :param time_interval:
-        :return:
-        '''
+    # def getBestPath(self, k_shortest_path, time_interval):
+    #     '''
+    #     get best path from k-shortest path candidate considering other component.
+    #     This function can be replaced with optimization formulation in the future.
+    #     :param k_shortest_path:
+    #     :param time_interval:
+    #     :return:
+    #     '''
