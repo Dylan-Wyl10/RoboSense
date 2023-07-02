@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2023-07-02 12:42:07 by Eclipse SUMO sumo Version 1.17.0
+<!-- generated on 2023-07-02 13:05:15 by Eclipse SUMO sumo Version 1.14.1
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/toy_net1.net.xml"/>
-        <route-files value="sumo_cfg/toy_net/od_cav.odtrips.xml,sumo_cfg/toy_net/ od_bgv.rou.xml"/>
-        <additional-files value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/v_type.add.xml"/>
+        <net-file value="sumo_cfg/toy_net/toy_net1.net.xml"/>
+        <route-files value="sumo_cfg/toy_net/od_cav.odtrips.xml,sumo_cfg/toy_net/od_bgv.rou.xml"/>
+        <additional-files value="sumo_cfg/toy_net/v_type.add.xml"/>
     </input>
 
     <output>
@@ -23,11 +23,11 @@
     <processing>
         <lateral-resolution value="0.1"/>
         <route-steps value="200"/>
-        <no-internal-links value="False"/>
+        <no-internal-links value="false"/>
         <ignore-route-errors value="true"/>
         <time-to-teleport value="200"/>
         <time-to-teleport.highways value="0"/>
-        <eager-insert value="False"/>
+        <eager-insert value="false"/>
     </processing>
 
     <routing>
@@ -42,7 +42,7 @@
     </report>
 
     <traci_server>
-        <remote-port value="42801"/>
+        <remote-port value="37705"/>
     </traci_server>
 
     <gui_only>
@@ -53,4 +53,3 @@
 -->
 
 <tripinfos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tripinfo_file.xsd">
-</tripinfos>
