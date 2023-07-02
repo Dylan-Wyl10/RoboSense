@@ -45,7 +45,7 @@ class Simulation:
         self.cav_route = {}
 
     def sim(self, save_path, k=32, parameters=(1, 1000)):
-        traci.start(["sumo", "-c", self.config, "--lateral-resolution=0.1",
+        traci.start(["sumo-gui", "-c", self.config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         self.step = 0
@@ -213,11 +213,15 @@ class Simulation:
             delta_cover_table = []  # store the change of cover rate for each candidate path
             veh_cover_table = []  # store the current coverage for each candidate path
 
+            # objective value for last candidate path, since the objective is to get max, the default number is -1000000.
+            last_route_obj = 10000
+
             # remove current vehicle in the futrual cover matrix
-            # shape = self.cover_LinkTimeVeh.shape
             for l in range(self.cover_LinkTimeVeh.shape[0]):
                 for t in range(int(self.time), self.cover_LinkTimeVeh.shape[1]):
                     self.cover_LinkTimeVeh[l, t, veh_idx] = 0
+
+            # enumerate all candidate path
             for sp in k_shortest_path:
                 route = [cav_edgeID]
                 for node_idx in range(len(sp) - 1):
@@ -238,10 +242,16 @@ class Simulation:
 
                 # this is the end of arrive time calculation, next is the change of cover rate
                 # cover_ts_pre = copy.deepcopy(self.cover_LinkTimeVeh)  # get a tmp matrix to calculate cover
-                cover_ts_pre = np.copy(self.cover_LinkTimeVeh)
+                # cover_ts_pre = np.copy(self.cover_LinkTimeVeh)
 
                 node_timeTmp = copy.deepcopy(node_time)
                 node_timeTmp.insert(0, self.time)
+
+                route_startTime = round(node_timeTmp[0])
+                route_endTime = round(node_timeTmp[-1])
+                duration = route_endTime - route_startTime
+                # predicted cover rate for given route,  this is temp data point
+                cover_ts_pre = np.copy(self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :])
 
                 for idx in range(len(route[:-1])):
                     edge_idx_num = int(re.findall(r'[0-9]+|[a-z]+', route[:-1][idx])[0])
@@ -253,37 +263,35 @@ class Simulation:
                             link_pos = edge_idx_num + 60  # determine the link idx in cover time-space table
                         else:
                             link_pos = edge_idx_num
-                        for k in range(round(node_timeTmp[idx]), round(node_timeTmp[idx + 1])):
-                            cover_ts_pre[link_pos - 1, k, veh_idx] = 1
-                # calculate cover rate from NEXT NODE to the END
-                duration = round(node_timeTmp[-1]) - round(node_timeTmp[0])
+                        for k in range(round(node_timeTmp[idx]) - int(node_timeTmp[0]), round(node_timeTmp[idx + 1]) - int(node_timeTmp[0])):
+                            # print(k)
+                            cover_ts_pre[link_pos - 1, k-1, veh_idx] = 1
+
 
                 # get the time-space cover table
                 cover_pre = np.where(np.sum(cover_ts_pre, axis=2) > 0, 1, 0)
-                cover_now = np.where(np.sum(self.cover_LinkTimeVeh, axis=2) > 0, 1, 0)
+                cover_now = np.where(np.sum(self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :], axis=2) > 0, 1, 0)
 
                 cover_delta = (np.sum(cover_pre) - np.sum(cover_now)) / duration
-                delta_cover_table.append(cover_delta)
-                veh_cover_table.append(cover_ts_pre)
 
+                # 4. calculate objective and get best route, update the routing based on best objective
+                current_route_obj = - parameters[0] * node_time[-1] + parameters[1] * cover_delta
+                if current_route_obj > last_route_obj:
+                    self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :] = cover_ts_pre
+                    best_route_node = sp  # get best route idx and path(node)
+                    best_route = [cav_edgeID]
+
+                    # convert node path to edge path
+                    for node_idx in range(len(best_route_node) - 1):
+                        node2edge = self.Network.node_list[best_route_node[node_idx + 1]].getEdgeByUpperNode(
+                            best_route_node[node_idx])
+                        best_route.append(node2edge)
+                    best_route.append(traci.vehicle.getRoute(cav_id)[-1])
+                    traci.vehicle.setRoute(cav_id, best_route)
+                last_route_obj = current_route_obj
                 del cover_ts_pre
 
-            # 4. calculate objective and get best route, update the routing prediction table
-            path_obj_table = copy.deepcopy(delta_cover_table)
-            for i in range(len(arrive_time_table)):
-                path_obj_table[i] = - parameters[0] * arrive_time_table[i] + parameters[1] * delta_cover_table[i]
-            best_idx = path_obj_table.index(max(path_obj_table))  # get best route idx
-            best_route_node = k_shortest_path[best_idx]  # get best route idx and path(node)
-            best_route = [cav_edgeID]
-            self.cover_LinkTimeVeh = veh_cover_table[best_idx]  # update predicted cover table
-
-            # convert node path to edge path
-            for node_idx in range(len(best_route_node) - 1):
-                node2edge = self.Network.node_list[best_route_node[node_idx + 1]].getEdgeByUpperNode(best_route_node[node_idx])
-                best_route.append(node2edge)
-            best_route.append(traci.vehicle.getRoute(cav_id)[-1])
-            traci.vehicle.setRoute(cav_id, best_route)
-        return
+        # return
 
     def save_lf(self, path):  # save link flow table to file, this is designed for history collection
         with open(path, "w") as outfile:
