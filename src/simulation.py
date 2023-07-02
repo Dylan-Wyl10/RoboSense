@@ -80,31 +80,6 @@ class Simulation:
             self.step += 1
             self.time = self.step * self.resolution
             traci.simulationStep()
-            # the following steps only apply in a GIVEN TIME Interval
-            # step1: get cav information from the network, update cav list
-            if self.step % 10 == 0:
-                self.getCAVinfo()
-                # update observation
-                self.updateObsv()
-
-            # step2: enumerate all cav from list, choose proper route and update vehicle information
-            if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
-
-                # -steps:
-                # -2A: enumerate all cav. for each cav.
-                #       -2AA: get k-shortest path considering distance
-                #       -2AB: calculate travel time and cover rate for each candidate route
-                #       -2AC: choose the best route and apply accordingly
-                #       -2AD: update CAV routing table
-                self.updateRoute(k, parameters)
-
-                """
-                # stepXXXX: (this will be added on next): adjust signal time plan. 
-                self.update_tsc()
-                self.update_veh()
-                """
-            # step4: push simulation and update information
-            self.step += 1
 
             # stop and save the results
             if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
