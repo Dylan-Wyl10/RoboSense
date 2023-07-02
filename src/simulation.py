@@ -18,7 +18,7 @@ import json
 
 
 class Simulation:
-    def __init__(self, max_time, link_num, resolution, config, lfHisPath, net_file, time_interval):
+    def __init__(self, max_time, link_num, resolution, lfHisPath, net_file, time_interval):
         self.step = 0
         self.time = 0
         self.time_interval = time_interval
@@ -27,7 +27,7 @@ class Simulation:
         self.link_flows_table = gen_LF_table(link_num)  # link flow table for all edges
         self.link_flows_num = {}
         self.link_flows_observation = {}
-        self.config = config  # 06/14/2023: temporaryly set sumo config path
+        # self.config = config  # 06/14/2023: temporaryly set sumo config path
         self.time_interval = 10  # 06/18/2023: plan cav route in every 10s
         self.Network = Network(6, 6, net_file)
         self.cav_list = []
@@ -44,8 +44,8 @@ class Simulation:
         # self.cover_idTable = np.array(self.cover_idTable)
         self.cav_route = {}
 
-    def sim(self, save_path, k=32, parameters=(1, 1000)):
-        traci.start(["sumo-gui", "-c", self.config, "--lateral-resolution=0.1",
+    def sim(self, save_path, config, k=32, parameters=(1, 1000)):
+        traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         self.step = 0
@@ -84,7 +84,32 @@ class Simulation:
             # stop and save the results
             if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
                 path = save_path['cover_table']
-                np.savetxt(path, self.cover_LinkTimeVeh, delimiter=",")
+                np.save(path, self.cover_LinkTimeVeh, delimiter=",")
+                print("Simulation has ended due to no enough vehicle")
+                break
+
+    def sim_benchmark(self, save_path, config="sumo_cfg/toy_net/toy_test.sumocfg"):
+        traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
+                     "--step-length={}".format(str(self.resolution))])
+        self.time = 0  # simulation time index
+        self.step = 0
+        self.Network.netInit(6, 6)
+        # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
+        while True:
+
+            # collect CAV infor evry 1 second == 10s
+            if self.step % 10 == 0:
+                self.getCAVinfo()
+                # update observation
+                self.updateObsv()
+
+            self.step += 1
+            self.time = self.step * self.resolution
+            traci.simulationStep()
+            # stop and save the results
+            if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
+                path = save_path['cover_table_benchmark']
+                np.save(path, self.cover_LinkTimeVeh, delimiter=",")
                 print("Simulation has ended due to no enough vehicle")
                 break
 
