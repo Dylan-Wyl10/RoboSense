@@ -2,3 +2,5 @@
 src/sumo_cfg/toy_net/dualogs
 backup_tmp
 result
+src/sumo_cfg
+src/__pycache__
