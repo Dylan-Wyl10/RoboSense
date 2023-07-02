@@ -1,6 +1,7 @@
 .idea
-src/sumo_cfg/toy_net/dualogs
+src/sumo_cfg/toy_net
 backup_tmp
 result
 src/sumo_cfg
 src/__pycache__
+src/utili/__pycache__
