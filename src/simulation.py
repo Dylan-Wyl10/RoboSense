@@ -32,7 +32,7 @@ class Simulation:
         self.Network = Network(6, 6, net_file)
         self.cav_list = []
         self.load_lf(lfHisPath)  # 06/18/2023: load link-flow table from given path
-        self.cover_LinkTimeVeh = np.zeros((120, 20000, 250))  # index = [link, time, veh], value is hardcoded as 0 (binary)
+        self.cover_LinkTimeVeh = np.zeros((120, 10000, 250))  # index = [link, time, veh], value is hardcoded as 0 (binary)
 
         # # build a time-space table for vehicle index
         # self.cover_idTable = []
@@ -45,7 +45,7 @@ class Simulation:
         self.cav_route = {}
 
     def sim(self, save_path, k=32, parameters=(1, 1000)):
-        traci.start(["sumo-gui", "-c", self.config, "--lateral-resolution=0.1",
+        traci.start(["sumo", "-c", self.config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         self.step = 0
@@ -240,9 +240,10 @@ class Simulation:
                 # cover_ts_pre = copy.deepcopy(self.cover_LinkTimeVeh)  # get a tmp matrix to calculate cover
                 cover_ts_pre = np.copy(self.cover_LinkTimeVeh)
 
+                node_timeTmp = copy.deepcopy(node_time)
+                node_timeTmp.insert(0, self.time)
+
                 for idx in range(len(route[:-1])):
-                    node_timeTmp = copy.deepcopy(node_time)
-                    node_timeTmp.insert(0, self.time)
                     edge_idx_num = int(re.findall(r'[0-9]+|[a-z]+', route[:-1][idx])[0])
                     if edge_idx_num < 60:
                         # # determine the start and end time point for each occupation
@@ -255,7 +256,7 @@ class Simulation:
                         for k in range(round(node_timeTmp[idx]), round(node_timeTmp[idx + 1])):
                             cover_ts_pre[link_pos - 1, k, veh_idx] = 1
                 # calculate cover rate from NEXT NODE to the END
-                duration = round(node_time[-1]) - round(node_time[0])
+                duration = round(node_timeTmp[-1]) - round(node_timeTmp[0])
 
                 # get the time-space cover table
                 cover_pre = np.where(np.sum(cover_ts_pre, axis=2) > 0, 1, 0)
@@ -264,6 +265,8 @@ class Simulation:
                 cover_delta = (np.sum(cover_pre) - np.sum(cover_now)) / duration
                 delta_cover_table.append(cover_delta)
                 veh_cover_table.append(cover_ts_pre)
+
+                del cover_ts_pre
 
             # 4. calculate objective and get best route, update the routing prediction table
             path_obj_table = copy.deepcopy(delta_cover_table)
