@@ -84,7 +84,7 @@ class Simulation:
             # stop and save the results
             if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
                 path = save_path['cover_table']
-                np.save(path, self.cover_LinkTimeVeh, delimiter=",")
+                np.save(path, self.cover_LinkTimeVeh)
                 print("Simulation has ended due to no enough vehicle")
                 break
 
@@ -109,7 +109,7 @@ class Simulation:
             # stop and save the results
             if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
                 path = save_path['cover_table_benchmark']
-                np.save(path, self.cover_LinkTimeVeh, delimiter=",")
+                np.save(path, self.cover_LinkTimeVeh)
                 print("Simulation has ended due to no enough vehicle")
                 break
 
@@ -211,10 +211,10 @@ class Simulation:
             # 3. get delta_cover for each candidate path
             arrive_time_table = []  # store the node arrive time for each path selection
             delta_cover_table = []  # store the change of cover rate for each candidate path
-            veh_cover_table = []  # store the current coverage for each candidate path
+            path_obj_table = []  # store the object value for each candidate path
 
             # objective value for last candidate path, since the objective is to get max, the default number is -1000000.
-            last_route_obj = 10000
+            last_bestRoute_obj = -10000
 
             # remove current vehicle in the futrual cover matrix
             for l in range(self.cover_LinkTimeVeh.shape[0]):
@@ -267,16 +267,17 @@ class Simulation:
                             # print(k)
                             cover_ts_pre[link_pos - 1, k-1, veh_idx] = 1
 
-
                 # get the time-space cover table
                 cover_pre = np.where(np.sum(cover_ts_pre, axis=2) > 0, 1, 0)
                 cover_now = np.where(np.sum(self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :], axis=2) > 0, 1, 0)
 
                 cover_delta = (np.sum(cover_pre) - np.sum(cover_now)) / duration
+                delta_cover_table.append(cover_delta)
 
                 # 4. calculate objective and get best route, update the routing based on best objective
                 current_route_obj = - parameters[0] * node_time[-1] + parameters[1] * cover_delta
-                if current_route_obj > last_route_obj:
+                path_obj_table.append(current_route_obj)
+                if current_route_obj > last_bestRoute_obj:
                     self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :] = cover_ts_pre
                     best_route_node = sp  # get best route idx and path(node)
                     best_route = [cav_edgeID]
@@ -288,9 +289,9 @@ class Simulation:
                         best_route.append(node2edge)
                     best_route.append(traci.vehicle.getRoute(cav_id)[-1])
                     traci.vehicle.setRoute(cav_id, best_route)
-                last_route_obj = current_route_obj
-                del cover_ts_pre
-
+                    last_bestRoute_obj = current_route_obj
+                del cover_ts_pre, cover_pre
+            print('yes')
         # return
 
     def save_lf(self, path):  # save link flow table to file, this is designed for history collection
