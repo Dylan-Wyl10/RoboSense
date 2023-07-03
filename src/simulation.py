@@ -44,7 +44,7 @@ class Simulation:
         # self.cover_idTable = np.array(self.cover_idTable)
         self.cav_route = {}
 
-    def sim(self, save_path, config, k=32, parameters=(1, 1000)):
+    def sim(self, save_path, config, parameters, k=32):
         traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
