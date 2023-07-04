@@ -131,12 +131,14 @@ class Simulation:
                 self.filter_lf_table()
                 break
 
+    # get list that will plan in this step
     def getCAVinfo(self):
         self.cav_list = []
         for v_id in traci.vehicle.getIDList():
             edge_id = traci.vehicle.getRoadID(v_id)
             if re.findall(r'[0-9]+|[a-z]+', v_id)[0] == "cav" and int(re.findall(r'[0-9]+|[a-z]+', edge_id)[0]) <= 60:
-                self.cav_list.append(v_id)
+                if traci.vehicle.getLanePosition(v_id) < 350:  # add no changing zone constrain
+                    self.cav_list.append(v_id)
                 # print(v_id, self.step, traci.vehicle.getRoadID(v_id))
 
     def updateObsv(self):
@@ -291,7 +293,7 @@ class Simulation:
                     traci.vehicle.setRoute(cav_id, best_route)
                     last_bestRoute_obj = current_route_obj
                 del cover_ts_pre, cover_pre
-            print('yes')
+            # print('yes')
         # return
 
     def save_lf(self, path):  # save link flow table to file, this is designed for history collection
