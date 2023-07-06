@@ -84,7 +84,7 @@ class Simulation:
             # stop and save the results
             if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
                 path = save_path['cover_table']
-                np.save(path, self.cover_LinkTimeVeh)
+                np.save(path, self.cover_LinkTimeVeh[:, :5000, :])
                 print("Simulation has ended due to no enough vehicle")
                 break
 
