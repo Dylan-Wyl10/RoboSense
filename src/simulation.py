@@ -28,7 +28,6 @@ class Simulation:
         self.link_flows_num = {}
         self.link_flows_observation = {}
         # self.config = config  # 06/14/2023: temporaryly set sumo config path
-        # self.time_interval = 10  # 06/18/2023: plan cav route in every 10s
         self.Network = Network(6, 6, net_file)
         self.cav_list = []
         self.load_lf(lfHisPath)  # 06/18/2023: load link-flow table from given path
