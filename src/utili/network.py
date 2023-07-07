@@ -214,7 +214,12 @@ class Network:
         :param desti_node:
         :return:
         '''
-        paths = list(nx.all_shortest_paths(self.G, start_node, desti_node))
+        # paths = list(nx.all_shortest_paths(self.G, start_node, desti_node))
+        tmp = nx.shortest_path_length(self.G, start_node, desti_node, weight=None, method='dijkstra')
+        tmp = int(2 + tmp)
+        paths = list(nx.all_simple_paths(self.G, start_node, desti_node, cutoff=tmp))
+        paths.sort(key=len)
+
         # paths = list(nx.all_shortest_paths(self.G, 'AA', 'FF'))
         # paths = list(nx.bidirectional_shortest_path(self.G, 'AA', 'FF'))
         return paths[:k]

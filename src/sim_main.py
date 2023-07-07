@@ -33,6 +33,6 @@ if __name__ == '__main__':
     s = Simulation(max_time=3600, link_num=60, resolution=0.1,
                             net_file='sumo_cfg/toy_net/toy_net1.net.xml',
                             time_interval=20, lfHisPath=lf_table_path)
-    s.sim(save_info, path, parameters=(1, 1000))
+    s.sim(save_info, path, parameters=(1, 1000), k=256)
     # s.sim_benchmark(save_info)
 
