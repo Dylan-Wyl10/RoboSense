@@ -31,7 +31,7 @@ class Simulation:
         self.Network = Network(6, 6, net_file)
         self.cav_list = []
         self.load_lf(lfHisPath)  # 06/18/2023: load link-flow table from given path
-        self.cover_LinkTimeVeh = np.zeros((120, 6000, 250))  # index = [link, time, veh], value is hardcoded as 0 (binary)
+        self.cover_LinkTimeVeh = np.zeros((120, 7000, 250))  # index = [link, time, veh], value is hardcoded as 0 (binary)
 
         # # build a time-space table for vehicle index
         # self.cover_idTable = []
