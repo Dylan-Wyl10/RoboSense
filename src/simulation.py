@@ -207,6 +207,11 @@ class Simulation:
 
             k_shortest_path = self.Network.findKShortPath(k, my_nextNode, my_desNode)
 
+            # 0710: get vehicle departure time
+            tmp = traci.vehicle.getDeparture(cav_id)
+            tmpp = traci.vehicle.getDepartDelay(cav_id)
+            dep_time = traci.vehicle.getDeparture(cav_id) + traci.vehicle.getDepartDelay(cav_id)  # get departure time
+
             # 2. calculate travel time and cover rate for each candidate route
             # 3. get delta_cover for each candidate path
             arrive_time_table = []  # store the node arrive time for each path selection
@@ -275,7 +280,6 @@ class Simulation:
                 delta_cover_table.append(cover_delta)
 
                 # 4. calculate objective and get best route, update the routing based on best objective
-                dep_time = traci.vehicle.getDeparture(cav_id) + traci.vehicle.getDepartDelay(cav_id)  # get departure time
                 #  0710 YW: update objective considering total travel time instead of current steps.
                 current_route_obj = - parameters[0] * (node_time[-1] - dep_time) + parameters[1] * cover_delta
                 path_obj_table.append(current_route_obj)
