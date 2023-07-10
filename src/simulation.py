@@ -275,7 +275,9 @@ class Simulation:
                 delta_cover_table.append(cover_delta)
 
                 # 4. calculate objective and get best route, update the routing based on best objective
-                current_route_obj = - parameters[0] * (node_time[-1] - node_time[0]) + parameters[1] * cover_delta
+                dep_time = traci.vehicle.getDeparture(cav_id) + traci.vehicle.getDepartDelay(cav_id)  # get departure time
+                #  0710 YW: update objective considering total travel time instead of current steps.
+                current_route_obj = - parameters[0] * (node_time[-1] - dep_time) + parameters[1] * cover_delta
                 path_obj_table.append(current_route_obj)
                 if current_route_obj > last_bestRoute_obj:
                     self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :] = cover_ts_pre
