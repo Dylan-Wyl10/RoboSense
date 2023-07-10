@@ -209,8 +209,7 @@ class Simulation:
 
             # 0710: get vehicle departure time
             tmp = traci.vehicle.getDeparture(cav_id)
-            tmpp = traci.vehicle.getDepartDelay(cav_id)
-            dep_time = traci.vehicle.getDeparture(cav_id) + traci.vehicle.getDepartDelay(cav_id)  # get departure time
+            dep_time = traci.vehicle.getDeparture(cav_id) # get departure time
 
             # 2. calculate travel time and cover rate for each candidate route
             # 3. get delta_cover for each candidate path
