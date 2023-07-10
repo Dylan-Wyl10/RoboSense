@@ -77,7 +77,7 @@ class Intersection:
         time_onStopBar = time + edge_length / ff_speed
         current_time = traci.simulation.getTime()
         phase_current = traci.trafficlight.getRedYellowGreenState(self.tls_id)
-        self.phase_split_time = [20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2]
+        # self.phase_split_time = [20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2]
         cycle_length = sum(self.phase_split_time[:12])
 
         if phase_current[self.link_phaseIdx_table[edge_id][0]] == 'G':
@@ -88,7 +88,7 @@ class Intersection:
         else:
             # SPaT = [phase_current[self.link_phaseIdx_table[edge_id][0]], traci.trafficlight.getNextSwitch(self.tls_id)]
             # self.phase_split_time = [20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2]
-            edge_phaseSeq = self.link_phaseIdx_table[edge_id][0] // 4
+            edge_phaseSeq = self.link_phaseIdx_table[edge_id][0] // 5  # 5 = number of connection in each phase
             phase_id = traci.trafficlight.getPhase(self.tls_id)  # current phase id
             if phase_id < 3 * edge_phaseSeq:
                 red_time = traci.trafficlight.getNextSwitch(self.tls_id) - current_time + sum(
