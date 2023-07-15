@@ -18,7 +18,7 @@ import json
 
 
 class Simulation:
-    def __init__(self, max_time, link_num, resolution, lfHisPath, net_file, time_interval):
+    def __init__(self, max_time, link_num, resolution, net_file, time_interval):
         self.step = 0
         self.time = 0
         self.time_interval = time_interval
@@ -30,7 +30,6 @@ class Simulation:
         # self.config = config  # 06/14/2023: temporaryly set sumo config path
         self.Network = Network(6, 6, net_file)
         self.cav_list = []
-        self.load_lf(lfHisPath)  # 06/18/2023: load link-flow table from given path
         self.cover_LinkTimeVeh = np.zeros((120, 7000, 250))  # index = [link, time, veh], value is hardcoded as 0 (binary)
 
         # # build a time-space table for vehicle index
@@ -112,8 +111,8 @@ class Simulation:
                 break
 
     # 06/18/2023 get historical link flow table through simulation
-    def get_LF_table(self):
-        traci.start(["sumo-gui", "-c", self.config, "--lateral-resolution=0.1",
+    def get_LF_table(self, config):
+        traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         # for step in range(self.MAXSTEP):
@@ -208,7 +207,7 @@ class Simulation:
             k_shortest_path = self.Network.findKShortPath(k, my_nextNode, my_desNode)
 
             # 0710: get vehicle departure time
-            tmp = traci.vehicle.getDeparture(cav_id)
+            # tmp = traci.vehicle.getDeparture(cav_id)
             dep_time = traci.vehicle.getDeparture(cav_id) # get departure time
 
             # 2. calculate travel time and cover rate for each candidate route
