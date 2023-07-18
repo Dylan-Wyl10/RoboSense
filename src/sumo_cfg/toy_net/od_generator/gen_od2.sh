@@ -6,3 +6,6 @@ mkdir "dualogs"
 cd dualogs
 python3 /usr/share/sumo/tools/assign/duaIterate.py -n ../toy_net1.net.xml -t ../od_generator/od_file_bgv.odtrips.xml --additional ../v_type.add.xml duarouter--vtype-output dummy.xml duarouter--additional-files ../v_type.add.xml
 scp 049/od_file_bgv.odtrips_049.rou.xml ../od.rou.xml
+cd ../../..
+python3 collect_history.py
+
