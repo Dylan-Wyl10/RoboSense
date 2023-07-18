@@ -2,7 +2,7 @@
 
     <input>
         <net-file value="toy_net1.net.xml"/>
-        <route-files value="od_cav.odtrips.xml, od_bgv.rou.xml"/>
+        <route-files value="od.rou.xml"/>
         <additional-files value="v_type.add.xml"/>
     </input>
 
