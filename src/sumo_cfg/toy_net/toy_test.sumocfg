@@ -18,6 +18,7 @@
     <output>
         <summary-output value="summary.xml"/>
         <tripinfo-output value="tripinfo.xml"/>
+        <statistic-output value="overall.xml"/>
     </output>
 
     <time>
