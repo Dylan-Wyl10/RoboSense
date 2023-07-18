@@ -18,6 +18,7 @@
     <output>
         <summary-output value="summary_benchmark.xml"/>
         <tripinfo-output value="tripinfo_benchmark.xml"/>
+        <statistic-output value="overall_benchmark.xml"/>
     </output>
 
     <time>
