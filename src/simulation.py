@@ -54,7 +54,7 @@ class Simulation:
             # the following steps only apply in a GIVEN TIME Interval
             # step1: get cav information from the network, update cav list
             if self.step % 10 == 0:
-                self.getCAVinfo()
+                self.getCAVctrlList()
                 # update observation
                 self.updateObsv()
 
@@ -96,7 +96,7 @@ class Simulation:
 
             # collect CAV infor evry 1 second == 10s
             if self.step % 10 == 0:
-                self.getCAVinfo()
+                # self.getCAVctrlList()
                 # update observation
                 self.updateObsv()
 
@@ -129,12 +129,13 @@ class Simulation:
                 break
 
     # get list that will plan in this step
-    def getCAVinfo(self):
+    def getCAVctrlList(self):
         self.cav_list = []
         for v_id in traci.vehicle.getIDList():
-            edge_id = traci.vehicle.getRoadID(v_id)
-            if re.findall(r'[0-9]+|[a-z]+', v_id)[0] == "cav" and int(re.findall(r'[0-9]+|[a-z]+', edge_id)[0]) <= 60:
-                if traci.vehicle.getLanePosition(v_id) < 350:  # add no changing zone constrain
+            if re.findall(r'[0-9]+|[a-z]+', v_id)[0] == "cav" and traci.vehicle.getLanePosition(v_id) < 350:# type and no changing zone constrain
+                edge_id = traci.vehicle.getRoadID(v_id)
+                if edge_id[0] == 'E' or int(re.findall(r'[0-9]+|[a-z]+', edge_id)[0]) <= 60:
+                    print(edge_id)
                     self.cav_list.append(v_id)
                 # print(v_id, self.step, traci.vehicle.getRoadID(v_id))
 

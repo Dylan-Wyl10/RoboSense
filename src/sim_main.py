@@ -34,6 +34,6 @@ if __name__ == '__main__':
                             net_file='sumo_cfg/toy_net/toy_net1.net.xml',
                             time_interval=20)
     s.load_lf(lf_table_path)
-    #s.sim(save_info, path, parameters=(1, 2000), k=256)
-    s.sim_benchmark(save_info)
+    s.sim(save_info, path, parameters=(1, 2000), k=256)
+    # s.sim_benchmark(save_info)
 
