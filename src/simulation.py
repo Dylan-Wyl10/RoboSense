@@ -86,7 +86,7 @@ class Simulation:
                 break
 
     def sim_benchmark(self, save_path, config="sumo_cfg/toy_net/toy_test.sumocfg"):
-        traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
+        traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         self.step = 0
@@ -112,7 +112,7 @@ class Simulation:
 
     # 06/18/2023 get historical link flow table through simulation
     def get_LF_table(self, config):
-        traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
+        traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         # for step in range(self.MAXSTEP):
