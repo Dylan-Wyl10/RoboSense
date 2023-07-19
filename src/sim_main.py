@@ -25,15 +25,15 @@ if __name__ == '__main__':
     # argparser = argparse.ArgumentParser(description=__doc__)
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
 
-    save_info = {'cover_table': "../result/PR2 Testing/cover_2000_step20.npy",
-                        'cover_table_benchmark': "../result/PR2 Testing/cover_table_benchmark1.npy"}
+    save_info = {'cover_table': "../result/PR2 Testing/pr2_cover_0_step20.npy",
+                        'cover_table_benchmark': "../result/PR2 Testing/cover_table_benchmark.npy"}
 
     path = "sumo_cfg/toy_net/toy_test.sumocfg"
-    lf_table_path = "../result/link_flow/link_flow_3600.json"
+    lf_table_path = "../result/link_flow/pr2_link_flow_3600.json"
     s = Simulation(max_time=3600, link_num=60, resolution=0.1,
                             net_file='sumo_cfg/toy_net/toy_net1.net.xml',
                             time_interval=20)
     s.load_lf(lf_table_path)
-    s.sim(save_info, path, parameters=(1, 2000), k=256)
+    s.sim(save_info, path, parameters=(1, 0), k=256)
     # s.sim_benchmark(save_info)
 
