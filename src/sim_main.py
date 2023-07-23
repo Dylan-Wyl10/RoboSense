@@ -25,15 +25,18 @@ if __name__ == '__main__':
     # argparser = argparse.ArgumentParser(description=__doc__)
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
 
-    save_info = {'cover_table': "../result/PR2 Testing/pr2_cover_0_step20.npy",
-                        'cover_table_benchmark': "../result/PR2 Testing/cover_table_benchmark.npy"}
+    p_set = [0, 100, 300, 500, 1000, 2000]
+    pr = 1
 
-    path = "sumo_cfg/toy_net/toy_test.sumocfg"
-    lf_table_path = "../result/link_flow/pr2_link_flow_3600.json"
-    s = Simulation(max_time=3600, link_num=60, resolution=0.1,
-                            net_file='sumo_cfg/toy_net/toy_net1.net.xml',
-                            time_interval=20)
-    s.load_lf(lf_table_path)
-    s.sim(save_info, path, parameters=(1, 0), k=256)
+    for p in p_set:
+        save_info = {'cover_table': "../result/PR{} Testing/pr{}_cover_{}_step20.npy".format(pr, pr, p),
+                     'cover_table_benchmark': "../result/PR{} Testing/cover_table_benchmark.npy".format(pr)}
+
+        path = "sumo_cfg/toy_net/toy_test_{}.sumocfg".format(p)
+        lf_table_path = "../result/link_flow/pr{}_link_flow_3600.json".format(pr)
+        s = Simulation(max_time=3600, link_num=60, resolution=0.1,
+                       net_file='sumo_cfg/toy_net/toy_net1.net.xml',
+                       time_interval=20)
+        s.load_lf(lf_table_path)
+        s.sim(save_info, path, parameters=(1, 1000), k=256)
     # s.sim_benchmark(save_info)
-
