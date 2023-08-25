@@ -8,4 +8,5 @@ python3 /usr/share/sumo/tools/assign/duaIterate.py -n ../toy_net1.net.xml -t ../
 scp 049/od_file_bgv.odtrips_049.rou.xml ../od.rou.xml
 cd ../../..
 python3 collect_history.py
+python3 sim_main.py
 
