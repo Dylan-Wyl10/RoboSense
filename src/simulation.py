@@ -30,7 +30,7 @@ class Simulation:
         # self.config = config  # 06/14/2023: temporaryly set sumo config path
         self.Network = Network(6, 6, net_file)
         self.cav_list = []
-        self.cover_LinkTimeVeh = np.zeros((120, 7000, 250))  # index = [link, time, veh], value is hardcoded as 0 (binary)
+        self.cover_LinkTimeVeh = np.zeros((120, 7000, 500))  # index = [link, time, veh], value is hardcoded as 0 (binary)
 
         # # build a time-space table for vehicle index
         # self.cover_idTable = []
@@ -43,7 +43,7 @@ class Simulation:
         self.cav_route = {}
 
     def sim(self, save_path, config, parameters, k=32):
-        traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
+        traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         self.step = 0
@@ -60,6 +60,7 @@ class Simulation:
 
             # step2: enumerate all cav from list, choose proper route and update vehicle information
             if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
+                print ('step is:', self.step, parameters[1])
                 # -steps:
                 # -2A: enumerate all cav. for each cav.
                 #       -2AA: get k-shortest path considering distance
@@ -85,7 +86,7 @@ class Simulation:
                 print("Simulation has ended due to no enough vehicle")
                 break
 
-    def sim_benchmark(self, save_path, config="sumo_cfg/toy_net/toy_test.sumocfg"):
+    def sim_benchmark(self, save_path, config="sumo_cfg/toy_net/toy_test_benchmark.sumocfg"):
         traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
@@ -135,7 +136,7 @@ class Simulation:
             if re.findall(r'[0-9]+|[a-z]+', v_id)[0] == "cav" and traci.vehicle.getLanePosition(v_id) < 350:# type and no changing zone constrain
                 edge_id = traci.vehicle.getRoadID(v_id)
                 if edge_id[0] == 'E' or int(re.findall(r'[0-9]+|[a-z]+', edge_id)[0]) <= 60:
-                    print(edge_id)
+                    # print(edge_id)
                     self.cav_list.append(v_id)
                 # print(v_id, self.step, traci.vehicle.getRoadID(v_id))
 
