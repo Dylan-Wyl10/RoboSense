@@ -205,7 +205,7 @@ class Network:
         lastNodeID = self.net.getEdge(edge_id).getFromNode().getID()
         return lastNodeID
 
-    def findKShortPath(self, k, start_node, desti_node):
+    def findKShortPath(self, k, start_node, desti_node, deroute_num):
         '''
         k-shortest path algorithm considering the travel cost, if there are multiple
         options, return all possible path.
@@ -216,7 +216,7 @@ class Network:
         '''
         # paths = list(nx.all_shortest_paths(self.G, start_node, desti_node))
         tmp = nx.shortest_path_length(self.G, start_node, desti_node, weight=None, method='dijkstra')
-        tmp = int(2 + tmp)
+        tmp = int(deroute_num + tmp)
         paths = list(nx.all_simple_paths(self.G, start_node, desti_node, cutoff=tmp))
         paths.sort(key=len)
 

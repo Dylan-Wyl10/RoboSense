@@ -42,7 +42,7 @@ class Simulation:
         # self.cover_idTable = np.array(self.cover_idTable)
         self.cav_route = {}
 
-    def sim(self, save_path, config, parameters, k=32):
+    def sim(self, save_path, config, parameters, deroute_num, k=32):
         traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
@@ -67,7 +67,7 @@ class Simulation:
                 #       -2AB: calculate travel time and cover rate for each candidate route
                 #       -2AC: choose the best route and apply accordingly
                 #       -2AD: update CAV routing table
-                self.updateRoute(k, parameters)
+                self.updateRoute(k, parameters, deroute_num)
 
                 """
                 # stepXXXX: (this will be added on next): adjust signal time plan. 
@@ -188,7 +188,7 @@ class Simulation:
             """od_i, n = re.findall(r'[0-9]+|[a-z]+', id)  # od_idx, v_idx"""
             # v.append(ttmp)
 
-    def updateRoute(self, k, parameters):
+    def updateRoute(self, k, parameters, deroute_num):
         """
         step2: enumerate all cav from list, choose proper route and update vehicle information
                 # -steps:
@@ -206,7 +206,7 @@ class Simulation:
             my_nextNode = self.Network.getNextNode(cav_edgeID)
             my_desNode = self.Network.getLastNode(traci.vehicle.getRoute(cav_id)[-1])
 
-            k_shortest_path = self.Network.findKShortPath(k, my_nextNode, my_desNode)
+            k_shortest_path = self.Network.findKShortPath(k, my_nextNode, my_desNode, deroute_num)
 
             # 0710: get vehicle departure time
             # tmp = traci.vehicle.getDeparture(cav_id)
