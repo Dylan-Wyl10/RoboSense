@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
 
     # p_set = [0, 100, 300, 500, 1000, 2000]
-    p_set = [0, 100, 300, 500]
+    p_set = [0, 100, 300, 500, 100, 1000, 2000]
     pr = 5
     step = 20
 
@@ -40,6 +40,6 @@ if __name__ == '__main__':
                        net_file='sumo_cfg/toy_net/toy_net1.net.xml',
                        time_interval=step)
         s.load_lf(lf_table_path)
-        s.sim(save_info, path, parameters=(1, p), deroute_num=4, k=256)
+        s.sim(save_info, path, parameters=(1, p), deroute_num=2, k=256)
         traci.close()
     # s.sim_benchmark(save_info)
