@@ -31,7 +31,7 @@ if __name__ == '__main__':
     step = 20
 
     for p in p_set:
-        save_info = {'cover_table': "../result/PR{} Testing/pr{}_cover_{}_step{}_deroute4.npy".format(pr, pr, p, step),
+        save_info = {'cover_table': "../result/PR{} TestingNew/pr{}_cover_{}_step{}.npy".format(pr, pr, p, step),
                      'cover_table_benchmark': "../result/PR{} Testing/cover_table_benchmark.npy".format(pr)}
 
         path = "sumo_cfg/toy_net/toy_test_{}.sumocfg".format(p)

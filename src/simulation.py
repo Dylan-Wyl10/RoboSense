@@ -60,7 +60,7 @@ class Simulation:
 
             # step2: enumerate all cav from list, choose proper route and update vehicle information
             if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
-                print ('step is:', self.step, parameters[1])
+                print('step is:', self.step, parameters[1])
                 # -steps:
                 # -2A: enumerate all cav. for each cav.
                 #       -2AA: get k-shortest path considering distance
