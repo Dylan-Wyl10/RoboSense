@@ -209,20 +209,24 @@ class Network:
         '''
         k-shortest path algorithm considering the travel cost, if there are multiple
         options, return all possible path.
-        :param k:
+        :param k: max number of candidate path
         :param start_node:
         :param desti_node:
+        :param deroute_num: parameters for derouting option (0926update: a ratio of the number of shortest path)
         :return:
         '''
-        # paths = list(nx.all_shortest_paths(self.G, start_node, desti_node))
-        tmp = nx.shortest_path_length(self.G, start_node, desti_node, weight=None, method='dijkstra')
-        tmp = int(deroute_num + tmp)
-        paths = list(nx.all_simple_paths(self.G, start_node, desti_node, cutoff=tmp))
-        paths.sort(key=len)
 
-        # paths = list(nx.all_shortest_paths(self.G, 'AA', 'FF'))
+        # start_node = 'DD'
+        # desti_node = 'FF'
+        sp_num = len(list(nx.all_shortest_paths(self.G, start_node, desti_node)))  # number of shortest path
+        max_path_num = min(int(sp_num * deroute_num), k)  # number of candidate path = min(max bound, deroute number)
+        sp_length = nx.shortest_path_length(self.G, start_node, desti_node, weight=None, method='dijkstra')
+        tmp = int(sp_length + 6)
+        paths = list(nx.all_simple_paths(self.G, start_node, desti_node, cutoff=tmp))
+        # paths = list(nx.all_simple_paths(self.G, 'DD', 'FF', cutoff=tmp))
+        paths.sort(key=len)
         # paths = list(nx.bidirectional_shortest_path(self.G, 'AA', 'FF'))
-        return paths[:k]
+        return paths[:max_path_num]
 
     def getNodeArrTime(self, route_OnEdge, route_OnNode, current_time, cav_id, lf_history):
         """
