@@ -6,10 +6,10 @@ Note:
 List:
 """
 
-
 import numpy as np
 import xml.dom.minidom
 
+def analysisTrip(trip_file):
 
 
 if __name__ == '__main__':
@@ -18,17 +18,24 @@ if __name__ == '__main__':
     pr = 5
     step = 20
     file_dir = {}
+    file_dir['benchmark'] = "../result/PR{} TestingNew/sumolog_tmp/tripinfo_benchmark.xml".format(pr)
 
-    for p in p_set:
-        save_info = {'cover_table': "../result/PR{} TestingNew/pr{}_cover_{}_step{}.npy".format(pr, pr, p, step),
-                     'cover_table_benchmark': "../result/PR{} Testing/cover_table_benchmark.npy".format(pr)}
+    for alp in alpha_set:
+        file_dir[str(alp)] = "../result/PR{} TestingNew/sumolog_tmp/tripinfor{}.xml".format(pr, alp)
 
-        path = "sumo_cfg/toy_net/toy_test_{}.sumocfg".format(p)
-        lf_table_path = "../result/link_flow/pr{}_link_flow_3600.json".format(pr)
-        s = Simulation(max_time=3600, link_num=60, resolution=0.1,
-                       net_file='sumo_cfg/toy_net/toy_net1.net.xml',
-                       time_interval=step)
-        s.load_lf(lf_table_path)
-        s.sim(save_info, path, parameters=(1, p), deroute_num=2, k=256)
-        traci.close()
-    # s.sim_benchmark(save_info)
+    print(file_dir)
+
+    #
+    # for p in p_set:
+    #     save_info = {'cover_table': "../result/PR{} TestingNew/pr{}_cover_{}_step{}.npy".format(pr, pr, p, step),
+    #                  'cover_table_benchmark': "../result/PR{} Testing/cover_table_benchmark.npy".format(pr)}
+    #
+    #     path = "sumo_cfg/toy_net/toy_test_{}.sumocfg".format(p)
+    #     lf_table_path = "../result/link_flow/pr{}_link_flow_3600.json".format(pr)
+    #     s = Simulation(max_time=3600, link_num=60, resolution=0.1,
+    #                    net_file='sumo_cfg/toy_net/toy_net1.net.xml',
+    #                    time_interval=step)
+    #     s.load_lf(lf_table_path)
+    #     s.sim(save_info, path, parameters=(1, p), deroute_num=2, k=256)
+    #     traci.close()
+    # # s.sim_benchmark(save_info)
