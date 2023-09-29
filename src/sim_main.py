@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
 
     # p_set = [0, 100, 300, 500, 1000, 2000]
-    p_set = [0, 100, 300, 500, 100, 1000, 2000]
+    p_set = [100, 1000, 2000]
     pr = 5
     step = 20
 
