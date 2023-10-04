@@ -6,10 +6,11 @@ Note:
 List:
 """
 
-
 import numpy as np
 import xml.dom.minidom
 
+def analysisTrip(trip_file):
+    print(trip_file)
 
 
 if __name__ == '__main__':
@@ -18,6 +19,7 @@ if __name__ == '__main__':
     pr = 5
     step = 20
     file_dir = {}
+<<<<<<< HEAD
     file_dir['trip_bench'] = "../result/sumolog_pr{}/tripinfor_benchmark.xml".format(pr)
 
     for a in alpha_set:
@@ -36,3 +38,13 @@ if __name__ == '__main__':
     #     s.sim(save_info, path, parameters=(1, p), deroute_num=2, k=256)
     #     traci.close()
     # # s.sim_benchmark(save_info)
+=======
+    file_dir['benchmark'] = "../result/PR{} TestingNew/sumolog_tmp/tripinfo_benchmark.xml".format(pr)
+
+    for alp in alpha_set:
+        file_dir[str(alp)] = "../result/PR{} TestingNew/sumolog_tmp/tripinfo{}.xml".format(pr, alp)
+
+    print(file_dir)
+    for _, v in file_dir.items():
+        analysisTrip(v)
+>>>>>>> a7cbfc6ddda823e3b6335d0322846c15358dd4ca
