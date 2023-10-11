@@ -16,9 +16,9 @@
     </processing>
 
     <output>
-        <summary-output value="summary_benchmark.xml"/>
-        <tripinfo-output value="tripinfo_benchmark.xml"/>
-        <statistic-output value="overall_benchmark.xml"/>
+        <summary-output value="../../../result/sumolog_tmp/summary_benchmark.xml"/>
+        <tripinfo-output value="../../../result/sumolog_tmp/tripinfo_benchmark.xml"/>
+        <statistic-output value="../../../result/sumolog_tmp/overall_benchmark.xml"/>
     </output>
 
     <time>
