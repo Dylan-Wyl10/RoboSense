@@ -11,6 +11,7 @@ import traci
 from simulation import Simulation
 import sys
 import os
+import os
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -26,11 +27,14 @@ else:
 
 if __name__ == '__main__':
     # argparser = argparse.ArgumentParser(description=__doc__)
+    current_directory = os.getcwd()
+    print(f"Current Working Directory: {current_directory}")
+
     max_step = 36000  # define the maximum steps for the simulation
     path = "sumo_cfg/toy_net/toy_test_benchmark.sumocfg"
     lf_table_savepath = "../result/link_flow/pr5_link_flow_3600.json"
-    save_info = {'cover_table': "../result/PR5 Testing/cover_xxxx_step20.npy",
-                 'cover_table_benchmark': "../result/PR5 Testing/pr5_cover_benchmark.npy"}
+    save_info = {'cover_table': "../result/PR5 TestingNew/cover_xxxx_step20.npy",
+                 'cover_table_benchmark': "../result/PR5 TestingNew/pr5_cover_benchmark.npy"}
 
     s = Simulation(max_time=3600, link_num=60, resolution=0.1,
                    net_file='sumo_cfg/toy_net/toy_net1.net.xml',
