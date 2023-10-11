@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-10-10 21:26:46 by Eclipse SUMO sumo Version 1.18.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="sumo_cfg/toy_net/toy_net1.net.xml"/>
+        <route-files value="sumo_cfg/toy_net/od.rou.xml"/>
+        <additional-files value="sumo_cfg/toy_net/v_type.add.xml"/>
+    </input>
+
+    <output>
+        <summary-output value="sumo_cfg/toy_net/../../../result/sumolog_tmp/summary100.xml"/>
+        <tripinfo-output value="sumo_cfg/toy_net/../../../result/sumolog_tmp/tripinfo100.xml"/>
+        <statistic-output value="sumo_cfg/toy_net/../../../result/sumolog_tmp/overall100.xml"/>
+    </output>
+
+    <time>
+        <begin value="0"/>
+        <end value="3600"/>
+        <step-length value="0.1"/>
+    </time>
+
+    <processing>
+        <lateral-resolution value="0.1"/>
+        <route-steps value="200"/>
+        <no-internal-links value="False"/>
+        <ignore-route-errors value="true"/>
+        <time-to-teleport value="200"/>
+        <time-to-teleport.highways value="0"/>
+        <eager-insert value="False"/>
+    </processing>
+
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <traci_server>
+        <remote-port value="34367"/>
+    </traci_server>
+
+    <gui_only>
+        <gui-settings-file value="sumo_cfg/toy_net/toy_net.view.xml"/>
+    </gui_only>
+
+</configuration>
+-->
+
+<tripinfos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tripinfo_file.xsd">
+    <tripinfo id="bgv6902" depart="15.60" departLane="E116_0" departPos="5.10" departPosLat="0.00" departSpeed="15.72" departDelay="0.05" arrival="386.70" arrivalLane="-E104_0" arrivalPos="200.00" arrivalPosLat="-0.00" arrivalSpeed="15.71" duration="371.10" routeLength="2794.90" waitingTime="164.60" waitingCount="5" stopTime="0.00" timeLoss="193.27" rerouteNo="0" devices="tripinfo_bgv6902" vType="bgv" speedFactor="1.13" vaporized=""/>
+    <tripinfo id="bgv6845" depart="25.40" departLane="E116_1" departPos="5.10" departPosLat="0.00" departSpeed="15.55" departDelay="0.06" arrival="386.70" arrivalLane="-E104_1" arrivalPos="200.00" arrivalPosLat="0.00" arrivalSpeed="15.45" duration="361.30" routeLength="2794.90" waitingTime="148.70" waitingCount="4" stopTime="0.00" timeLoss="181.46" rerouteNo="0" devices="tripinfo_bgv6845" vType="bgv" speedFactor="1.12" vaporized=""/>
+    <tripinfo id="bgv6358" depart="36.60" departLane="E117_1" departPos="5.10" departPosLat="0.00" departSpeed="15.94" departDelay="0.08" arrival="411.50" arrivalLane="-E105_0" arrivalPos="200.00" arrivalPosLat="-0.00" arrivalSpeed="15.85" duration="374.90" routeLength="2794.90" waitingTime="182.10" waitingCount="3" stopTime="0.00" timeLoss="199.54" rerouteNo="0" devices="tripinfo_bgv6358" vType="bgv" speedFactor="1.15" vaporized=""/>
+    <tripinfo id="bgv6391" depart="27.70" departLane="E117_0" departPos="5.10" departPosLat="0.00" departSpeed="14.45" departDelay="0.08" arrival="423.50" arrivalLane="-E105_1" arrivalPos="200.00" arrivalPosLat="0.00" arrivalSpeed="14.44" duration="395.80" routeLength="2794.90" waitingTime="174.80" waitingCount="3" stopTime="0.00" timeLoss="202.29" rerouteNo="0" devices="tripinfo_bgv6391" vType="bgv" speedFactor="1.04" vaporized=""/>
+    <tripinfo id="bgv3556" depart="29.90" departLane="E123_1" departPos="5.10" departPosLat="0.00" departSpeed="14.66" departDelay="0.01" arrival="429.50" arrivalLane="-E111_0" arrivalPos="200.00" arrivalPosLat="-0.00" arrivalSpeed="14.56" duration="399.60" routeLength="2794.90" waitingTime="177.60" waitingCount="4" stopTime="0.00" timeLoss="208.95" rerouteNo="0" devices="tripinfo_bgv3556" vType="bgv" speedFactor="1.06" vaporized=""/>
+    <tripinfo id="bgv1396" depart="22.90" departLane="E105_1" departPos="5.10" departPosLat="0.00" departSpeed="14.12" departDelay="0.08" arrival="487.60" arrivalLane="-E117_1" arrivalPos="200.00" arrivalPosLat="0.00" arrivalSpeed="14.00" duration="464.70" routeLength="2794.90" waitingTime="222.90" waitingCount="5" stopTime="0.00" timeLoss="266.76" rerouteNo="0" devices="tripinfo_bgv1396" vType="bgv" speedFactor="1.02" vaporized=""/>
+    <tripinfo id="bgv1350" depart="16.10" departLane="E105_1" departPos="5.10" departPosLat="0.00" departSpeed="13.96" departDelay="0.02" arrival="487.80" arrivalLane="-E117_0" arrivalPos="200.00" arrivalPosLat="-0.00" arrivalSpeed="13.93" duration="471.70" routeLength="2794.90" waitingTime="245.20" waitingCount="5" stopTime="0.00" timeLoss="271.47" rerouteNo="0" devices="tripinfo_bgv1350" vType="bgv" speedFactor="1.01" vaporized=""/>
+    <tripinfo id="bgv1427" depart="24.50" departLane="E105_0" departPos="5.10" departPosLat="0.00" departSpeed="14.97" departDelay="0.06" arrival="489.00" arrivalLane="-E117_1" arrivalPos="200.00" arrivalPosLat="0.00" arrivalSpeed="15.86" duration="464.50" routeLength="2794.90" waitingTime="245.40" waitingCount="5" stopTime="0.00" timeLoss="288.35" rerouteNo="0" devices="tripinfo_bgv1427" vType="bgv" speedFactor="1.14" vaporized=""/>
+    <tripinfo id="bgv1580" depart="14.10" departLane="E105_0" departPos="5.10" departPosLat="0.00" departSpeed="13.18" departDelay="0.03" arrival="489.80" arrivalLane="-E117_0" arrivalPos="200.00" arrivalPosLat="0.00" arrivalSpeed="13.07" duration="475.70" routeLength="2794.90" waitingTime="215.60" waitingCount="5" stopTime="0.00" timeLoss="263.55" rerouteNo="0" devices="tripinfo_bgv1580" vType="bgv" speedFactor="0.95" vaporized=""/>
+    <tripinfo id="bgv6476" depart="35.30" departLane="E117_0" departPos="5.10" departPosLat="0.00" departSpeed="15.10" departDelay="0.00" arrival="496.90" arrivalLane="-E105_0" arrivalPos="200.00" arrivalPosLat="0.00" arrivalSpeed="15.05" duration="461.60" routeLength="2794.90" waitingTime="237.80" waitingCount="4" stopTime="0.00" timeLoss="276.41" rerouteNo="0" devices="tripinfo_bgv6476" vType="bgv" speedFactor="1.09" vaporized=""/>
+    <tripinfo id="bgv1143" depart="23.90" departLane="E104_0" departPos="5.10" departPosLat="0.00" departSpeed="13.83" departDelay="0.01" arrival="497.70" arrivalLane="-E116_0" arrivalPos="200.00" arrivalPosLat="-0.00" arrivalSpeed="13.72" duration="473.80" routeLength="2794.90" waitingTime="241.50" waitingCount="5" stopTime="0.00" timeLoss="271.76" rerouteNo="0" devices="tripinfo_bgv1143" vType="bgv" speedFactor="1.00" vaporized=""/>
+    <tripinfo id="bgv4034" depart="50.70" departLane="E122_0" departPos="5.10" departPosLat="0.00" departSpeed="15.32" departDelay="0.00" arrival="504.60" arrivalLane="-E110_0" arrivalPos="200.00" arrivalPosLat="-0.00" arrivalSpeed="15.22" duration="453.90" routeLength="2794.90" waitingTime="240.70" waitingCount="4" stopTime="0.00" timeLoss="271.45" rerouteNo="0" devices="tripinfo_bgv4034" vType="bgv" speedFactor="1.10" vaporized=""/>
+    <tripinfo id="bgv3683" depart="42.60" departLane="E110_0" departPos="5.10" departPosLat="0.00" departSpeed="14.79" departDelay="0.07" arrival="512.20" arrivalLane="-E122_1" arrivalPos="200.00" arrivalPosLat="0.00" arrivalSpeed="14.70" duration="469.60" routeLength="2794.90" waitingTime="233.90" waitingCount="5" stopTime="0.00" timeLoss="280.59" rerouteNo="0" devices="tripinfo_bgv3683" vType="bgv" speedFactor="1.06" vaporized=""/>
+    <tripinfo id="bgv3569" depart="53.30" departLane="E123_1" departPos="5.10" departPosLat="0.00" departSpeed="14.74" departDelay="0.04" arrival="512.20" arrivalLane="-E111_1" arrivalPos="200.00" arrivalPosLat="0.00" arrivalSpeed="14.67" duration="458.90" routeLength="2794.90" waitingTime="241.70" waitingCount="4" stopTime="0.00" timeLoss="269.20" rerouteNo="0" devices="tripinfo_bgv3569" vType="bgv" speedFactor="1.06" vaporized=""/>
+    <tripinfo id="bgv3462" depart="18.90" departLane="E123_0" departPos="5.10" departPosLat="0.00" departSpeed="14.31" departDelay="0.04" arrival="512.30" arrivalLane="-E111_0" arrivalPos="200.00" arrivalPosLat="-0.00" arrivalSpeed="14.24" duration="493.40" routeLength="2794.90" waitingTime="268.10" waitingCount="5" stopTime="0.00" timeLoss="298.08" rerouteNo="0" devices="tripinfo_bgv3462" vType="bgv" speedFactor="1.03" vaporized=""/>
+    <tripinfo id="bgv3767" depart="46.80" departLane="E110_1" departPos="5.10" departPosLat="0.00" departSpeed="14.08" departDelay="0.00" arrival="512.50" arrivalLane="-E122_0" arrivalPos="200.00" arrivalPosLat="-0.00" arrivalSpeed="13.97" duration="465.70" routeLength="2794.90" waitingTime="235.50" waitingCount="5" stopTime="0.00" timeLoss="267.24" rerouteNo="0" devices="tripinfo_bgv3767" vType="bgv" speedFactor="1.01" vaporized=""/>
+    <tripinfo id="bgv3625" depart="42.40" departLane="E123_1" departPos="5.10" departPosLat="0.00" departSpeed="15.58" departDelay="0.09" arrival="513.70" arrivalLane="-E111_0" arrivalPos="200.00" arrivalPosLat="-0.00" arrivalSpeed="15.58" duration="471.30" routeLength="2794.90" waitingTime="240.00" waitingCount="4" stopTime="0.00" timeLoss="291.89" rerouteNo="0" devices="tripinfo_bgv3625" vType="bgv" speedFactor="1.12" vaporized=""/>
+    <tripinfo id="bgv3044" depart="22.70" departLane="E109_1" departPos="5.10" departPosLat="0.00" departSpeed="16.24" departDelay="0.01" arrival="514.70" arrivalLane="-E121_0" arrivalPos="200.00" arrivalPosLat="-0.00" arrivalSpeed="16.21" duration="492.00" routeLength="3594.90" waitingTime="203.20" waitingCount="6" stopTime="0.00" timeLoss="270.51" rerouteNo="0" devices="tripinfo_bgv3044" vType="bgv" speedFactor="1.17" vaporized=""/>
