@@ -32,9 +32,9 @@ if __name__ == '__main__':
 
     max_step = 36000  # define the maximum steps for the simulation
     path = "sumo_cfg/toy_net/toy_test_benchmark.sumocfg"
-    lf_table_savepath = "../result/link_flow/pr5_link_flow_3600.json"
-    save_info = {'cover_table': "../result/PR5 TestingNew/cover_xxxx_step20.npy",
-                 'cover_table_benchmark': "../result/PR5 TestingNew/pr5_cover_benchmark.npy"}
+    lf_table_savepath = "../result/link_flow/pr2_link_flow_3600.json"
+    save_info = {'cover_table': "../result/PR2 TestingNew/cover_xxxx_step20.npy",
+                 'cover_table_benchmark': "../result/PR2 TestingNew/pr2_cover_benchmark.npy"}
 
     s = Simulation(max_time=3600, link_num=60, resolution=0.1,
                    net_file='sumo_cfg/toy_net/toy_net1.net.xml',
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     s.save_lf(lf_table_savepath)
     print('lf table has been saved')
     traci.close()
-    s.sim_benchmark(save_info)
+    # s.sim_benchmark(save_info)
 
 
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])

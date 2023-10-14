@@ -57,6 +57,7 @@ class Simulation:
                 self.getCAVctrlList()
                 # update observation
                 self.updateObsv()
+                self.checkCoverTable()
 
             # step2: enumerate all cav from list, choose proper route and update vehicle information
             if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
@@ -100,6 +101,7 @@ class Simulation:
                 # self.getCAVctrlList()
                 # update observation
                 self.updateObsv()
+                self.checkCoverTable()
 
             self.step += 1
             self.time = self.step * self.resolution
@@ -148,9 +150,6 @@ class Simulation:
         self.link_flows_table = current link-flow information
         :return:
         """
-        # for k, v in self.link_flows_table.items():
-        #     self.link_flows_observation[k] = 0  # get history link-flow table
-        # tmp = traci.edge.getIDList()
         time_idx = round(self.time)
         for edge in traci.edge.getIDList():
             edge_idx = int(re.findall(r'[0-9]+|[a-z]+', edge)[0]) - 1
@@ -163,6 +162,8 @@ class Simulation:
                     v_tem = re.findall(r'[0-9]+|[a-z]+', v)  # [type, num]
                     if v_tem[0] == 'cav':
                         cav_idx = int(v_tem[1]) - 1 # cav index = cav numbber - 1
+                        for eID in range(self.cover_LinkTimeVeh.shape[0]):
+                            self.cover_LinkTimeVeh[eID, time_idx, cav_idx] = 0 # clear current edge occupation before update
                         if edge[0] == '-':
                             self.cover_LinkTimeVeh[edge_idx + 60, time_idx, cav_idx] = 1
                         else:
@@ -200,6 +201,7 @@ class Simulation:
         :return:
         """
         for cav_id in self.cav_list:
+            # print(f'current veh idx is {cav_id} in a list of {self.cav_list}')
             # 1.get k shortest path considering distance
             veh_idx = int(re.findall(r'[0-9]+|[a-z]+', cav_id)[1]) - 1  # [num = actual number -1]
             cav_edgeID = traci.vehicle.getRoadID(cav_id)
@@ -221,13 +223,18 @@ class Simulation:
             # objective value for last candidate path, since the objective is to get max, the default number is -1000000.
             last_bestRoute_obj = -10000
 
-            # remove current vehicle in the futrual cover matrix
-            for l in range(self.cover_LinkTimeVeh.shape[0]):
-                for t in range(int(self.time), self.cover_LinkTimeVeh.shape[1]):
-                    self.cover_LinkTimeVeh[l, t, veh_idx] = 0
+
+            # print(f'check cover table at start of {cav_id} at time {self.time}')
+            # self.checkCoverTable()
 
             # enumerate all candidate path
             for sp in k_shortest_path:
+                # remove future route
+                for l in range(self.cover_LinkTimeVeh.shape[0]):
+                    for t in range(int(self.time), self.cover_LinkTimeVeh.shape[1]):
+                        self.cover_LinkTimeVeh[l, t, veh_idx] = 0
+                # print(f'begin to check if cover table is cleared for vehicle {cav_id} at time {self.time} on path {sp}')
+                self.checkCoverTable()
                 route = [cav_edgeID]
                 for node_idx in range(len(sp) - 1):
                     node2edge = self.Network.node_list[sp[node_idx + 1]].getEdgeByUpperNode(sp[node_idx])
@@ -308,3 +315,22 @@ class Simulation:
     def load_lf(self, path):  # this load link flow history
         with open(path, "r") as infile:
             self.link_flows_hisNum = json.load(infile)
+
+
+    ###20231011: some debug tools
+    def checkCoverTable(self):
+        # cover table  = [edge, time, veh]
+        v_idx = traci.vehicle.getIDList()
+        for v in v_idx:
+            v_tem = re.findall(r'[0-9]+|[a-z]+', v)  # [type, num]
+            if v_tem[0] == 'cav':
+                cav_idx = int(v_tem[1]) - 1
+                tableLinkTime = self.cover_LinkTimeVeh[:, :, cav_idx]
+                for t in range(tableLinkTime.shape[1]):
+                    # print(np.sum(tableLinkTime[:, t]))
+                    if np.sum(tableLinkTime[:, t]) > 1:
+                        print(f"Vehicle {cav_idx+1} is more than one pos at time {t}, current time is {self.time}:")
+
+
+
+
