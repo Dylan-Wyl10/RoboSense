@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
     covermatrix_list = [np.load(p) for p in covermatrix_path]
 
-    # tmp = [cvm[:, :, 6] for cvm in covermatrix_list]
+    tmp = [cvm[:, :, 6] for cvm in covermatrix_list]
     vehicle_paths = combine_vehicle_paths(covermatrix_list)
     write_to_txt(vehicle_paths, filename=vehicle_path)
 
