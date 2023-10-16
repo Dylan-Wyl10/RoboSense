@@ -1,8 +1,12 @@
 .idea
 backup_tmp
 result/PR2 TestingNew
+result/PR1 Testing
 result/PR5 TestingNew
 result/PR5 Testing
 src/sumo_cfg/toy_net/dualogs
 src/__pycache__
 src/utili/__pycache__
+result/link_flow
+result/oldbackup_noUTurn
+result/PR2 Testing
