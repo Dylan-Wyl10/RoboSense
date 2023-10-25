@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2023-10-14 17:55:44 by Eclipse SUMO sumo Version 1.18.0
+<!-- generated on 2023-10-10 16:38:36 by Eclipse SUMO sumo Version 1.18.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
@@ -10,14 +10,14 @@
     </input>
 
     <output>
-        <summary-output value="sumo_cfg/toy_net/../../../result/sumolog_tmp/summary100.xml"/>
-        <tripinfo-output value="sumo_cfg/toy_net/../../../result/sumolog_tmp/tripinfo100.xml"/>
-        <statistic-output value="sumo_cfg/toy_net/../../../result/sumolog_tmp/overall100.xml"/>
+        <summary-output value="sumo_cfg/toy_net/summary_benchmark.xml"/>
+        <tripinfo-output value="sumo_cfg/toy_net/tripinfo_benchmark.xml"/>
+        <statistic-output value="sumo_cfg/toy_net/overall_benchmark.xml"/>
     </output>
 
     <time>
         <begin value="0"/>
-        <end value="3600"/>
+        <end value="36000"/>
         <step-length value="0.1"/>
     </time>
 
@@ -43,7 +43,7 @@
     </report>
 
     <traci_server>
-        <remote-port value="37273"/>
+        <remote-port value="58559"/>
     </traci_server>
 
     <gui_only>
@@ -53,4 +53,5 @@
 </configuration>
 -->
 
-<tripinfos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tripinfo_file.xsd">
+<statistics xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/statistic_file.xsd">
+</statistics>
