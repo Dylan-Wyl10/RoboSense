@@ -61,6 +61,7 @@ class Simulation:
 
             # step2: enumerate all cav from list, choose proper route and update vehicle information
             if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
+                self.getCAVctrlList()
                 print('step is:', self.step, parameters[1])
                 # -steps:
                 # -2A: enumerate all cav. for each cav.
@@ -75,6 +76,12 @@ class Simulation:
                 self.update_tsc()
                 self.update_veh()
                 """
+            # step3: update observation information
+            if self.step % 10 == 0:
+                # self.getCAVctrlList()
+                # update observation
+                self.updateObsv()
+                self.checkCoverTable()
             # step4: push simulation and update information
             self.step += 1
             self.time = self.step * self.resolution
