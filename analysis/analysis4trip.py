@@ -9,6 +9,7 @@ List:
 import numpy as np
 import xml.dom.minidom
 import os
+from itertools import groupby
 
 def analysisTrip(trip_file):
     print(trip_file)
@@ -72,41 +73,6 @@ def extract_attributes(data, attributes):
     return extracted_data
 
 
-
-# def combine_vehicle_paths(matrix_list):
-#     """
-#     Extract list of link indices for each vehicle ID from a list of
-#     3D NumPy matrices indexed by [link][time][vehicle]. Combines and
-#     removes duplicate link indices across matrices.
-#
-#     Parameters:
-#     - matrix_list (list of numpy.ndarray): List of 3D NumPy matrices
-#       indicating the vehicle presence. Each matrix is indexed by
-#       [link][time][vehicle].
-#
-#     Returns:
-#     - dict: Dictionary where each key is a vehicle ID and each value
-#       is a list of unique link indices, combining all matrices.
-#     """
-#     combined_paths = {}
-#
-#     for np_matrix in matrix_list:
-#         num_links, num_times, num_vehicles = np_matrix.shape
-#
-#         for vehicle in range(num_vehicles):
-#             if vehicle not in combined_paths:
-#                 combined_paths[vehicle] = []
-#
-#             for time in range(num_times):
-#                 for link in range(num_links):
-#                     if np_matrix[link, time, vehicle] == 1:
-#                         if link not in combined_paths[vehicle]:
-#                             combined_paths[vehicle].append(link)
-#                         break  # Assuming a vehicle can be on only one link at a time
-#
-#     return combined_paths
-
-
 def combine_vehicle_paths(matrix_list):
     """
     Extract list of link indices for each vehicle ID from a list of
@@ -132,13 +98,15 @@ def combine_vehicle_paths(matrix_list):
 
             # Add a new path list for the current scenario
             combined_paths[vehicle].append([])
+            tmp = []
 
             for time in range(num_times):
                 for link in range(num_links):
                     if np_matrix[link, time, vehicle] == 1:
-                        if link not in combined_paths[vehicle][scenario_index]:
-                            combined_paths[vehicle][scenario_index].append(link)
-                        break  # Assuming a vehicle can be on only one link at a time
+                        tmp.append(link+1)  # sumo link index starts from 1 while matrix starts form zero
+                        # combined_paths[vehicle][scenario_index].append(link)
+            combined_paths[vehicle][scenario_index] = [key for key, group in groupby(tmp)]
+            # print('yes')
 
     return combined_paths
 
@@ -190,7 +158,7 @@ if __name__ == '__main__':
 
     covermatrix_list = [np.load(p) for p in covermatrix_path]
 
-    tmp = [cvm[:, :, 6] for cvm in covermatrix_list]
+    tmp = [cvm[:, :, 84] for cvm in covermatrix_list]  # the number is vehicle index number
     vehicle_paths = combine_vehicle_paths(covermatrix_list)
     write_to_txt(vehicle_paths, filename=vehicle_path)
 
