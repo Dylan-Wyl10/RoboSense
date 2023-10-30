@@ -4,8 +4,8 @@ result/PR2 TestingNew
 result/PR1 Testing
 result/PR5 TestingNew
 result/PR5 Testing
-src/sumo_cfg/toy_net/dualogs
-src/sumo_cfg/5x5net/dualogs
+sumo_cfg/5x5net/dualogs
+sumo_cfg/toy_net/dualogs
 src/__pycache__
 src/utili/__pycache__
 result/link_flow
