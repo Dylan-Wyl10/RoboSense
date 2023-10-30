@@ -1,0 +1,19 @@
+$O;D2
+0.00 1.0
+1.00
+AA_in EE_out 686
+EE_in AA_out 686
+AB_in ED_out 343
+ED_in AB_out 343
+AC_in EC_out 343
+EC_in AC_out 343
+AD_in EB_out 343
+EB_in AD_out 343
+AE_in EA_out 686
+EA_in AE_out 686
+BA_in DE_out 343
+DE_in BA_out 343
+CA_in CE_out 343
+CE_in CA_out 343
+DA_in BE_out 343
+BE_in DA_out 343
