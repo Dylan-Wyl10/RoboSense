@@ -24,13 +24,13 @@ def od_generator(filepath, time, size, linkflow):
         print('1.00', file=od)
         for nx in range(size):
             for ny in range(size):
-                if nx == 0 or ny == 0 or nx == 5 or ny == 5:
-                    if nx == ny or nx+ny == 5:
+                if nx == 0 or ny == 0 or nx == size - 1 or ny == size - 1:
+                    if nx == ny or nx+ny == size:
                         veh_num = 2 * flow
                     else:
                         veh_num = flow
                     print(nx, ny, '\t')
                     print('{}{}_in {}{}_out {}'.format(node_dict[nx + 1], node_dict[ny + 1],
-                                                node_dict[6 - nx], node_dict[6 - ny],
+                                                node_dict[size-nx], node_dict[size-ny],
                                                 str(veh_num)), file=od)
         # print()

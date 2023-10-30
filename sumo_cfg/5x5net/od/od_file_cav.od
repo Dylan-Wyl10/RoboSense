@@ -1,0 +1,19 @@
+$O;D2
+0.00 2.0
+1.00
+AA_in EE_out 28
+AB_in ED_out 14
+AC_in EC_out 14
+AD_in EB_out 14
+AE_in EA_out 14
+BA_in DE_out 14
+BE_in DA_out 28
+CA_in CE_out 14
+CE_in CA_out 14
+DA_in BE_out 14
+DE_in BA_out 14
+EA_in AE_out 14
+EB_in AD_out 28
+EC_in AC_out 14
+ED_in AB_out 14
+EE_in AA_out 28

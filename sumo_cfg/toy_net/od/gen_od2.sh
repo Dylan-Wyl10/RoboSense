@@ -1,6 +1,6 @@
 scp od_file_cav.odtrips.xml ../od_cav.odtrips.xml
 cd ..
-#duarouter -n toy_net1.net.xml --route-files od_generator/od_file.odtrips.xml -o toy_netOD.rou.xml
+#duarouter -n toy_net1.net.xml --route-files od/od_file.odtrips.xml -o toy_netOD.rou.xml
 rm -r "dualogs"
 mkdir "dualogs"
 cd dualogs
