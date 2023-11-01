@@ -8,6 +8,7 @@ Note: this script is the script that used to collect historical travel informati
 # Status check for Sumo environment
 import traci
 
+import argparse
 from simulation import Simulation
 import sys
 import os
@@ -30,20 +31,36 @@ if __name__ == '__main__':
     current_directory = os.getcwd()
     print(f"Current Working Directory: {current_directory}")
 
-    max_step = 36000  # define the maximum steps for the simulation
-    path = "sumo_cfg/toy_net/toy_test_benchmark.sumocfg"
-    lf_table_savepath = "../result/link_flow/pr2_link_flow_3600.json"
-    save_info = {'cover_table': "../result/PR2 TestingNew/cover_xxxx_step20.npy",
-                 'cover_table_benchmark': "../result/PR2 TestingNew/pr2_cover_benchmark.npy"}
+    argparser = argparse.ArgumentParser(description=__doc__)
+    argparser.add_argument('--net_dirc',
+                           default='../sumo_cfg/5x5net',
+                           type=str,
+                           help='working dirctory for current simulation(sumo config)')
+    argparser.add_argument('--maxtime',
+                           default=4200,
+                           type=int,
+                           help='max simulation length(unit:s)')
 
-    s = Simulation(max_time=3600, link_num=60, resolution=0.1,
-                   net_file='sumo_cfg/toy_net/toy_net1.net.xml',
-                   time_interval=20)
-    s.get_LF_table(config=path)
-    s.save_lf(lf_table_savepath)
-    print('lf table has been saved')
-    traci.close()
-    # s.sim_benchmark(save_info)
+    argparser.add_argument('--netname',
+                           default='5x5net',
+                           type=str,
+                           help='network name used for configuration')
+
+    args = argparser.parse_args()
+
+    max_step = 10 * args.maxtime  # define the maximum steps for the simulation
+    path = args.net_dirc + ("/benchmark.sumocfg")
+    lf_table_savepath = "../result/{}/link_flow/pr2_link_flow_3600.json".format(args.netname)
+    save_info = {'cover_table_benchmark': "../result/{}/PR2 TestingNew/pr2_cover_benchmark.npy".format(args.netname)}
+
+    s = Simulation(start_time=600, max_time=args.maxtime, link_num=40, resolution=0.1,
+                   net_file='../sumo_cfg/5x5net/5x5net.net.xml',
+                   time_interval=20, sizeX=5, sizeY=5)
+    # s.get_LF_table(config=path)
+    # s.save_lf(lf_table_savepath)
+    # print('lf table has been saved')
+    # traci.close()
+    s.sim_benchmark(save_info)
 
 
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])

@@ -127,16 +127,19 @@ if __name__ == '__main__':
     current_directory = os.getcwd()
     print(f"Current Working Directory: {current_directory}")
 
-    alpha_set = [0, 100, 300, 500, 1000, 2000]
+    # alpha_set = [0, 100, 300, 500, 1000, 2000]
+
+    alpha_set = [0]
     pr = 2
     step = 20
+    netname = "5x5net"
     vehicle_path = "vehicle_paths.txt"
 
     ## this part
     tripFile_dir = {}
-    tripFile_dir['trip_bench'] = "../result/sumolog_pr{}/tripinfo_benchmark.xml".format(pr)
+    tripFile_dir['trip_bench'] = "../result/{}/sumolog_tmp/tripinfo_benchmark.xml".format(netname)
     for a in alpha_set:
-        tripFile_dir['trip_{}'.format(a)] = "../result/sumolog_pr{}/tripinfo{}.xml".format(pr, a)
+        tripFile_dir['trip_{}'.format(a)] = "../result/{}/sumolog_tmp/tripinfo{}.xml".format(netname, a)
 
     # Example Usage
     file_paths = [tripFile_dir[k] for k in tripFile_dir.keys()]
@@ -151,15 +154,17 @@ if __name__ == '__main__':
     print('yesyes')
 
     # start from generate path
+    netname = "5x5net"
     path_senario = "PR2 TestingNew"
 
-    covermatrix_path = ['../result/{}/pr{}_cover_{}_step20.npy'.format(path_senario, pr, a) for a in alpha_set]
-    covermatrix_path.append('../result/{}/pr{}_cover_benchmark.npy'.format(path_senario, pr))
+    covermatrix_path = ['../result/{}/{}/pr{}_cover_{}_step20.npy'.format(netname, path_senario, pr, a) for a in alpha_set]
+    covermatrix_path.append('../result/{}/{}/pr{}_cover_benchmark.npy'.format(netname, path_senario, pr))
 
     covermatrix_list = [np.load(p) for p in covermatrix_path]
 
-    tmp = [cvm[:, :, 84] for cvm in covermatrix_list]  # the number is vehicle index number
+    # tmp = [cvm[:, :, :] for cvm in covermatrix_list]  # the number is vehicle index number
     vehicle_paths = combine_vehicle_paths(covermatrix_list)
+    vehicle_path = "vehicle_pathsnew.txt"
     write_to_txt(vehicle_paths, filename=vehicle_path)
 
 
