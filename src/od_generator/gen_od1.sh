@@ -1,6 +1,6 @@
 read -p "please provide the bgv link flow:" bgv_link
 read -p "please provide the cav link flow:" cav_link
-read -p "please provide the length of simulation:" simtime_hr
+read -p "please provide the length of simulation in hour:" simtime_hr
 read -p "provide the directory path for network configuration (from project root without/)": -e config_path
 
 simtime=$((3600 * simtime_hr))

@@ -18,20 +18,22 @@ import json
 
 
 class Simulation:
-    def __init__(self, max_time, link_num, resolution, net_file, time_interval):
+    def __init__(self, start_time, max_time, link_num, resolution, net_file, time_interval, sizeX, sizeY):
         self.step = 0
         self.time = 0
+        self.start_time = start_time
         self.time_interval = time_interval
+        self.max_time = max_time
         self.MAXSTEP = int(max_time / resolution)
         self.resolution = resolution
         self.link_flows_table = gen_LF_table(link_num)  # link flow table for all edges
         self.link_flows_num = {}
         self.link_flows_observation = {}
         # self.config = config  # 06/14/2023: temporaryly set sumo config path
-        self.Network = Network(6, 6, net_file)
+        self.Network = Network(5, 5, net_file)
         self.cav_list = []
-        self.cover_LinkTimeVeh = np.zeros((120, 7000, 500))  # index = [link, time, veh], value is hardcoded as 0 (binary)
-
+        self.cover_LinkTimeVeh = np.zeros((4*link_num, 7000, 500))  # index = [link, time, veh], value is hardcoded as 0 (binary)
+        self.sizeX, self.sizeY = sizeX, sizeY
         # # build a time-space table for vehicle index
         # self.cover_idTable = []
         # for i in range(self.cover_LinkTimeVeh.shape[0]):
@@ -47,7 +49,7 @@ class Simulation:
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         self.step = 0
-        self.Network.netInit(6, 6)
+        self.Network.netInit(self.sizeX, self.sizeY)
         # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
         while True:
 
@@ -56,8 +58,8 @@ class Simulation:
             if self.step % 10 == 0:
                 self.getCAVctrlList()
                 # update observation
-                self.updateObsv()
-                self.checkCoverTable()
+                # self.updateObsv()
+                # self.checkCoverTable()
 
             # step2: enumerate all cav from list, choose proper route and update vehicle information
             if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
@@ -88,18 +90,20 @@ class Simulation:
             traci.simulationStep()
 
             # stop and save the results
-            if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
+            # if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
+            if self.step > self.MAXSTEP or (traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
+
                 path = save_path['cover_table']
-                np.save(path, self.cover_LinkTimeVeh[:, :5000, :])
+                np.save(path, self.cover_LinkTimeVeh[:, self.start_time:self.max_time, :])
                 print("Simulation has ended due to no enough vehicle")
                 break
 
-    def sim_benchmark(self, save_path, config="sumo_cfg/toy_net/toy_test_benchmark.sumocfg"):
-        traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
+    def sim_benchmark(self, save_path, config="../sumo_cfg/5x5net/benchmark.sumocfg"):
+        traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         self.step = 0
-        self.Network.netInit(6, 6)
+        self.Network.netInit(self.sizeX, self.sizeY)
         # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
         while True:
 
@@ -114,7 +118,7 @@ class Simulation:
             self.time = self.step * self.resolution
             traci.simulationStep()
             # stop and save the results
-            if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
+            if self.step > self.MAXSTEP or (traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
                 path = save_path['cover_table_benchmark']
                 np.save(path, self.cover_LinkTimeVeh)
                 print("Simulation has ended due to no enough vehicle")
@@ -122,17 +126,18 @@ class Simulation:
 
     # 06/18/2023 get historical link flow table through simulation
     def get_LF_table(self, config):
-        traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
+        traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         # for step in range(self.MAXSTEP):
         while True:
-            self.update_lf_table()
+            if self.time > self.start_time:
+                self.update_lf_table()
             # print(self.link_flows_table['E1'])
             self.step += 1
             self.time = self.step * self.resolution
             traci.simulationStep()
-            if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
+            if self.step > self.MAXSTEP or (traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
                 # if self.step > self.MAXSTEP:
                 print("Simulation has ended due to no enough vehicle")
                 self.filter_lf_table()
@@ -192,7 +197,7 @@ class Simulation:
             for id in v:
                 if re.findall(r'[0-9]+|[a-z]+', id)[0] == 'cav':
                     v.remove(id)
-            self.link_flows_num[k] = (3600 * len(v)) / self.time
+            self.link_flows_num[k] = (3600 * len(v)) / (self.time - self.start_time)
             """od_i, n = re.findall(r'[0-9]+|[a-z]+', id)  # od_idx, v_idx"""
             # v.append(ttmp)
 

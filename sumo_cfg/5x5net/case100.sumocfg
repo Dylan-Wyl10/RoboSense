@@ -17,7 +17,7 @@
 
     <output>
         <summary-output value="../../result/5x5net/sumolog_tmp/summary100.xml"/>
-        <tripinfo-output value="../../result/5x5net/umolog_tmp/tripinfo100.xml"/>
+        <tripinfo-output value="../../result/5x5net/sumolog_tmp/tripinfo100.xml"/>
         <statistic-output value="../../result/5x5net/sumolog_tmp/overall100.xml"/>
     </output>
 
