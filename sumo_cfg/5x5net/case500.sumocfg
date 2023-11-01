@@ -1,7 +1,7 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="toy_net1.net.xml"/>
+        <net-file value="5x5net.net.xml"/>
         <route-files value="od.rou.xml"/>
         <additional-files value="v_type.add.xml"/>
     </input>
@@ -16,9 +16,9 @@
     </processing>
 
     <output>
-        <summary-output value="../../../result/sumolog_tmp/summary1000.xml"/>
-        <tripinfo-output value="../../../result/sumolog_tmp/tripinfo1000.xml"/>
-        <statistic-output value="../../../result/sumolog_tmp/overall1000.xml"/>
+        <summary-output value="../../result/5x5net/sumolog_tmp/summary500.xml"/>
+        <tripinfo-output value="../../result/5x5net/sumolog_tmp/tripinfo500.xml"/>
+        <statistic-output value="../../result/5x5net/sumolog_tmp/overall500.xml"/>
     </output>
 
     <time>
