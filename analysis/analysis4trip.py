@@ -129,7 +129,7 @@ if __name__ == '__main__':
 
     # alpha_set = [0, 100, 300, 500, 1000, 2000]
 
-    alpha_set = [0]
+    alpha_set = [0, 100, 1000, 2000]
     pr = 2
     step = 20
     netname = "5x5net"
