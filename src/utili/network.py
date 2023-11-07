@@ -223,8 +223,8 @@ class Network:
         :return:
         '''
 
-        # start_node = 'BB'
-        # desti_node = 'EE'
+        # start_node = 'DE'
+        # desti_node = 'DE'
         # sp_num = len(list(nx.all_shortest_paths(self.G, start_node, desti_node)))  # number of shortest path
         # max_path_num = min(int(sp_num * flexibility), k)  # number of candidate path = min(max bound, deroute number)
 

@@ -233,11 +233,11 @@ class Simulation:
                 vidx = int(re.findall(r'[0-9]+|[a-z]+', v_id)[1])
                 if v_id not in self.cav_dic:
                     # default add vehicle
-                    sp_tmp = self.Network.getShortDistance(self.Network.getNextNode(traci.vehicle.getRoute(v_id)[0]), self.Network.getFromNode(traci.vehicle.getRoute(v_id)[-1]))
+                    sp_length = self.Network.getShortDistance(self.Network.getNextNode(traci.vehicle.getRoute(v_id)[0]), self.Network.getFromNode(traci.vehicle.getRoute(v_id)[-1]))
                     self.cav_dic[v_id] = {'original': self.Network.getNextNode(traci.vehicle.getRoute(v_id)[0]),
                                           'destination': self.Network.getFromNode(traci.vehicle.getRoute(v_id)[-1]),
                                           'currentFlex': self.flex,  # initial flexibility, must be even number
-                                          'sp': sp_tmp,
+                                          'spLength': sp_length,
                                           'currentRoute': []}
                 else:
                     # calculate and update current flexibility
@@ -252,14 +252,14 @@ class Simulation:
                     route_tmp = [key for key, group in groupby(tmp)]
                     self.cav_dic[v_id]['currentRoute'] = route_tmp
                     edge_current = traci.vehicle.getRoadID(v_id)
-                    edgelink_idx = int(re.findall(r'[0-9]+|[a-z]+', '-E22')[0])
-                    if edgelink_idx <= self.link_num:
+                    # edgelink_idx = int(re.findall(r'[0-9]+|[a-z]+', '-E22')[0])
+                    if edge_current[0] != '-':
                         nextNode_tmp = self.Network.getNextNode(edge_current)
                         sp_current = self.Network.getShortDistance(nextNode_tmp, self.cav_dic[v_id]['destination'])
 
                         # 1103 update: current flexibility = original sp length + flexibility - number of edges traveled - current sp length
-                        self.cav_dic[v_id]['currentFlex'] = (self.cav_dic[v_id]['sp'] + self.cav_dic[v_id]['currentFlex']
-                                                             - len(route_tmp)) - sp_current
+                        tmp_flex = self.cav_dic[v_id]['spLength'] + self.cav_dic[v_id]['currentFlex'] - len(route_tmp) - sp_current
+                        self.cav_dic[v_id]['currentFlex'] = max(tmp_flex, 0)
                         print(f'vehicle {v_id} has flex {self.cav_dic[v_id]["currentFlex"]}')
 
 
@@ -282,7 +282,7 @@ class Simulation:
             my_nextNode = self.Network.getNextNode(cav_edgeID)
             my_desNode = self.Network.getFromNode(traci.vehicle.getRoute(cav_id)[-1])
 
-            k_shortest_path = self.Network.findKShortPath(k, my_nextNode, my_desNode, self.cav_dic[cav_id]['currentFlex'])
+            k_shortest_path = self.Network.findKShortPath(k, my_nextNode, self.cav_dic[cav_id]['destination'], self.cav_dic[cav_id]['currentFlex'])
 
             # 0710: get vehicle departure time
             # tmp = traci.vehicle.getDeparture(cav_id)
