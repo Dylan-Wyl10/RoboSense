@@ -191,7 +191,7 @@ if __name__ == '__main__':
     #
     #     path = "sumo_cfg/toy_net/toy_test_{}.sumocfg".format(a)
     #     lf_table_path = "../result/link_flow/pr{}_link_flow_3600.json".format(pr)
-    #     s = Simulation(max_time=3600, link_num=60, resolution=0.1,
+    #     s = CTMSim(max_time=3600, link_num=60, resolution=0.1,
     #                    net_file='sumo_cfg/toy_net/toy_net1.net.xml',
     #                    time_interval=step)
     #     s.load_lf(lf_table_path)

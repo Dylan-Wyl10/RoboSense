@@ -3,7 +3,7 @@ Date: June 13, 2023
 Author: Yilin Wang
 Note: this script contains the source code for the class for simualtion. including the necessary methods to muliplate simulate and the defined space for variables .
 Structures:
-- Simulation
+- CTMSim
 """
 
 import copy
@@ -48,7 +48,7 @@ class Simulation:
         self.cav_route = {}
 
     def sim(self, save_path, config, parameters, flex=0, k=32):
-        traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
+        traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.flex = flex  # default flexibility of the vehicle
         self.time = 0  # simulation time index
@@ -103,7 +103,7 @@ class Simulation:
 
                 path = save_path['cover_table{}'.format(parameters[1])]
                 np.save(path, self.cover_LinkTimeVeh[:, self.start_time:self.max_time, :])
-                print("Simulation has ended due to no enough vehicle")
+                print("CTMSim has ended due to no enough vehicle")
                 break
 
     def sim_benchmark(self, save_path, config="../sumo_cfg/5x5net/benchmark.sumocfg"):
@@ -129,7 +129,7 @@ class Simulation:
             if self.step > self.MAXSTEP or (traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
                 path = save_path['cover_table_benchmark']
                 np.save(path, self.cover_LinkTimeVeh)
-                print("Simulation has ended due to no enough vehicle")
+                print("CTMSim has ended due to no enough vehicle")
                 break
 
     # 06/18/2023 get historical link flow table through simulation
@@ -147,7 +147,7 @@ class Simulation:
             traci.simulationStep()
             if self.step > self.MAXSTEP or (traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
                 # if self.step > self.MAXSTEP:
-                print("Simulation has ended due to no enough vehicle")
+                print("CTMSim has ended due to no enough vehicle")
                 self.filter_lf_table()
                 break
 
