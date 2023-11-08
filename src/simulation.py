@@ -249,9 +249,11 @@ class Simulation:
                             if veh_cover[l, t] == 1:
                                 tmp.append(l + 1)  # sumo link index starts from 1 while matrix starts form zero
                                 # combined_paths[vehicle][scenario_index].append(link)
+                    edge_current = traci.vehicle.getRoadID(v_id)
+                    tmp.append(int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]))
                     route_tmp = [key for key, group in groupby(tmp)]
                     self.cav_dic[v_id]['currentRoute'] = route_tmp
-                    edge_current = traci.vehicle.getRoadID(v_id)
+                    # edge_current = traci.vehicle.getRoadID(v_id)
                     # edgelink_idx = int(re.findall(r'[0-9]+|[a-z]+', '-E22')[0])
                     if edge_current[0] != '-':
                         nextNode_tmp = self.Network.getNextNode(edge_current)
@@ -259,6 +261,8 @@ class Simulation:
 
                         # 1103 update: current flexibility = original sp length + flexibility - number of edges traveled - current sp length
                         tmp_flex = self.cav_dic[v_id]['spLength'] + self.cav_dic[v_id]['currentFlex'] - len(route_tmp) - sp_current
+                        if tmp_flex == 5:
+                            print('we have something')
                         self.cav_dic[v_id]['currentFlex'] = max(tmp_flex, 0)
                         print(f'vehicle {v_id} has flex {self.cav_dic[v_id]["currentFlex"]}')
 
