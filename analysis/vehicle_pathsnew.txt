@@ -2,56 +2,56 @@ Combined Vehicle Paths:
 Vehicle 0:
   Scenario 0: 22, 23, 24, 17, 18, 19, 20
   Scenario 1: 22, 23, 24, 17, 18, 19, 20
-  Scenario 2: 22, 23, 24, 17, 18, 19, 20
-  Scenario 3: 22, 23, 24, 17, 18, 19, 20
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 1, 2, 29, 7, 34, 35, 16, 40
 Vehicle 1:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 22, 23, 24, 17, 18, 19, 20
+  Scenario 3: 22, 23, 24, 17, 18, 19, 20
   Scenario 4: 
 Vehicle 2:
   Scenario 0: 1, 25, 6, 30, 11, 12, 39, 40
   Scenario 1: 1, 25, 6, 30, 11, 12, 39, 40
-  Scenario 2: 1, 25, 6, 30, 11, 12, 39, 40
-  Scenario 3: 1, 25, 6, 30, 11, 12, 39, 40
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 1, 2, 3, 33, 8, 38, 39, 40
 Vehicle 3:
   Scenario 0: 1, 2
   Scenario 1: 1, 2
-  Scenario 2: 1, 2
-  Scenario 3: 1, 2
+  Scenario 2: 1, 25, 6, 30, 11, 35, 36, 20
+  Scenario 3: 1, 25, 6, 30, 11, 35, 36, 20
   Scenario 4: 21, 22
 Vehicle 4:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 1, 2
+  Scenario 3: 1, 2
   Scenario 4: 
 Vehicle 5:
   Scenario 0: 20
   Scenario 1: 20
-  Scenario 2: 20
-  Scenario 3: 20
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 21, 5, 26, 10, 31, 15, 36, 20
 Vehicle 6:
   Scenario 0: 1, 2, 29, 7, 34, 35, 36, 20
   Scenario 1: 1, 2, 29, 7, 34, 35, 36, 20
-  Scenario 2: 1, 2, 29, 7, 34, 35, 36, 20
-  Scenario 3: 1, 2, 29, 7, 34, 35, 36, 20
+  Scenario 2: 20
+  Scenario 3: 20
   Scenario 4: 1, 2, 3, 4, 37, 38, 39, 40
 Vehicle 7:
   Scenario 0: 3, 33, 34, 35, 36, 20
   Scenario 1: 3, 33, 34, 35, 36, 20
-  Scenario 2: 3, 33, 34, 35, 36, 20
-  Scenario 3: 3, 33, 34, 35, 36, 20
+  Scenario 2: 1, 2, 3, 33, 34, 35, 36, 20
+  Scenario 3: 1, 2, 3, 33, 34, 35, 36, 20
   Scenario 4: 21, 5, 26, 10, 31, 15, 16, 40
 Vehicle 8:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 3, 33, 34, 35, 36, 20
+  Scenario 3: 3, 33, 34, 35, 36, 20
   Scenario 4: 
 Vehicle 9:
   Scenario 0: 
@@ -80,44 +80,44 @@ Vehicle 12:
 Vehicle 13:
   Scenario 0: 21, 22, 23, 24, 17, 18, 19, 20
   Scenario 1: 21, 22, 23, 24, 17, 18, 19, 20
-  Scenario 2: 21, 22, 23, 24, 17, 18, 19, 20
-  Scenario 3: 21, 22, 23, 24, 17, 18, 19, 20
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 1, 25, 6, 7, 8, 38, 39, 40
 Vehicle 14:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 21, 5, 6, 30, 31, 32, 19, 20
+  Scenario 3: 21, 5, 6, 30, 31, 32, 19, 20
   Scenario 4: 
 Vehicle 15:
   Scenario 0: 1, 2, 3, 33, 34, 12, 39, 40
   Scenario 1: 1, 2, 3, 33, 34, 12, 39, 40
-  Scenario 2: 1, 2, 3, 33, 34, 12, 39, 40
-  Scenario 3: 1, 2, 3, 33, 34, 12, 39, 40
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 1, 2, 3, 33, 8, 38, 39, 40
 Vehicle 16:
   Scenario 0: 1, 25, 26, 27, 28, 18, 19, 20
   Scenario 1: 1, 25, 26, 27, 28, 18, 19, 20
-  Scenario 2: 1, 25, 26, 27, 28, 18, 19, 20
-  Scenario 3: 1, 25, 26, 27, 28, 18, 19, 20
+  Scenario 2: 1, 2, 29, 30, 11, 12, 39, 40
+  Scenario 3: 1, 2, 29, 30, 11, 12, 39, 40
   Scenario 4: 21, 5, 6, 7, 34, 35, 16, 40
 Vehicle 17:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 1, 25, 6, 7, 34, 35, 36, 20
+  Scenario 3: 1, 25, 6, 7, 34, 35, 36, 20
   Scenario 4: 
 Vehicle 18:
   Scenario 0: 1, 2, 3, 33, 34, 35, 36, 20
   Scenario 1: 1, 2, 3, 33, 34, 35, 36, 20
-  Scenario 2: 1, 2, 3, 33, 34, 35, 36, 20
-  Scenario 3: 1, 2, 3, 33, 34, 35, 36, 20
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 21, 22, 23, 24, 17, 18, 19, 20
 Vehicle 19:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 1, 25, 26, 27, 28, 18, 19, 20
+  Scenario 3: 1, 25, 26, 27, 28, 18, 19, 20
   Scenario 4: 
 Vehicle 20:
   Scenario 0: 
@@ -128,26 +128,26 @@ Vehicle 20:
 Vehicle 21:
   Scenario 0: 1, 2, 3, 33, 34, 35, 16, 40
   Scenario 1: 1, 2, 3, 33, 34, 35, 16, 40
-  Scenario 2: 1, 2, 3, 33, 34, 35, 16, 40
-  Scenario 3: 1, 2, 3, 33, 34, 35, 16, 40
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 1, 2, 29, 7, 8, 38, 39, 40
 Vehicle 22:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 1, 2, 3, 33, 34, 35, 36, 20
+  Scenario 3: 1, 2, 3, 33, 34, 35, 36, 20
   Scenario 4: 
 Vehicle 23:
   Scenario 0: 1, 25, 26, 10, 31, 15, 36, 20
   Scenario 1: 1, 25, 26, 10, 31, 15, 36, 20
-  Scenario 2: 1, 25, 26, 10, 31, 15, 36, 20
-  Scenario 3: 1, 25, 26, 10, 31, 15, 36, 20
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 1, 2, 3, 4, 37, 38, 39, 40
 Vehicle 24:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 1, 25, 26, 10, 11, 35, 36, 20
+  Scenario 3: 1, 25, 26, 10, 11, 35, 36, 20
   Scenario 4: 
 Vehicle 25:
   Scenario 0: 
@@ -170,38 +170,38 @@ Vehicle 27:
 Vehicle 28:
   Scenario 0: 25, 6, 7, 34, 35, 36
   Scenario 1: 25, 6, 7, 34, 35, 36
-  Scenario 2: 25, 6, 7, 34, 35, 36
-  Scenario 3: 25, 6, 7, 34, 35, 36
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 25, 26, 27, 28, 18, 19
 Vehicle 29:
   Scenario 0: 2, 29, 7, 34, 35, 36
   Scenario 1: 2, 29, 7, 34, 35, 36
-  Scenario 2: 2, 29, 7, 34, 35, 36
-  Scenario 3: 2, 29, 7, 34, 35, 36
+  Scenario 2: 25, 6, 7, 34, 35, 36
+  Scenario 3: 25, 6, 7, 34, 35, 36
   Scenario 4: 2, 29, 30, 11, 35, 36
 Vehicle 30:
   Scenario 0: 25, 26, 27, 14, 15, 36
   Scenario 1: 25, 26, 27, 14, 15, 36
-  Scenario 2: 25, 26, 27, 14, 15, 36
-  Scenario 3: 25, 26, 27, 14, 15, 36
+  Scenario 2: 25, 26, 10, 11, 35, 36
+  Scenario 3: 25, 26, 10, 11, 35, 36
   Scenario 4: 25, 26, 27, 28, 18, 19
 Vehicle 31:
   Scenario 0: 25, 26, 10, 31, 15, 36
   Scenario 1: 25, 26, 10, 31, 15, 36
-  Scenario 2: 25, 26, 10, 31, 15, 36
-  Scenario 3: 25, 26, 10, 31, 15, 36
+  Scenario 2: 25, 26, 10, 11, 35, 36
+  Scenario 3: 25, 26, 10, 11, 35, 36
   Scenario 4: 25, 26, 27, 14, 15, 36
 Vehicle 32:
   Scenario 0: 2, 3, 33, 34, 35, 36
   Scenario 1: 2, 3, 33, 34, 35, 36
-  Scenario 2: 2, 3, 33, 34, 35, 36
-  Scenario 3: 2, 3, 33, 34, 35, 36
+  Scenario 2: 2, 29, 30, 11, 35, 36
+  Scenario 3: 2, 29, 30, 11, 35, 36
   Scenario 4: 2, 3, 33, 34, 35, 36
 Vehicle 33:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 2, 3, 33, 34, 35, 36
+  Scenario 3: 2, 3, 33, 34, 35, 36
   Scenario 4: 
 Vehicle 34:
   Scenario 0: 
@@ -218,14 +218,14 @@ Vehicle 35:
 Vehicle 36:
   Scenario 0: 25, 26, 10, 11, 35, 36
   Scenario 1: 25, 26, 10, 11, 35, 36
-  Scenario 2: 25, 26, 10, 11, 35, 36
-  Scenario 3: 25, 26, 10, 11, 35, 36
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 25, 6, 7, 34, 35, 36
 Vehicle 37:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 25, 26, 10, 11, 35, 36
+  Scenario 3: 25, 26, 10, 11, 35, 36
   Scenario 4: 
 Vehicle 38:
   Scenario 0: 
@@ -248,20 +248,20 @@ Vehicle 40:
 Vehicle 41:
   Scenario 0: 29, 30, 31, 32
   Scenario 1: 29, 30, 31, 32
-  Scenario 2: 29, 30, 31, 32
-  Scenario 3: 29, 30, 31, 32
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 29, 30, 31, 32
 Vehicle 42:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 29, 30, 31, 32
+  Scenario 3: 29, 30, 31, 32
   Scenario 4: 
 Vehicle 43:
   Scenario 0: 29, 30, 31, 32
   Scenario 1: 29, 30, 31, 32
-  Scenario 2: 29, 30, 31, 32
-  Scenario 3: 29, 30, 31, 32
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 29, 30, 31, 32
 Vehicle 44:
   Scenario 0: 29, 30, 31, 32
@@ -278,8 +278,8 @@ Vehicle 45:
 Vehicle 46:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 29, 30, 31, 32
+  Scenario 3: 29, 30, 31, 32
   Scenario 4: 
 Vehicle 47:
   Scenario 0: 
@@ -290,26 +290,26 @@ Vehicle 47:
 Vehicle 48:
   Scenario 0: 29, 30, 31, 32
   Scenario 1: 29, 30, 31, 32
-  Scenario 2: 29, 30, 31, 32
-  Scenario 3: 29, 30, 31, 32
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 29, 30, 31, 32
 Vehicle 49:
   Scenario 0: 30, 31, 32
   Scenario 1: 30, 31, 32
-  Scenario 2: 30, 31, 32
-  Scenario 3: 30, 31, 32
+  Scenario 2: 29, 30, 31, 32
+  Scenario 3: 29, 30, 31, 32
   Scenario 4: 29, 30, 31, 32
 Vehicle 50:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 30, 31, 32
+  Scenario 3: 30, 31, 32
   Scenario 4: 
 Vehicle 51:
   Scenario 0: 29, 30, 31, 32
   Scenario 1: 29, 30, 31, 32
-  Scenario 2: 29, 30, 31, 32
-  Scenario 3: 29, 30, 31, 32
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 29, 30, 31, 32
 Vehicle 52:
   Scenario 0: 29, 30, 31, 32
@@ -326,8 +326,8 @@ Vehicle 53:
 Vehicle 54:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 29, 30, 31, 32
+  Scenario 3: 29, 30, 31, 32
   Scenario 4: 
 Vehicle 55:
   Scenario 0: 
@@ -356,14 +356,14 @@ Vehicle 58:
 Vehicle 59:
   Scenario 0: 33, 34, 71, 70, 27, 28
   Scenario 1: 33, 34, 71, 70, 27, 28
-  Scenario 2: 33, 34, 71, 70, 27, 28
-  Scenario 3: 33, 34, 71, 70, 27, 28
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 33, 34, 35, 75, 32, 78
 Vehicle 60:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 33, 34, 35, 55, 54, 28
+  Scenario 3: 33, 34, 35, 55, 54, 28
   Scenario 4: 
 Vehicle 61:
   Scenario 0: 
@@ -374,110 +374,110 @@ Vehicle 61:
 Vehicle 62:
   Scenario 0: 33, 34, 35, 75, 74, 28
   Scenario 1: 33, 34, 35, 75, 74, 28
-  Scenario 2: 33, 34, 35, 75, 74, 28
-  Scenario 3: 33, 34, 35, 75, 74, 28
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 63, 62, 25, 26, 27, 28
 Vehicle 63:
   Scenario 0: 33, 34, 71, 70, 27, 28
   Scenario 1: 33, 34, 71, 70, 27, 28
-  Scenario 2: 33, 34, 71, 70, 27, 28
-  Scenario 3: 33, 34, 71, 70, 27, 28
+  Scenario 2: 33, 47, 30, 50, 27, 28
+  Scenario 3: 33, 47, 30, 50, 27, 28
   Scenario 4: 33, 34, 35, 75, 32, 78
 Vehicle 64:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 33, 34, 35, 36, 59, 58
+  Scenario 3: 33, 34, 35, 36, 59, 58
   Scenario 4: 
 Vehicle 65:
   Scenario 0: 63, 29, 30, 70, 27, 28
   Scenario 1: 63, 29, 30, 70, 27, 28
-  Scenario 2: 63, 29, 30, 70, 27, 28
-  Scenario 3: 63, 29, 30, 70, 27, 28
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 33, 34, 35, 36, 79, 78
 Vehicle 66:
   Scenario 0: 63, 29, 30, 31, 32, 78
   Scenario 1: 63, 29, 30, 31, 32, 78
-  Scenario 2: 63, 29, 30, 31, 32, 78
-  Scenario 3: 63, 29, 30, 31, 32, 78
+  Scenario 2: 43, 29, 30, 50, 27, 28
+  Scenario 3: 43, 29, 30, 50, 27, 28
   Scenario 4: 33, 67, 30, 70, 27, 28
 Vehicle 67:
   Scenario 0: 33, 67, 30, 31, 74, 28
   Scenario 1: 33, 67, 30, 31, 74, 28
-  Scenario 2: 33, 67, 30, 31, 74, 28
-  Scenario 3: 33, 67, 30, 31, 74, 28
+  Scenario 2: 43, 29, 30, 50, 27, 28
+  Scenario 3: 43, 29, 30, 50, 27, 28
   Scenario 4: 33, 34, 35, 36, 79, 78
 Vehicle 68:
   Scenario 0: 33, 34, 35, 75, 74, 28
   Scenario 1: 33, 34, 35, 75, 74, 28
-  Scenario 2: 33, 34, 35, 75, 74, 28
-  Scenario 3: 33, 34, 35, 75, 74, 28
+  Scenario 2: 33, 34, 35, 55, 54, 28
+  Scenario 3: 33, 34, 35, 55, 54, 28
   Scenario 4: 33, 34, 35, 75, 74, 28
 Vehicle 69:
   Scenario 0: 64, 63, 29, 30, 70, 69, 23, 24
   Scenario 1: 64, 63, 29, 30, 70, 69, 23, 24
-  Scenario 2: 64, 63, 29, 30, 70, 69, 23, 24
-  Scenario 3: 64, 63, 29, 30, 70, 69, 23, 24
+  Scenario 2: 33, 34, 35, 55, 54, 28
+  Scenario 3: 33, 34, 35, 55, 54, 28
   Scenario 4: 37, 68, 67, 30, 31, 74, 73, 24
 Vehicle 70:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 44, 43, 29, 30, 50, 49, 23, 24
+  Scenario 3: 44, 43, 29, 30, 50, 49, 23, 24
   Scenario 4: 
 Vehicle 71:
   Scenario 0: 64, 33, 34, 35, 75, 74, 28, 77
   Scenario 1: 64, 33, 34, 35, 75, 74, 28, 77
-  Scenario 2: 64, 33, 34, 35, 75, 74, 28, 77
-  Scenario 3: 64, 33, 34, 35, 75, 74, 28, 77
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 37, 38, 39, 40, 80, 79, 78, 77
 Vehicle 72:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 44, 33, 34, 35, 55, 54, 28, 57
+  Scenario 3: 44, 33, 34, 35, 55, 54, 28, 57
   Scenario 4: 
 Vehicle 73:
   Scenario 0: 68, 34, 35, 36, 79, 78, 77
   Scenario 1: 68, 34, 35, 36, 79, 78, 77
-  Scenario 2: 68, 34, 35, 36, 79, 78, 77
-  Scenario 3: 68, 34, 35, 36, 79, 78, 77
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 37, 38, 39, 40, 80, 79, 78, 77
 Vehicle 74:
   Scenario 0: 37, 38, 72, 71, 70, 69, 23, 24
   Scenario 1: 37, 38, 72, 71, 70, 69, 23, 24
-  Scenario 2: 37, 38, 72, 71, 70, 69, 23, 24
-  Scenario 3: 37, 38, 72, 71, 70, 69, 23, 24
+  Scenario 2: 48, 34, 35, 36, 59, 58, 57
+  Scenario 3: 48, 34, 35, 36, 59, 58, 57
   Scenario 4: 37, 38, 39, 40, 80, 79, 78, 77
 Vehicle 75:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 37, 48, 47, 30, 50, 49, 23, 24
+  Scenario 3: 37, 48, 47, 30, 50, 49, 23, 24
   Scenario 4: 
 Vehicle 76:
   Scenario 0: 64, 63, 29, 30, 70, 69, 23, 24
   Scenario 1: 64, 63, 29, 30, 70, 69, 23, 24
-  Scenario 2: 64, 63, 29, 30, 70, 69, 23, 24
-  Scenario 3: 64, 63, 29, 30, 70, 69, 23, 24
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 64, 63, 29, 30, 70, 27, 28, 77
 Vehicle 77:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 44, 43, 29, 30, 50, 49, 23, 24
+  Scenario 3: 44, 43, 29, 30, 50, 49, 23, 24
   Scenario 4: 
 Vehicle 78:
   Scenario 0: 39, 76, 75, 32, 78, 77
   Scenario 1: 39, 76, 75, 32, 78, 77
-  Scenario 2: 39, 76, 75, 32, 78, 77
-  Scenario 3: 39, 76, 75, 32, 78, 77
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 37, 38, 39, 40, 80, 79, 78, 77
 Vehicle 79:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 39, 56, 55, 32, 58, 57
+  Scenario 3: 39, 56, 55, 32, 58, 57
   Scenario 4: 
 Vehicle 80:
   Scenario 0: 
@@ -530,32 +530,32 @@ Vehicle 87:
 Vehicle 88:
   Scenario 0: 5, 26, 27, 14, 15, 16
   Scenario 1: 5, 26, 27, 14, 15, 16
-  Scenario 2: 5, 26, 27, 14, 15, 16
-  Scenario 3: 5, 26, 27, 14, 15, 16
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 5, 6, 7, 34, 35, 16
 Vehicle 89:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 5, 26, 10, 11, 12, 39
+  Scenario 3: 5, 26, 10, 11, 12, 39
   Scenario 4: 
 Vehicle 90:
   Scenario 0: 5, 26, 27, 14, 15, 16
   Scenario 1: 5, 26, 27, 14, 15, 16
-  Scenario 2: 5, 26, 27, 14, 15, 16
-  Scenario 3: 5, 26, 27, 14, 15, 16
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 5, 26, 10, 11, 12, 39
 Vehicle 91:
   Scenario 0: 22, 9, 27, 14, 15, 16
   Scenario 1: 22, 9, 27, 14, 15, 16
-  Scenario 2: 22, 9, 27, 14, 15, 16
-  Scenario 3: 22, 9, 27, 14, 15, 16
+  Scenario 2: 22, 23, 13, 14, 15, 16
+  Scenario 3: 22, 23, 13, 14, 15, 16
   Scenario 4: 22, 9, 10, 11, 12, 39
 Vehicle 92:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 22, 9, 27, 14, 15, 16
+  Scenario 3: 22, 9, 27, 14, 15, 16
   Scenario 4: 
 Vehicle 93:
   Scenario 0: 
@@ -566,14 +566,14 @@ Vehicle 93:
 Vehicle 94:
   Scenario 0: 5, 26, 10
   Scenario 1: 5, 26, 10
-  Scenario 2: 5, 26, 10
-  Scenario 3: 5, 26, 10
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 22, 9
 Vehicle 95:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 5, 6, 30
+  Scenario 3: 5, 6, 30
   Scenario 4: 22, 9, 27, 14, 15, 16
 Vehicle 96:
   Scenario 0: 
@@ -584,14 +584,14 @@ Vehicle 96:
 Vehicle 97:
   Scenario 0: 73
   Scenario 1: 73
-  Scenario 2: 73
-  Scenario 3: 73
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 38, 72, 35, 75, 74, 73
 Vehicle 98:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 53
+  Scenario 3: 53
   Scenario 4: 
 Vehicle 99:
   Scenario 0: 
@@ -638,68 +638,68 @@ Vehicle 105:
 Vehicle 106:
   Scenario 0: 38, 72, 71, 70, 69, 23
   Scenario 1: 38, 72, 71, 70, 69, 23
-  Scenario 2: 38, 72, 71, 70, 69, 23
-  Scenario 3: 38, 72, 71, 70, 69, 23
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 68, 67, 66, 26, 69, 23
 Vehicle 107:
   Scenario 0: 68, 67, 66, 26, 69, 23
   Scenario 1: 68, 67, 66, 26, 69, 23
-  Scenario 2: 68, 67, 66, 26, 69, 23
-  Scenario 3: 68, 67, 66, 26, 69, 23
+  Scenario 2: 48, 34, 51, 50, 49, 23
+  Scenario 3: 48, 34, 51, 50, 49, 23
   Scenario 4: 38, 72, 35, 75, 74, 73
 Vehicle 108:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 48, 34, 51, 50, 27, 53
+  Scenario 3: 48, 34, 51, 50, 27, 53
   Scenario 4: 
 Vehicle 109:
   Scenario 0: 68, 34, 71, 70, 69, 23
   Scenario 1: 68, 34, 71, 70, 69, 23
-  Scenario 2: 68, 34, 71, 70, 69, 23
-  Scenario 3: 68, 34, 71, 70, 69, 23
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 38, 39, 76, 75, 74, 73
 Vehicle 110:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 48, 34, 35, 55, 54, 53
+  Scenario 3: 48, 34, 35, 55, 54, 53
   Scenario 4: 
 Vehicle 111:
   Scenario 0: 68, 34, 35, 75, 74, 73
   Scenario 1: 68, 34, 35, 75, 74, 73
-  Scenario 2: 68, 34, 35, 75, 74, 73
-  Scenario 3: 68, 34, 35, 75, 74, 73
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 68, 67, 66, 26, 27, 73
 Vehicle 112:
   Scenario 0: 68, 67, 30, 70, 27, 73
   Scenario 1: 68, 67, 30, 70, 27, 73
-  Scenario 2: 68, 67, 30, 70, 27, 73
-  Scenario 3: 68, 67, 30, 70, 27, 73
+  Scenario 2: 48, 34, 51, 50, 49, 23
+  Scenario 3: 48, 34, 51, 50, 49, 23
   Scenario 4: 38, 72, 71, 70, 27, 73
 Vehicle 113:
   Scenario 0: 68, 67, 66, 26, 69, 23
   Scenario 1: 68, 67, 66, 26, 69, 23
-  Scenario 2: 68, 67, 66, 26, 69, 23
-  Scenario 3: 68, 67, 66, 26, 69, 23
+  Scenario 2: 38, 39, 56, 55, 54, 53
+  Scenario 3: 38, 39, 56, 55, 54, 53
   Scenario 4: 68, 67, 66, 65, 22, 23
 Vehicle 114:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 48, 34, 35, 55, 54, 53
+  Scenario 3: 48, 34, 35, 55, 54, 53
   Scenario 4: 
 Vehicle 115:
   Scenario 0: 38, 39, 76, 75, 74, 73
   Scenario 1: 38, 39, 76, 75, 74, 73
-  Scenario 2: 38, 39, 76, 75, 74, 73
-  Scenario 3: 38, 39, 76, 75, 74, 73
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 68, 67, 66, 26, 27, 73
 Vehicle 116:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 38, 52, 51, 50, 27, 53
+  Scenario 3: 38, 52, 51, 50, 27, 53
   Scenario 4: 
 Vehicle 117:
   Scenario 0: 
@@ -722,14 +722,14 @@ Vehicle 119:
 Vehicle 120:
   Scenario 0: 68, 34, 71, 70, 27, 73
   Scenario 1: 68, 34, 71, 70, 27, 73
-  Scenario 2: 68, 34, 71, 70, 27, 73
-  Scenario 3: 68, 34, 71, 70, 27, 73
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 38, 72, 71, 70, 27, 73
 Vehicle 121:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 48, 34, 51, 50, 49, 23
+  Scenario 3: 48, 34, 51, 50, 49, 23
   Scenario 4: 
 Vehicle 122:
   Scenario 0: 
@@ -740,20 +740,20 @@ Vehicle 122:
 Vehicle 123:
   Scenario 0: 38, 72, 71, 70, 69, 23
   Scenario 1: 38, 72, 71, 70, 69, 23
-  Scenario 2: 38, 72, 71, 70, 69, 23
-  Scenario 3: 38, 72, 71, 70, 69, 23
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 38, 72, 71, 70, 69, 23
 Vehicle 124:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 38, 52, 51, 31, 54, 53
+  Scenario 3: 38, 52, 51, 31, 54, 53
   Scenario 4: 
 Vehicle 125:
   Scenario 0: 9, 10, 11, 12
   Scenario 1: 9, 10, 11, 12
-  Scenario 2: 9, 10, 11, 12
-  Scenario 3: 9, 10, 11, 12
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 9, 10, 11, 12
 Vehicle 126:
   Scenario 0: 9, 10, 11, 12
@@ -764,32 +764,32 @@ Vehicle 126:
 Vehicle 127:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 9, 10, 11, 12
+  Scenario 3: 9, 10, 11, 12
   Scenario 4: 
 Vehicle 128:
   Scenario 0: 9, 10, 11, 12
   Scenario 1: 9, 10, 11, 12
-  Scenario 2: 9, 10, 11, 12
-  Scenario 3: 9, 10, 11, 12
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 9, 10, 11, 12
 Vehicle 129:
   Scenario 0: 10, 11, 12
   Scenario 1: 10, 11, 12
-  Scenario 2: 10, 11, 12
-  Scenario 3: 10, 11, 12
+  Scenario 2: 9, 10, 11, 12
+  Scenario 3: 9, 10, 11, 12
   Scenario 4: 9, 10, 11, 12
 Vehicle 130:
   Scenario 0: 9, 10, 11, 12
   Scenario 1: 9, 10, 11, 12
-  Scenario 2: 9, 10, 11, 12
-  Scenario 3: 9, 10, 11, 12
+  Scenario 2: 10, 11, 12
+  Scenario 3: 10, 11, 12
   Scenario 4: 9, 10, 11, 12
 Vehicle 131:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 9, 10, 11, 12
+  Scenario 3: 9, 10, 11, 12
   Scenario 4: 
 Vehicle 132:
   Scenario 0: 
@@ -806,32 +806,32 @@ Vehicle 133:
 Vehicle 134:
   Scenario 0: 12
   Scenario 1: 12
-  Scenario 2: 12
-  Scenario 3: 12
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 9, 10, 11, 12
 Vehicle 135:
   Scenario 0: 9, 10, 11, 12
   Scenario 1: 9, 10, 11, 12
-  Scenario 2: 9, 10, 11, 12
-  Scenario 3: 9, 10, 11, 12
+  Scenario 2: 12
+  Scenario 3: 12
   Scenario 4: 9, 10, 11, 12
 Vehicle 136:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 9, 10, 11, 12
+  Scenario 3: 9, 10, 11, 12
   Scenario 4: 
 Vehicle 137:
   Scenario 0: 9, 10, 11, 12
   Scenario 1: 9, 10, 11, 12
-  Scenario 2: 9, 10, 11, 12
-  Scenario 3: 9, 10, 11, 12
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 9, 10, 11, 12
 Vehicle 138:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 9, 10, 11, 12
+  Scenario 3: 9, 10, 11, 12
   Scenario 4: 
 Vehicle 139:
   Scenario 0: 
@@ -842,26 +842,26 @@ Vehicle 139:
 Vehicle 140:
   Scenario 0: 72, 71, 70, 69
   Scenario 1: 72, 71, 70, 69
-  Scenario 2: 72, 71, 70, 69
-  Scenario 3: 72, 71, 70, 69
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 72, 71, 70, 69
 Vehicle 141:
   Scenario 0: 72, 71, 70, 69
   Scenario 1: 72, 71, 70, 69
-  Scenario 2: 72, 71, 70, 69
-  Scenario 3: 72, 71, 70, 69
+  Scenario 2: 52, 51, 50, 49
+  Scenario 3: 52, 51, 50, 49
   Scenario 4: 72, 71, 70, 69
 Vehicle 142:
   Scenario 0: 72, 71, 70, 69
   Scenario 1: 72, 71, 70, 69
-  Scenario 2: 72, 71, 70, 69
-  Scenario 3: 72, 71, 70, 69
+  Scenario 2: 52, 51, 50, 49
+  Scenario 3: 52, 51, 50, 49
   Scenario 4: 72, 71, 70, 69
 Vehicle 143:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 52, 51, 50, 49
+  Scenario 3: 52, 51, 50, 49
   Scenario 4: 
 Vehicle 144:
   Scenario 0: 
@@ -890,26 +890,26 @@ Vehicle 147:
 Vehicle 148:
   Scenario 0: 72, 71, 70, 69
   Scenario 1: 72, 71, 70, 69
-  Scenario 2: 72, 71, 70, 69
-  Scenario 3: 72, 71, 70, 69
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 72, 71, 70, 69
 Vehicle 149:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 52, 51, 50, 49
+  Scenario 3: 52, 51, 50, 49
   Scenario 4: 
 Vehicle 150:
   Scenario 0: 72, 71, 70, 69
   Scenario 1: 72, 71, 70, 69
-  Scenario 2: 72, 71, 70, 69
-  Scenario 3: 72, 71, 70, 69
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 72, 71, 70, 69
 Vehicle 151:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 52, 51, 50, 49
+  Scenario 3: 52, 51, 50, 49
   Scenario 4: 
 Vehicle 152:
   Scenario 0: 
@@ -944,38 +944,38 @@ Vehicle 156:
 Vehicle 157:
   Scenario 0: 13, 14
   Scenario 1: 13, 14
-  Scenario 2: 13, 14
-  Scenario 3: 13, 14
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 83, 9, 10
 Vehicle 158:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 13, 14
+  Scenario 3: 13, 14
   Scenario 4: 
 Vehicle 159:
   Scenario 0: 83, 9, 10, 11
   Scenario 1: 83, 9, 10, 11
-  Scenario 2: 83, 9, 10, 11
-  Scenario 3: 83, 9, 10, 11
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 83, 9, 86, 6, 7
 Vehicle 160:
   Scenario 0: 83, 9, 10, 11, 12, 98
   Scenario 1: 83, 9, 10, 11, 12, 98
-  Scenario 2: 83, 9, 10, 11, 12, 98
-  Scenario 3: 83, 9, 10, 11, 12, 98
+  Scenario 2: 63, 9, 10, 11
+  Scenario 3: 63, 9, 10, 11
   Scenario 4: 13, 87, 10, 11, 12, 98
 Vehicle 161:
   Scenario 0: 13, 14, 91, 11, 12, 98
   Scenario 1: 13, 14, 91, 11, 12, 98
-  Scenario 2: 13, 14, 91, 11, 12, 98
-  Scenario 3: 13, 14, 91, 11, 12, 98
+  Scenario 2: 63, 9, 10, 11, 12, 78
+  Scenario 3: 63, 9, 10, 11, 12, 78
   Scenario 4: 83, 82, 5, 6, 7, 8
 Vehicle 162:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 13, 14, 71, 11, 12, 78
+  Scenario 3: 13, 14, 71, 11, 12, 78
   Scenario 4: 
 Vehicle 163:
   Scenario 0: 
@@ -986,32 +986,32 @@ Vehicle 163:
 Vehicle 164:
   Scenario 0: 83, 9, 10, 11, 12, 98
   Scenario 1: 83, 9, 10, 11, 12, 98
-  Scenario 2: 83, 9, 10, 11, 12, 98
-  Scenario 3: 83, 9, 10, 11, 12, 98
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 83, 9, 10, 11, 12, 98
 Vehicle 165:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 63, 9, 10, 11, 12, 78
+  Scenario 3: 63, 9, 10, 11, 12, 78
   Scenario 4: 
 Vehicle 166:
   Scenario 0: 13, 14, 15, 16, 99, 98
   Scenario 1: 13, 14, 15, 16, 99, 98
-  Scenario 2: 13, 14, 15, 16, 99, 98
-  Scenario 3: 13, 14, 15, 16, 99, 98
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 13, 14, 15, 95, 94, 8
 Vehicle 167:
   Scenario 0: 68, 67, 66, 65
   Scenario 1: 68, 67, 66, 65
-  Scenario 2: 68, 67, 66, 65
-  Scenario 3: 68, 67, 66, 65
+  Scenario 2: 13, 14, 15, 16, 79, 78
+  Scenario 3: 13, 14, 15, 16, 79, 78
   Scenario 4: 99, 72, 71, 90, 66, 65
 Vehicle 168:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 48, 47, 46, 65, 41, 21
+  Scenario 3: 48, 47, 46, 65, 41, 21
   Scenario 4: 
 Vehicle 169:
   Scenario 0: 
@@ -1022,14 +1022,14 @@ Vehicle 169:
 Vehicle 170:
   Scenario 0: 99, 98, 68, 67, 66, 65
   Scenario 1: 99, 98, 68, 67, 66, 65
-  Scenario 2: 99, 98, 68, 67, 66, 65
-  Scenario 3: 99, 98, 68, 67, 66, 65
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 76, 75, 91, 70, 69, 82
 Vehicle 171:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 56, 55, 71, 70, 46, 45
+  Scenario 3: 56, 55, 71, 70, 46, 45
   Scenario 4: 
 Vehicle 172:
   Scenario 0: 
@@ -1064,20 +1064,20 @@ Vehicle 176:
 Vehicle 177:
   Scenario 0: 76, 75, 74, 73, 83, 82
   Scenario 1: 76, 75, 74, 73, 83, 82
-  Scenario 2: 76, 75, 74, 73, 83, 82
-  Scenario 3: 76, 75, 74, 73, 83, 82
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 99, 98, 68, 67, 66, 65
 Vehicle 178:
   Scenario 0: 70, 86, 65
   Scenario 1: 70, 86, 65
-  Scenario 2: 70, 86, 65
-  Scenario 3: 70, 86, 65
+  Scenario 2: 56, 55, 71, 50, 49, 62
+  Scenario 3: 56, 55, 71, 50, 49, 62
   Scenario 4: 99, 72, 71, 70, 86, 65
 Vehicle 179:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 52, 74, 47, 46, 45
+  Scenario 3: 52, 74, 47, 46, 45
   Scenario 4: 
 Vehicle 180:
   Scenario 0: 
@@ -1094,14 +1094,14 @@ Vehicle 181:
 Vehicle 182:
   Scenario 0: 17, 88, 87, 86, 6, 7, 8, 97
   Scenario 1: 17, 88, 87, 86, 6, 7, 8, 97
-  Scenario 2: 17, 88, 87, 86, 6, 7, 8, 97
-  Scenario 3: 17, 88, 87, 86, 6, 7, 8, 97
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 84, 13, 14, 91, 11, 94, 8, 97
 Vehicle 183:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 17, 68, 14, 71, 70, 69, 3, 4
+  Scenario 3: 17, 68, 14, 71, 70, 69, 3, 4
   Scenario 4: 
 Vehicle 184:
   Scenario 0: 
@@ -1112,98 +1112,98 @@ Vehicle 184:
 Vehicle 185:
   Scenario 0: 84, 13, 14
   Scenario 1: 84, 13, 14
-  Scenario 2: 84, 13, 14
-  Scenario 3: 84, 13, 14
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 84, 83
 Vehicle 186:
   Scenario 0: 84, 13, 14, 15, 95, 94, 8, 97
   Scenario 1: 84, 13, 14, 15, 95, 94, 8, 97
-  Scenario 2: 84, 13, 14, 15, 95, 94, 8, 97
-  Scenario 3: 84, 13, 14, 15, 95, 94, 8, 97
+  Scenario 2: 64, 13, 14
+  Scenario 3: 64, 13, 14
   Scenario 4: 84, 83, 82, 81, 1, 2, 3, 4
 Vehicle 187:
   Scenario 0: 17, 18, 92, 91, 11, 12, 98, 97
   Scenario 1: 17, 18, 92, 91, 11, 12, 98, 97
-  Scenario 2: 17, 18, 92, 91, 11, 12, 98, 97
-  Scenario 3: 17, 18, 92, 91, 11, 12, 98, 97
+  Scenario 2: 64, 13, 14, 71, 70, 7, 8, 77
+  Scenario 3: 64, 13, 14, 71, 70, 7, 8, 77
   Scenario 4: 84, 83, 82, 5, 6, 89, 3, 4
 Vehicle 188:
   Scenario 0: 17, 88, 87, 86, 85, 2, 3, 4
   Scenario 1: 17, 88, 87, 86, 85, 2, 3, 4
-  Scenario 2: 17, 88, 87, 86, 85, 2, 3, 4
-  Scenario 3: 17, 88, 87, 86, 85, 2, 3, 4
+  Scenario 2: 17, 18, 72, 71, 11, 12, 78, 77
+  Scenario 3: 17, 18, 72, 71, 11, 12, 78, 77
   Scenario 4: 17, 88, 87, 86, 6, 7, 93, 4
 Vehicle 189:
   Scenario 0: 17, 88, 87, 86, 85, 2, 3, 4
   Scenario 1: 17, 88, 87, 86, 85, 2, 3, 4
-  Scenario 2: 17, 88, 87, 86, 85, 2, 3, 4
-  Scenario 3: 17, 88, 87, 86, 85, 2, 3, 4
+  Scenario 2: 17, 68, 67, 66, 65, 2, 3, 4
+  Scenario 3: 17, 68, 67, 66, 65, 2, 3, 4
   Scenario 4: 84, 83, 82, 5, 85, 2, 3, 4
 Vehicle 190:
   Scenario 0: 17, 18, 92, 15, 95, 12
   Scenario 1: 17, 18, 92, 15, 95, 12
-  Scenario 2: 17, 18, 92, 15, 95, 12
-  Scenario 3: 17, 18, 92, 15, 95, 12
+  Scenario 2: 17, 68, 67, 66, 6, 7, 8, 77
+  Scenario 3: 17, 68, 67, 66, 6, 7, 8, 77
   Scenario 4: 84, 83, 82, 81, 1, 2, 3
 Vehicle 191:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 17, 18, 19, 76, 16, 79, 78
+  Scenario 3: 17, 18, 19, 76, 16, 79, 78
   Scenario 4: 
 Vehicle 192:
   Scenario 0: 17, 88, 87, 10, 11, 12, 98, 97
   Scenario 1: 17, 88, 87, 10, 11, 12, 98, 97
-  Scenario 2: 17, 88, 87, 10, 11, 12, 98, 97
-  Scenario 3: 17, 88, 87, 10, 11, 12, 98, 97
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 84, 83, 82, 5, 6, 7, 8, 97
 Vehicle 193:
   Scenario 0: 84, 13, 14, 91, 11, 12, 98, 97
   Scenario 1: 84, 13, 14, 91, 11, 12, 98, 97
-  Scenario 2: 84, 13, 14, 91, 11, 12, 98, 97
-  Scenario 3: 84, 13, 14, 91, 11, 12, 98, 97
+  Scenario 2: 17, 68, 14, 15, 16, 79, 78, 77
+  Scenario 3: 17, 68, 14, 15, 16, 79, 78, 77
   Scenario 4: 84, 83, 82, 5, 85, 2, 3, 4
 Vehicle 194:
   Scenario 0: 17, 18, 92, 91, 11, 12, 98, 97
   Scenario 1: 17, 18, 92, 91, 11, 12, 98, 97
-  Scenario 2: 17, 18, 92, 91, 11, 12, 98, 97
-  Scenario 3: 17, 18, 92, 91, 11, 12, 98, 97
+  Scenario 2: 64, 13, 14, 71, 70, 7, 8, 77
+  Scenario 3: 64, 13, 14, 71, 70, 7, 8, 77
   Scenario 4: 84, 13, 14, 15, 95, 94, 8, 97
 Vehicle 195:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 17, 18, 72, 71, 11, 12, 78, 77
+  Scenario 3: 17, 18, 72, 71, 11, 12, 78, 77
   Scenario 4: 88, 87, 86, 85, 2, 3
 Vehicle 196:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 88, 14, 91, 90, 7, 93
 Vehicle 197:
   Scenario 0: 18, 19, 96, 95, 94, 93
   Scenario 1: 18, 19, 96, 95, 94, 93
-  Scenario 2: 18, 19, 96, 95, 94, 93
-  Scenario 3: 18, 19, 96, 95, 94, 93
+  Scenario 2: 18, 72, 71, 11, 74, 73
+  Scenario 3: 18, 72, 71, 11, 74, 73
   Scenario 4: 88, 87, 86, 6, 7, 93
 Vehicle 198:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 18, 19, 76, 75, 74, 73
+  Scenario 3: 18, 19, 76, 75, 74, 73
   Scenario 4: 
 Vehicle 199:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 88, 87, 86, 85, 2, 3
 Vehicle 200:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 
 Vehicle 201:
   Scenario 0: 
@@ -1220,50 +1220,50 @@ Vehicle 202:
 Vehicle 203:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 18, 92, 91, 90, 89, 3
 Vehicle 204:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 18, 19, 96, 95, 94, 93
 Vehicle 205:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 
 Vehicle 206:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 18, 92, 15, 95, 94, 93
 Vehicle 207:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 18, 92, 91, 11, 94, 93
 Vehicle 208:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 88, 87, 10, 11, 94, 93
 Vehicle 209:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 88, 14, 91, 90, 7, 93
 Vehicle 210:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 
 Vehicle 211:
   Scenario 0: 
@@ -1274,38 +1274,38 @@ Vehicle 211:
 Vehicle 212:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 88, 87, 10, 11, 94, 93
 Vehicle 213:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 
 Vehicle 214:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 88, 87, 86, 85, 2, 3
 Vehicle 215:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 88, 87, 86, 85, 2, 3
 Vehicle 216:
   Scenario 0: 18, 19, 96, 95, 94, 93
   Scenario 1: 18, 19, 96, 95, 94, 93
-  Scenario 2: 18, 19, 96, 95, 94, 93
-  Scenario 3: 18, 19, 96, 95, 94, 93
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 88, 14, 91, 90, 89, 3
 Vehicle 217:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 18, 19, 76, 75, 74, 73
+  Scenario 3: 18, 19, 76, 75, 74, 73
   Scenario 4: 
 Vehicle 218:
   Scenario 0: 
@@ -1316,14 +1316,14 @@ Vehicle 218:
 Vehicle 219:
   Scenario 0: 88, 14, 15, 95, 94, 93
   Scenario 1: 88, 14, 15, 95, 94, 93
-  Scenario 2: 88, 14, 15, 95, 94, 93
-  Scenario 3: 88, 14, 15, 95, 94, 93
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 88, 87, 86, 6, 7, 93
 Vehicle 220:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 68, 14, 15, 75, 74, 73
+  Scenario 3: 68, 14, 15, 75, 74, 73
   Scenario 4: 
 Vehicle 221:
   Scenario 0: 
@@ -1334,20 +1334,20 @@ Vehicle 221:
 Vehicle 222:
   Scenario 0: 88, 14, 91, 11, 94, 93
   Scenario 1: 88, 14, 91, 11, 94, 93
-  Scenario 2: 88, 14, 91, 11, 94, 93
-  Scenario 3: 88, 14, 91, 11, 94, 93
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 18, 92, 15, 95, 94, 93
 Vehicle 223:
   Scenario 0: 92, 91, 90, 89
   Scenario 1: 92, 91, 90, 89
-  Scenario 2: 92, 91, 90, 89
-  Scenario 3: 92, 91, 90, 89
+  Scenario 2: 18, 72, 15, 75, 74, 73
+  Scenario 3: 18, 72, 15, 75, 74, 73
   Scenario 4: 92, 91, 90, 89
 Vehicle 224:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 72, 71, 70, 69
+  Scenario 3: 72, 71, 70, 69
   Scenario 4: 
 Vehicle 225:
   Scenario 0: 
@@ -1370,44 +1370,44 @@ Vehicle 227:
 Vehicle 228:
   Scenario 0: 92, 91, 90, 89
   Scenario 1: 92, 91, 90, 89
-  Scenario 2: 92, 91, 90, 89
-  Scenario 3: 92, 91, 90, 89
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 92, 91, 90, 89
 Vehicle 229:
   Scenario 0: 92, 91, 90, 89
   Scenario 1: 92, 91, 90, 89
-  Scenario 2: 92, 91, 90, 89
-  Scenario 3: 92, 91, 90, 89
+  Scenario 2: 72, 71, 70, 69
+  Scenario 3: 72, 71, 70, 69
   Scenario 4: 92, 91, 90, 89
 Vehicle 230:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 72, 71, 70, 69
+  Scenario 3: 72, 71, 70, 69
   Scenario 4: 
 Vehicle 231:
   Scenario 0: 92, 91, 90, 89
   Scenario 1: 92, 91, 90, 89
-  Scenario 2: 92, 91, 90, 89
-  Scenario 3: 92, 91, 90, 89
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 92, 15, 95, 94, 93, 63
 Vehicle 232:
   Scenario 0: 92
   Scenario 1: 92
-  Scenario 2: 92
-  Scenario 3: 92
+  Scenario 2: 72, 71, 70, 69
+  Scenario 3: 72, 71, 70, 69
   Scenario 4: 92
 Vehicle 233:
   Scenario 0: 92, 91, 90, 89
   Scenario 1: 92, 91, 90, 89
-  Scenario 2: 92, 91, 90, 89
-  Scenario 3: 92, 91, 90, 89
+  Scenario 2: 72
+  Scenario 3: 72
   Scenario 4: 92, 91, 90, 89
 Vehicle 234:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 72, 71, 70, 69
+  Scenario 3: 72, 71, 70, 69
   Scenario 4: 
 Vehicle 235:
   Scenario 0: 
@@ -1418,20 +1418,20 @@ Vehicle 235:
 Vehicle 236:
   Scenario 0: 92, 91, 90
   Scenario 1: 92, 91, 90
-  Scenario 2: 92, 91, 90
-  Scenario 3: 92, 91, 90
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 92, 91, 90
 Vehicle 237:
   Scenario 0: 90, 89, 62
   Scenario 1: 90, 89, 62
-  Scenario 2: 90, 89, 62
-  Scenario 3: 90, 89, 62
+  Scenario 2: 72, 71, 70
+  Scenario 3: 72, 71, 70
   Scenario 4: 79, 92, 91, 90, 66, 85
 Vehicle 238:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 70, 69, 42
+  Scenario 3: 70, 69, 42
   Scenario 4: 
 Vehicle 239:
   Scenario 0: 
@@ -1448,80 +1448,80 @@ Vehicle 240:
 Vehicle 241:
   Scenario 0: 96, 95, 94, 67, 89, 62
   Scenario 1: 96, 95, 94, 67, 89, 62
-  Scenario 2: 96, 95, 94, 67, 89, 62
-  Scenario 3: 96, 95, 94, 67, 89, 62
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 96, 95, 71, 90, 66, 85
 Vehicle 242:
   Scenario 0: 96, 95, 94, 93, 63, 62
   Scenario 1: 96, 95, 94, 93, 63, 62
-  Scenario 2: 96, 95, 94, 93, 63, 62
-  Scenario 3: 96, 95, 94, 93, 63, 62
+  Scenario 2: 76, 75, 74, 73, 43, 42
+  Scenario 3: 76, 75, 74, 73, 43, 42
   Scenario 4: 96, 75, 91, 90, 66, 85
 Vehicle 243:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 76, 75, 74, 73, 43, 42
+  Scenario 3: 76, 75, 74, 73, 43, 42
   Scenario 4: 
 Vehicle 244:
   Scenario 0: 79, 92, 91, 90, 89, 62
   Scenario 1: 79, 92, 91, 90, 89, 62
-  Scenario 2: 79, 92, 91, 90, 89, 62
-  Scenario 3: 79, 92, 91, 90, 89, 62
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 96, 95, 71, 90, 66, 85
 Vehicle 245:
   Scenario 0: 96, 75, 74, 87, 86, 85
   Scenario 1: 96, 75, 74, 87, 86, 85
-  Scenario 2: 96, 75, 74, 87, 86, 85
-  Scenario 3: 96, 75, 74, 87, 86, 85
+  Scenario 2: 59, 58, 68, 67, 66, 65
+  Scenario 3: 59, 58, 68, 67, 66, 65
   Scenario 4: 96, 95, 71, 90, 66, 85
 Vehicle 246:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 76, 55, 71, 70, 69, 42
+  Scenario 3: 76, 55, 71, 70, 69, 42
   Scenario 4: 
 Vehicle 247:
   Scenario 0: 96, 95, 94, 67, 89, 62
   Scenario 1: 96, 95, 94, 67, 89, 62
-  Scenario 2: 96, 95, 94, 67, 89, 62
-  Scenario 3: 96, 95, 94, 67, 89, 62
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 79, 92, 74, 87, 86, 85
 Vehicle 248:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 76, 75, 74, 73, 43, 42
+  Scenario 3: 76, 75, 74, 73, 43, 42
   Scenario 4: 
 Vehicle 249:
   Scenario 0: 79, 78, 88, 87, 86, 85
   Scenario 1: 79, 78, 88, 87, 86, 85
-  Scenario 2: 79, 78, 88, 87, 86, 85
-  Scenario 3: 79, 78, 88, 87, 86, 85
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 79, 92, 91, 90, 66, 85
 Vehicle 250:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 59, 58, 68, 67, 66, 65
+  Scenario 3: 59, 58, 68, 67, 66, 65
   Scenario 4: 
 Vehicle 251:
   Scenario 0: 80, 79, 92, 91, 90, 66, 65, 81
   Scenario 1: 80, 79, 92, 91, 90, 66, 65, 81
-  Scenario 2: 80, 79, 92, 91, 90, 66, 65, 81
-  Scenario 3: 80, 79, 92, 91, 90, 66, 65, 81
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 100, 76, 75, 74, 87, 86, 85, 61
 Vehicle 252:
   Scenario 0: 80, 79, 78, 88, 87, 86, 65, 81
   Scenario 1: 80, 79, 78, 88, 87, 86, 65, 81
-  Scenario 2: 80, 79, 78, 88, 87, 86, 65, 81
-  Scenario 3: 80, 79, 78, 88, 87, 86, 65, 81
+  Scenario 2: 60, 59, 72, 71, 50, 66, 45, 61
+  Scenario 3: 60, 59, 72, 71, 50, 66, 45, 61
   Scenario 4: 100, 99, 98, 97, 64, 63, 62, 61
 Vehicle 253:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 60, 59, 72, 54, 53, 63, 62, 61
+  Scenario 3: 60, 59, 72, 54, 53, 63, 62, 61
   Scenario 4: 
 Vehicle 254:
   Scenario 0: 
@@ -1556,32 +1556,32 @@ Vehicle 258:
 Vehicle 259:
   Scenario 0: 100, 76, 75, 91, 70, 69, 82, 81
   Scenario 1: 100, 76, 75, 91, 70, 69, 82, 81
-  Scenario 2: 100, 76, 75, 91, 70, 69, 82, 81
-  Scenario 3: 100, 76, 75, 91, 70, 69, 82, 81
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 80, 79, 78, 77, 84, 83, 82, 81
 Vehicle 260:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 80, 56, 55, 71, 70, 69, 42, 41
+  Scenario 3: 80, 56, 55, 71, 70, 69, 42, 41
   Scenario 4: 
 Vehicle 261:
   Scenario 0: 100, 99, 98, 97, 64, 63, 62, 61
   Scenario 1: 100, 99, 98, 97, 64, 63, 62, 61
-  Scenario 2: 100, 99, 98, 97, 64, 63, 62, 61
-  Scenario 3: 100, 99, 98, 97, 64, 63, 62, 61
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 100, 99, 98, 68, 67, 66, 65, 81
 Vehicle 262:
   Scenario 0: 80, 79, 78, 88, 87, 86, 85, 61
   Scenario 1: 80, 79, 78, 88, 87, 86, 85, 61
-  Scenario 2: 80, 79, 78, 88, 87, 86, 85, 61
-  Scenario 3: 80, 79, 78, 88, 87, 86, 85, 61
+  Scenario 2: 80, 79, 78, 77, 44, 43, 42, 41
+  Scenario 3: 80, 79, 78, 77, 44, 43, 42, 41
   Scenario 4: 80, 79, 78, 77, 84, 83, 82, 81
 Vehicle 263:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 60, 59, 72, 54, 53, 63, 62, 61
+  Scenario 3: 60, 59, 72, 54, 53, 63, 62, 61
   Scenario 4: 
 Vehicle 264:
   Scenario 0: 
@@ -1610,44 +1610,44 @@ Vehicle 267:
 Vehicle 268:
   Scenario 0: 80, 96, 95, 71, 90, 66
   Scenario 1: 80, 96, 95, 71, 90, 66
-  Scenario 2: 80, 96, 95, 71, 90, 66
-  Scenario 3: 80, 96, 95, 71, 90, 66
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 80, 79, 78, 77, 84, 83
 Vehicle 269:
   Scenario 0: 63, 62, 61
   Scenario 1: 63, 62, 61
-  Scenario 2: 63, 62, 61
-  Scenario 3: 63, 62, 61
+  Scenario 2: 60, 59, 58, 68, 67, 49
+  Scenario 3: 60, 59, 58, 68, 67, 49
   Scenario 4: 100, 99, 72, 71, 70, 86, 65, 81
 Vehicle 270:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 43, 42, 41
+  Scenario 3: 43, 42, 41
   Scenario 4: 
 Vehicle 271:
   Scenario 0: 100, 99, 72, 71, 90, 66, 65, 81
   Scenario 1: 100, 99, 72, 71, 90, 66, 65, 81
-  Scenario 2: 100, 99, 72, 71, 90, 66, 65, 81
-  Scenario 3: 100, 99, 72, 71, 90, 66, 65, 81
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 100, 99, 98, 68, 67, 66, 85, 61
 Vehicle 272:
   Scenario 0: 100, 99, 72, 94, 67, 66, 85, 61
   Scenario 1: 100, 99, 72, 94, 67, 66, 85, 61
-  Scenario 2: 100, 99, 72, 94, 67, 66, 85, 61
-  Scenario 3: 100, 99, 72, 94, 67, 66, 85, 61
+  Scenario 2: 80, 79, 52, 51, 70, 69, 42, 41
+  Scenario 3: 80, 79, 52, 51, 70, 69, 42, 41
   Scenario 4: 80, 79, 78, 88, 87, 86, 65, 81
 Vehicle 273:
   Scenario 0: 100, 76, 75, 91, 70, 69, 82, 81
   Scenario 1: 100, 76, 75, 91, 70, 69, 82, 81
-  Scenario 2: 100, 76, 75, 91, 70, 69, 82, 81
-  Scenario 3: 100, 76, 75, 91, 70, 69, 82, 81
+  Scenario 2: 80, 79, 78, 38, 52, 51, 70, 46, 45, 61, 45
+  Scenario 3: 80, 79, 78, 38, 52, 51, 70, 46, 45, 61, 45
   Scenario 4: 80, 79, 78, 77, 84, 83, 82, 81
 Vehicle 274:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 80, 56, 75, 51, 50, 49, 62, 61
+  Scenario 3: 80, 56, 75, 51, 50, 49, 62, 61
   Scenario 4: 
 Vehicle 275:
   Scenario 0: 
@@ -1658,20 +1658,20 @@ Vehicle 275:
 Vehicle 276:
   Scenario 0: 80, 96, 75, 91, 70, 86, 85, 61
   Scenario 1: 80, 96, 75, 91, 70, 86, 85, 61
-  Scenario 2: 80, 96, 75, 91, 70, 86, 85, 61
-  Scenario 3: 80, 96, 75, 91, 70, 86, 85, 61
+  Scenario 2: 
+  Scenario 3: 
   Scenario 4: 100, 76, 75, 74, 73, 83, 82, 81
 Vehicle 277:
   Scenario 0: 80, 79, 92, 91, 90, 66, 65, 81
   Scenario 1: 80, 79, 92, 91, 90, 66, 65, 81
-  Scenario 2: 80, 79, 92, 91, 90, 66, 65, 81
-  Scenario 3: 80, 79, 92, 91, 90, 66, 65, 81
+  Scenario 2: 60, 76, 75, 74, 47, 69, 42, 41
+  Scenario 3: 60, 76, 75, 74, 47, 69, 42, 41
   Scenario 4: 80, 96, 95, 94, 67, 66, 65, 81
 Vehicle 278:
   Scenario 0: 
   Scenario 1: 
-  Scenario 2: 
-  Scenario 3: 
+  Scenario 2: 60, 59, 72, 71, 70, 46, 45, 61
+  Scenario 3: 60, 59, 72, 71, 70, 46, 45, 61
   Scenario 4: 
 Vehicle 279:
   Scenario 0: 
