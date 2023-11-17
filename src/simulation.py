@@ -252,7 +252,7 @@ class Simulation:
                                 # combined_paths[vehicle][scenario_index].append(link)
                     edge_current = traci.vehicle.getRoadID(v_id)
                     if int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) <= self.link_num:
-                        tmp.append(int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]))
+                        tmp.append(int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) if edge_current[0] == 'E' else int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0])+self.link_num)
                     route_tmp = [key for key, group in groupby(tmp)]
                     self.cav_dic[v_id]['currentRoute'] = route_tmp
                     # edge_current = traci.vehicle.getRoadID(v_id)
