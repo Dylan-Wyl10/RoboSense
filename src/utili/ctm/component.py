@@ -26,13 +26,19 @@ class Cell(object):
         self.w = w
         self.cfrom = []
         self.cto = []
+        self.type = 'norm'  # defaultly set cell type = norm
+        # identify the type of the cell
+        if len(self.cto) == 2 and len(self.cfrom) == 1:
+            self.type = 'div'  # diverge
+        elif len(self.cto) == 1 and len(self.cfrom) == 2:
+            self.type = 'merg'  # merge
         self.k = k  # density at time interval t
         self.oldk = k  # density at time interval t-1
         self.qmax = qmax
         self.length = length
         self.updated = updated
-        self.arr_rate = arr_rate
-        self.dis_rate = dis_rate
+        self.arr_rate = arr_rate  # arrival rate
+        self.dis_rate = dis_rate  # departure rate
         self.time_sec = time_interval
         self.time_hour = time_interval / 3600
         self.inflow = 0
@@ -48,7 +54,7 @@ class Cell(object):
     def addConnection(self, sink):
         if len(sink.cfrom) == 2 or len(self.cto) == 2:
             raise Exception("Cannot add more connection to cell %s and cell %s" % (
-            self.getCompleteAddress(), sink.getCompleteAddress()))
+                self.getCompleteAddress(), sink.getCompleteAddress()))
 
         if (len(self.cto) and len(sink.cfrom)) and (len(sink.cto) == 2 or len(self.cfrom) == 2):
             raise Exception("Invaild cell connection! A cell cannot connect to merge and diverge cell simultaneously")
@@ -104,7 +110,7 @@ class Cell(object):
     def updateDensity(self):  # This method can only be used by normal cell instance.
         if not self.updated:
             self.oldk = self.k
-        if len(self.cfrom) == 2:  # Merge at here, we need to update density among this cell and two other upstream cells.
+        if self.type == 'merg':  # Merge at here, we need to update density among this cell and two other upstream cells.
             pk = self.pk  # probability from upstream normal cell
             pck = 1 - self.pk  # probability from upstream merge cell
             for elem in self.cfrom:
@@ -147,7 +153,7 @@ class Cell(object):
                 self.inflow = np.min([self.qmax * self.time_hour / self.length, sbk + sck,
                                       self.w * (self.kjam - self.oldk) * self.time_hour / self.length])
                 self.outflow = np.min([self.cto[0].qmax, self.oldk * self.vf, self.cto[0].w * (
-                            self.cto[0].kjam - self.cto[0].oldk)]) * self.time_hour / self.length
+                        self.cto[0].kjam - self.cto[0].oldk)]) * self.time_hour / self.length
             else:
                 self.inflow = np.min([self.qmax * self.time_hour / self.length, sbk + sck,
                                       self.w * (self.kjam - self.oldk) * self.time_hour / self.length])
@@ -159,7 +165,7 @@ class Cell(object):
 
             prov.updated, self.updated, merge.updated = True, True, True
 
-        elif len(self.cto) == 2:  # Diverge at here
+        elif self.type == 'div':  # Diverge at here
             ptnc = self.pk  # Propotion towards to next normal cell
             ptdc = 1 - self.pk  # Propotion towards to diverge cell
             for elem in self.cto:
@@ -174,14 +180,14 @@ class Cell(object):
                     diverge = elem
 
             rck = np.min([next_c.qmax, next_c.w * (
-                        next_c.kjam - next_c.oldk)]) * next_c.time_hour / next_c.length  # Receive ability of next normal cell
+                    next_c.kjam - next_c.oldk)]) * next_c.time_hour / next_c.length  # Receive ability of next normal cell
             rek = np.min([diverge.qmax, diverge.w * (diverge.kjam - diverge.oldk)]) * diverge.time_hour / diverge.length
             sbk = np.min([self.qmax, self.vf * self.oldk]) * self.time_hour / self.length
 
             try:  # In order to cope with situation that next cell is the last cell (cto is empty)
                 next_c.inflow = ptnc * np.min([sbk, rek / ptdc, rck / ptnc])
                 next_c.outflow = np.min([next_c.cto[0].qmax, next_c.vf * next_c.oldk, next_c.cto[0].w * (
-                            next_c.cto[0].kjam - next_c.cto[0].oldk)]) * next_c.time_hour / next_c.length
+                        next_c.cto[0].kjam - next_c.cto[0].oldk)]) * next_c.time_hour / next_c.length
             except:
                 next_c.inflow = ptnc * np.min([sbk, rek / ptdc, rck / ptnc])
                 next_c.outflow = np.min(
@@ -190,7 +196,7 @@ class Cell(object):
             if len(diverge.cto):
                 diverge.inflow = ptdc * np.min([sbk, rek / ptdc, rck / ptnc])
                 diverge.outflow = np.min([diverge.cto[0].qmax, diverge.oldk * diverge.vf, diverge.cto[0].w * (
-                            diverge.cto[0].kjam - diverge.cto[0].oldk)]) * diverge.time_hour / diverge.length
+                        diverge.cto[0].kjam - diverge.cto[0].oldk)]) * diverge.time_hour / diverge.length
             else:
                 diverge.inflow = ptdc * np.min([sbk, rek / ptdc, rck / ptnc])
                 diverge.outflow = np.min(
@@ -210,7 +216,7 @@ class Cell(object):
             self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
             next_c.updated, self.updated, diverge.updated = True, True, True
 
-        else:  # Normal cell
+        elif self.type == 'norm':  # Normal cell
             if self.updated:
                 return
 
@@ -218,7 +224,7 @@ class Cell(object):
                 self.inflow = np.min(
                     [self.qmax, self.arr_rate, self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
                 self.outflow = np.min([self.cto[0].qmax, self.oldk * self.vf, self.cto[0].w * (
-                            self.cto[0].kjam - self.cto[0].oldk)]) * self.time_hour / self.length
+                        self.cto[0].kjam - self.cto[0].oldk)]) * self.time_hour / self.length
 
             elif len(self.cto) == 0:
                 self.inflow = self.cfrom[0].outflow
@@ -229,7 +235,7 @@ class Cell(object):
                 self.inflow = self.cfrom[0].outflow
                 # self.inflow = np.min([self.qmax, self.cfrom[0].oldk * self.vf, self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
                 self.outflow = np.min([self.qmax, self.oldk * self.vf, self.cto[0].w * (
-                            self.cto[0].kjam - self.cto[0].oldk)]) * self.time_hour / self.length
+                        self.cto[0].kjam - self.cto[0].oldk)]) * self.time_hour / self.length
 
             self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
             self.updated = True
@@ -295,5 +301,3 @@ class Corridor(object):
 
     def update(self):
         pass
-
-

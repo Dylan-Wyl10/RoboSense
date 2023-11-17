@@ -108,7 +108,7 @@ class CTMSim(threading.Thread):
         print("Initializing CTMSim...")
         """
         inital simulation.
-        1. read SUMO net configuration file, restore network structure
+        1. read SUMO net file, restore network structure
         2. 
         """
         print("Initialize Complete!")

@@ -1,9 +1,9 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="5x5net.net.xml"/>
-        <route-files value="od.rou.xml"/>
-        <additional-files value="v_type.add.xml"/>
+        <net-file value="../5x5net.net.xml"/>
+        <route-files value="../od.rou.xml"/>
+        <additional-files value="../v_type.add.xml"/>
     </input>
 
     <processing>
@@ -16,16 +16,16 @@
     </processing>
 
     <output>
-        <summary-output value="../../result/5x5net/sumolog_tmp/summary1000.xml"/>
-        <tripinfo-output value="../../result/5x5net/sumolog_tmp/tripinfo1000.xml"/>
-        <statistic-output value="../../result/5x5net/sumolog_tmp/overall1000.xml"/>
+        <summary-output value="../../../result/5x5net/sumolog_tmp/summary_benchmark.xml"/>
+        <tripinfo-output value="../../../result/5x5net/sumolog_tmp/tripinfo_benchmark.xml"/>
+        <statistic-output value="../../../result/5x5net/sumolog_tmp/overall_benchmark.xml"/>
     </output>
 
     <time>
-        <begin value="0"/>
-        <end value="3600"/>
-	    <step-length value="0.1"/>
-    </time>
+            <begin value="0"/>
+            <end value="36000"/>
+			<step-length value="0.1"/>
+	</time>
 
     <routing>
         <device.rerouting.adaptation-steps value="18"/>
