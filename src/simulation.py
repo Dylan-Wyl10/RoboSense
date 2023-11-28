@@ -33,7 +33,7 @@ class Simulation:
         # self.config = config  # 06/14/2023: temporaryly set sumo config path
         self.Network = Network(5, 5, net_file)
         self.cav_list = []
-        self.cover_LinkTimeVeh = np.zeros((2*link_num, 7000, 500))  # index = [link, time, veh], value is hardcoded as 0 (binary)
+        self.cover_LinkTimeVeh = np.zeros((2*link_num, 7000, 1000))  # index = [link, time, veh], value is hardcoded as 0 (binary)
         self.sizeX, self.sizeY = sizeX, sizeY
         # # build a time-space table for vehicle index
         # self.cover_idTable = []

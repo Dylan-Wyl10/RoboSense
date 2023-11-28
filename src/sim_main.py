@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
 
     # p_set = [100, 300, 500, 1000, 2000]
-    a_set = [5000, 10000]
+    a_set = [100000, 0, 10000]
     # pr = 2  # penetration
     step = 20
 
@@ -37,7 +37,7 @@ if __name__ == '__main__':
                            type=str,
                            help='working dirctory for current simulation(sumo config)')
     argparser.add_argument('--penetration',
-                           default=2,
+                           default=5,
                            type=int,
                            help='penetration rate in %')
     argparser.add_argument('--maxtime',

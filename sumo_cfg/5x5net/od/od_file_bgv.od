@@ -1,19 +1,19 @@
 $O;D2
 0.00 2.0
 1.00
-AA_in EE_out 1372
-AB_in ED_out 686
-AC_in EC_out 686
-AD_in EB_out 686
-AE_in EA_out 686
-BA_in DE_out 686
-BE_in DA_out 1372
-CA_in CE_out 686
-CE_in CA_out 686
-DA_in BE_out 686
-DE_in BA_out 686
-EA_in AE_out 686
-EB_in AD_out 1372
-EC_in AC_out 686
-ED_in AB_out 686
-EE_in AA_out 1372
+AA_in EE_out 1328
+AB_in ED_out 664
+AC_in EC_out 664
+AD_in EB_out 664
+AE_in EA_out 664
+BA_in DE_out 664
+BE_in DA_out 1328
+CA_in CE_out 664
+CE_in CA_out 664
+DA_in BE_out 664
+DE_in BA_out 664
+EA_in AE_out 664
+EB_in AD_out 1328
+EC_in AC_out 664
+ED_in AB_out 664
+EE_in AA_out 1328

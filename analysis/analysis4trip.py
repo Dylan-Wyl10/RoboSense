@@ -129,8 +129,8 @@ if __name__ == '__main__':
 
     # alpha_set = [0, 100, 300, 500, 1000, 2000]
 
-    alpha_set = [0, 100, 1000, 2000]
-    pr = 2
+    alpha_set = [0, 100000, 10000]
+    pr = 5
     step = 20
     netname = "5x5net"
     vehicle_path = "vehicle_paths.txt"
