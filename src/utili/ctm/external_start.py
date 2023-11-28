@@ -1,4 +1,4 @@
-import Cell_Transmission_Model as CTM
+import CTMsim as CTM
 from datetime import datetime
 
 start = datetime.now()

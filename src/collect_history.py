@@ -49,18 +49,19 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     max_step = 10 * args.maxtime  # define the maximum steps for the simulation
-    path = args.net_dirc + ("/benchmark.sumocfg")
-    lf_table_savepath = "../result/{}/link_flow/pr2_link_flow_3600.json".format(args.netname)
-    save_info = {'cover_table_benchmark': "../result/{}/PR2 TestingNew/pr2_cover_benchmark.npy".format(args.netname)}
+    path = args.net_dirc + ("/simcfg/benchmark.sumocfg")
+    pr = 5
+    lf_table_savepath = "../result/{}/link_flow/pr{}_link_flow_3600.json".format(args.netname, pr)
+    save_info = {'cover_table_benchmark': "../result/{}/PR5 TestingNew/pr5_cover_benchmark.npy".format(args.netname)}
 
     s = Simulation(start_time=600, max_time=args.maxtime, link_num=40, resolution=0.1,
                    net_file='../sumo_cfg/5x5net/5x5net.net.xml',
                    time_interval=20, sizeX=5, sizeY=5)
-    # s.get_LF_table(config=path)
-    # s.save_lf(lf_table_savepath)
-    # print('lf table has been saved')
-    # traci.close()
-    s.sim_benchmark(save_info)
+    s.get_LF_table(config=path)
+    s.save_lf(lf_table_savepath)
+    print('lf table has been saved')
+    traci.close()
+    s.sim_benchmark(save_info, config=path)
 
 
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
