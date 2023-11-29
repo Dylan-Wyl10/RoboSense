@@ -130,11 +130,12 @@ class Intersection:
 
 class Network:
     def __init__(self, x_size, y_size, net_file):
-        self.link_num = (x_size - 1) * y_size + (y_size - 1) * x_size
-        # self.net_config = net_file
-        self.net = sumolib.net.readNet(net_file)
+        # self.link_num = (x_size - 1) * y_size + (y_size - 1) * x_size
+        self.net_config = net_file
+        self.sumonet = sumolib.net.readNet(net_file)
         self.G = nx.Graph()  # initial a graph component
-        self.node_list = self.getNodeList(x_size, y_size, self.net)  # restore the list of id on intersection
+        self.node_list = self.getNodeList(x_size, y_size, self.sumonet)  # restore the list of id on intersection
+
 
     def netInit(self, x_size, y_size):
         for n in self.node_list.values():
@@ -202,7 +203,7 @@ class Network:
         :param edge_id:
         :return: node index
         """
-        lastNodeID = self.net.getEdge(edge_id).getFromNode().getID()
+        lastNodeID = self.sumonet.getEdge(edge_id).getFromNode().getID()
         return lastNodeID
 
     def getShortDistance(self, start_node, dest_node):

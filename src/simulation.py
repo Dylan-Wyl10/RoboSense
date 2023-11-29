@@ -7,15 +7,14 @@ Structures:
 """
 
 import copy
-import numpy as np
 
 from utili.tools import *
-from utili.vehicle import *
 from utili.network import Network
 import traci
 import re
 import json
 from itertools import groupby
+from utili.ctmcomponent import *
 
 class Simulation:
     def __init__(self, start_time, max_time, link_num, resolution, net_file, time_interval, sizeX, sizeY):
@@ -31,7 +30,7 @@ class Simulation:
         self.link_flows_num = {}
         self.link_flows_observation = {}
         # self.config = config  # 06/14/2023: temporaryly set sumo config path
-        self.Network = Network(5, 5, net_file)
+        self.network = Network(5, 5, net_file)
         self.cav_list = []
         self.cover_LinkTimeVeh = np.zeros((2*link_num, 7000, 1000))  # index = [link, time, veh], value is hardcoded as 0 (binary)
         self.sizeX, self.sizeY = sizeX, sizeY
@@ -51,11 +50,16 @@ class Simulation:
         self.flex = flex  # default flexibility of the vehicle
         self.time = 0  # simulation time index
         self.step = 0
-        self.Network.netInit(self.sizeX, self.sizeY)
+        self.network.netInit(self.sizeX, self.sizeY)
 
         # initial the cav list
         self.cav_dic = {}
         # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
+
+        # initial CTM
+        self.CTM = CTM(self.network, tick_interval=5)  # 20111128 defaultly set tick as 5s.
+        self.CTM.init()
+
         while True:
 
             # the following steps only apply in a GIVEN TIME Interval

@@ -6,11 +6,9 @@ Features:
  - construct the network from network xml file directly linked with SUMO
  - uniformly
 """
-import numpy as np
-from component import Cell, Link, Node, Corridor
+from src.utili.ctmcomponent import Cell, Corridor
 import pandas as pd
 import re
-from datetime import datetime
 import threading
 
 class CTMSim(threading.Thread):
