@@ -388,7 +388,11 @@ class CTM():
 
     def init(self):
         print(f'Initializing CTM for network{self.net.net_config}...')
-        self.link_ls = self.net.sumonet.
+        self.link_ls = [i[0] + i[1] for i in np.array(self.net.G.edges)] # get link index for ctm model
+        """next is create unified cells for each corridos. some assumptions holds:
+        
+        """
+        print('testing')
 
 
 #

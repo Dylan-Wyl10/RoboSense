@@ -16,6 +16,7 @@ import json
 from itertools import groupby
 from utili.ctmcomponent import *
 
+
 class Simulation:
     def __init__(self, start_time, max_time, link_num, resolution, net_file, time_interval, sizeX, sizeY):
         self.step = 0
@@ -32,7 +33,7 @@ class Simulation:
         # self.config = config  # 06/14/2023: temporaryly set sumo config path
         self.network = Network(5, 5, net_file)
         self.cav_list = []
-        self.cover_LinkTimeVeh = np.zeros((2*link_num, 7000, 1000))  # index = [link, time, veh], value is hardcoded as 0 (binary)
+        self.cover_LinkTimeVeh = np.zeros((2 * link_num, 7000, 1000))  # index = [link, time, veh], value is hardcoded as 0 (binary)
         self.sizeX, self.sizeY = sizeX, sizeY
         # # build a time-space table for vehicle index
         # self.cover_idTable = []
@@ -64,11 +65,11 @@ class Simulation:
 
             # the following steps only apply in a GIVEN TIME Interval
             if self.step % (self.time_interval * 10) == 0:
-            # step1: update cav dictionary information, add new and remove completed cav
+                # step1: update cav dictionary information, add new and remove completed cav
                 self.updateCAVinfo()
 
-            # step2: enumerate all cav from list, choose proper route and update vehicle information
-            # if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
+                # step2: enumerate all cav from list, choose proper route and update vehicle information
+                # if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
                 self.getCAVctrlList()
                 print('step is:', self.step, parameters[1])
                 # print(f'current cav ctrl list is {self.cav_list}')
@@ -102,8 +103,8 @@ class Simulation:
 
             # stop and save the results
             # if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
-            if self.step > self.MAXSTEP or (traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
-
+            if self.step > self.MAXSTEP or (
+                    traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
                 path = save_path['cover_table{}'.format(parameters[1])]
                 np.save(path, self.cover_LinkTimeVeh[:, self.start_time:self.max_time, :])
                 with open(flextable, 'w') as flxfile:
@@ -116,7 +117,7 @@ class Simulation:
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         self.step = 0
-        self.Network.netInit(self.sizeX, self.sizeY)
+        self.network.netInit(self.sizeX, self.sizeY)
         # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
         while True:
 
@@ -131,7 +132,8 @@ class Simulation:
             self.time = self.step * self.resolution
             traci.simulationStep()
             # stop and save the results
-            if self.step > self.MAXSTEP or (traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
+            if self.step > self.MAXSTEP or (
+                    traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
                 path = save_path['cover_table_benchmark']
                 np.save(path, self.cover_LinkTimeVeh)
                 print("CTMSim has ended due to no enough vehicle")
@@ -150,7 +152,8 @@ class Simulation:
             self.step += 1
             self.time = self.step * self.resolution
             traci.simulationStep()
-            if self.step > self.MAXSTEP or (traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
+            if self.step > self.MAXSTEP or (
+                    traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
                 # if self.step > self.MAXSTEP:
                 print("CTMSim has ended due to no enough vehicle")
                 self.filter_lf_table()
@@ -160,7 +163,8 @@ class Simulation:
     def getCAVctrlList(self):
         self.cav_list = []
         for v_id in traci.vehicle.getIDList():
-            if re.findall(r'[0-9]+|[a-z]+', v_id)[0] == "cav" and traci.vehicle.getLanePosition(v_id) < 350:# type and no changing zone constrain
+            if re.findall(r'[0-9]+|[a-z]+', v_id)[0] == "cav" and traci.vehicle.getLanePosition(
+                    v_id) < 350:  # type and no changing zone constrain
                 edge_id = traci.vehicle.getRoadID(v_id)
                 if not (edge_id[0] == '-' and int(re.findall(r'[0-9]+|[a-z]+', edge_id)[0]) > self.link_num):
                     # print(edge_id)
@@ -183,7 +187,6 @@ class Simulation:
     #         tmp = traci.vehicle.getRoute(cav_id)
     #         print(tmp)
 
-
     def updateObsv(self):
         """
         06/22/2023 update: use this function to check observation and cover time-space table
@@ -203,9 +206,10 @@ class Simulation:
                 for v in v_id:
                     v_tem = re.findall(r'[0-9]+|[a-z]+', v)  # [type, num]
                     if v_tem[0] == 'cav':
-                        cav_idx = int(v_tem[1]) # cav index = cav numbber - 1
+                        cav_idx = int(v_tem[1])  # cav index = cav numbber - 1
                         for eID in range(self.cover_LinkTimeVeh.shape[0]):
-                            self.cover_LinkTimeVeh[eID, time_idx, cav_idx] = 0 # clear current edge occupation before update
+                            self.cover_LinkTimeVeh[
+                                eID, time_idx, cav_idx] = 0  # clear current edge occupation before update
                         if edge[0] == '-':
                             self.cover_LinkTimeVeh[edge_idx + self.link_num, time_idx, cav_idx] = 1
                         else:
@@ -237,9 +241,11 @@ class Simulation:
                 vidx = int(re.findall(r'[0-9]+|[a-z]+', v_id)[1])
                 if v_id not in self.cav_dic:
                     # default add vehicle
-                    sp_length = self.Network.getShortDistance(self.Network.getNextNode(traci.vehicle.getRoute(v_id)[0]), self.Network.getFromNode(traci.vehicle.getRoute(v_id)[-1]))
-                    self.cav_dic[v_id] = {'original': self.Network.getNextNode(traci.vehicle.getRoute(v_id)[0]),
-                                          'destination': self.Network.getFromNode(traci.vehicle.getRoute(v_id)[-1]),
+                    sp_length = self.network.getShortDistance(self.network.getNextNode(traci.vehicle.getRoute(v_id)[0]),
+                                                              self.network.getFromNode(
+                                                                  traci.vehicle.getRoute(v_id)[-1]))
+                    self.cav_dic[v_id] = {'original': self.network.getNextNode(traci.vehicle.getRoute(v_id)[0]),
+                                          'destination': self.network.getFromNode(traci.vehicle.getRoute(v_id)[-1]),
                                           'Flex': [self.flex],  # initial flexibility, must be even number
                                           'currentFlex': self.flex,
                                           'spLength': sp_length,
@@ -256,22 +262,25 @@ class Simulation:
                                 # combined_paths[vehicle][scenario_index].append(link)
                     edge_current = traci.vehicle.getRoadID(v_id)
                     if int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) <= self.link_num:
-                        tmp.append(int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) if edge_current[0] == 'E' else int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0])+self.link_num)
+                        tmp.append(
+                            int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) if edge_current[0] == 'E' else int(
+                                re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) + self.link_num)
                     route_tmp = [key for key, group in groupby(tmp)]
                     self.cav_dic[v_id]['currentRoute'] = route_tmp
                     # edge_current = traci.vehicle.getRoadID(v_id)
                     # edgelink_idx = int(re.findall(r'[0-9]+|[a-z]+', '-E22')[0])
-                    if not (edge_current[0] == '-' and int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) > self.link_num):
-                        nextNode_tmp = self.Network.getNextNode(edge_current)
-                        sp_current = self.Network.getShortDistance(nextNode_tmp, self.cav_dic[v_id]['destination'])
+                    if not (edge_current[0] == '-' and int(
+                            re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) > self.link_num):
+                        nextNode_tmp = self.network.getNextNode(edge_current)
+                        sp_current = self.network.getShortDistance(nextNode_tmp, self.cav_dic[v_id]['destination'])
                         # 1103 update: current flexibility = original sp length + flexibility - number of edges traveled - current sp length
-                        tmp_flex = self.cav_dic[v_id]['spLength'] + self.cav_dic[v_id]['currentFlex'] - len(route_tmp) - sp_current
+                        tmp_flex = self.cav_dic[v_id]['spLength'] + self.cav_dic[v_id]['currentFlex'] - len(
+                            route_tmp) - sp_current
                         # if tmp_flex == 3:
                         #     print('we have something')
                         self.cav_dic[v_id]['Flex'].append(max(tmp_flex, 0))
                         self.cav_dic[v_id]['currentFlex'] = max(tmp_flex, 0)
                         print(f'vehicle {v_id} has flex {self.cav_dic[v_id]["currentFlex"]}')
-
 
     def updateRoute(self, k, parameters):
         """
@@ -289,14 +298,15 @@ class Simulation:
             # 1.get k shortest path considering distance
             veh_idx = int(re.findall(r'[0-9]+|[a-z]+', cav_id)[1])  # [num = actual number -1]
             cav_edgeID = traci.vehicle.getRoadID(cav_id)
-            my_nextNode = self.Network.getNextNode(cav_edgeID)
-            my_desNode = self.Network.getFromNode(traci.vehicle.getRoute(cav_id)[-1])
+            my_nextNode = self.network.getNextNode(cav_edgeID)
+            my_desNode = self.network.getFromNode(traci.vehicle.getRoute(cav_id)[-1])
 
-            k_shortest_path = self.Network.findKShortPath(k, my_nextNode, self.cav_dic[cav_id]['destination'], self.cav_dic[cav_id]['currentFlex'])
+            k_shortest_path = self.network.findKShortPath(k, my_nextNode, self.cav_dic[cav_id]['destination'],
+                                                          self.cav_dic[cav_id]['currentFlex'])
 
             # 0710: get vehicle departure time
             # tmp = traci.vehicle.getDeparture(cav_id)
-            dep_time = traci.vehicle.getDeparture(cav_id) # get departure time
+            dep_time = traci.vehicle.getDeparture(cav_id)  # get departure time
 
             # 2. calculate travel time and cover rate for each candidate route
             # 3. get delta_cover for each candidate path
@@ -306,7 +316,6 @@ class Simulation:
 
             # objective value for last candidate path, since the objective is to get max, the default number is -1000000.
             last_bestRoute_obj = -10000
-
 
             # print(f'check cover table at start of {cav_id} at time {self.time}')
             # self.checkCoverTable()
@@ -322,7 +331,7 @@ class Simulation:
                 self.checkCoverTable()
                 route = [cav_edgeID]
                 for node_idx in range(len(sp) - 1):
-                    node2edge = self.Network.node_list[sp[node_idx + 1]].getEdgeByUpperNode(sp[node_idx])
+                    node2edge = self.network.node_list[sp[node_idx + 1]].getEdgeByUpperNode(sp[node_idx])
                     route.append(node2edge)
                 route.append(traci.vehicle.getRoute(cav_id)[-1])
                 """
@@ -331,7 +340,7 @@ class Simulation:
                 - next step is to calculate arrival time for each node in sp with route[:-1]
                 - another input is an if table about if the edge is observed currently
                 """
-                node_time = self.Network.getNodeArrTime(route[:-1], sp, self.time, cav_id,
+                node_time = self.network.getNodeArrTime(route[:-1], sp, self.time, cav_id,
                                                         self.link_flows_hisNum)  # arrive time on each node for given path route
                 arrive_time_table.append(node_time[-1])
 
@@ -360,13 +369,15 @@ class Simulation:
                             link_pos = edge_idx_num + self.link_num  # determine the link idx in cover time-space table
                         else:
                             link_pos = edge_idx_num
-                        for k in range(round(node_timeTmp[idx]) - int(node_timeTmp[0]), round(node_timeTmp[idx + 1]) - int(node_timeTmp[0])):
+                        for k in range(round(node_timeTmp[idx]) - int(node_timeTmp[0]),
+                                       round(node_timeTmp[idx + 1]) - int(node_timeTmp[0])):
                             # print(k)
-                            cover_ts_pre[link_pos - 1, k-1, veh_idx] = 1
+                            cover_ts_pre[link_pos - 1, k - 1, veh_idx] = 1
 
                 # get the time-space cover table
                 cover_pre = np.where(np.sum(cover_ts_pre, axis=2) > 0, 1, 0)
-                cover_now = np.where(np.sum(self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :], axis=2) > 0, 1, 0)
+                cover_now = np.where(np.sum(self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :], axis=2) > 0,
+                                     1, 0)
 
                 cover_delta = (np.sum(cover_pre) - np.sum(cover_now)) / duration
                 delta_cover_table.append(cover_delta)
@@ -382,13 +393,14 @@ class Simulation:
 
                     # convert node path to edge path
                     for node_idx in range(len(best_route_node) - 1):
-                        node2edge = self.Network.node_list[best_route_node[node_idx + 1]].getEdgeByUpperNode(
+                        node2edge = self.network.node_list[best_route_node[node_idx + 1]].getEdgeByUpperNode(
                             best_route_node[node_idx])
                         best_route.append(node2edge)
                     best_route.append(traci.vehicle.getRoute(cav_id)[-1])
                     traci.vehicle.setRoute(cav_id, best_route)
                     last_bestRoute_obj = current_route_obj
-                    print(f'vehicle {cav_id} current route is {best_route} with best obj {last_bestRoute_obj} with time {(node_time[-1] - dep_time)} and cover {cover_delta}')
+                    print(
+                        f'vehicle {cav_id} current route is {best_route} with best obj {last_bestRoute_obj} with time {(node_time[-1] - dep_time)} and cover {cover_delta}')
                 del cover_ts_pre, cover_pre
             # print('yes')
         # return
@@ -402,7 +414,6 @@ class Simulation:
         with open(path, "r") as infile:
             self.link_flows_hisNum = json.load(infile)
 
-
     ###20231011: some debug tools
     def checkCoverTable(self):
         # cover table  = [edge, time, veh]
@@ -415,8 +426,4 @@ class Simulation:
                 for t in range(tableLinkTime.shape[1]):
                     # print(np.sum(tableLinkTime[:, t]))
                     if np.sum(tableLinkTime[:, t]) > 1:
-                        print(f"Vehicle {cav_idx+1} is more than one pos at time {t}, current time is {self.time}:")
-
-
-
-
+                        print(f"Vehicle {cav_idx + 1} is more than one pos at time {t}, current time is {self.time}:")

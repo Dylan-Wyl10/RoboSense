@@ -129,17 +129,17 @@ if __name__ == '__main__':
 
     # alpha_set = [0, 100, 300, 500, 1000, 2000]
 
-    alpha_set = [0, 100000, 10000]
-    pr = 5
+    alpha_set = [0, 10000, 100000]
+    pr = 2
     step = 20
     netname = "5x5net"
     vehicle_path = "vehicle_paths.txt"
 
     ## this part
     tripFile_dir = {}
-    tripFile_dir['trip_bench'] = "../result/{}/sumolog_tmp/tripinfo_benchmark.xml".format(netname)
+    tripFile_dir['trip_bench'] = "../result/{}/sumologpr{}/tripinfo_benchmark.xml".format(netname, pr)
     for a in alpha_set:
-        tripFile_dir['trip_{}'.format(a)] = "../result/{}/sumolog_tmp/tripinfo{}.xml".format(netname, a)
+        tripFile_dir['trip_{}'.format(a)] = "../result/{}/sumologpr{}/tripinfo{}.xml".format(netname, pr, a)
 
     # Example Usage
     file_paths = [tripFile_dir[k] for k in tripFile_dir.keys()]
