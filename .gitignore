@@ -8,6 +8,7 @@ result/toynet/link_flow
 result/5x5net/PR2 TestingNew
 result/5x5net/PR5 TestingNew
 result/5x5net/sumolog_tmp
+result/5x5net/sumologpr2
 result/5x5net/link_flow
 sumo_cfg/5x5net/dualogs
 sumo_cfg/toy_net/dualogs
