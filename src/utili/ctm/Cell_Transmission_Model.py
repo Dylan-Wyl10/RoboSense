@@ -7,13 +7,10 @@ Features:
  - uniformly
 """
 import numpy as np
-from component import Cell, Link, Node, Corridor
-from CTMsim import CTMSim
-import pandas as pd
-import re
-from datetime import datetime
-import threading
 
+from src.utili.ctmcomponent import Cell
+# from CTMsim import CTMSim
+import threading
 
 
 def getCrossProduct(va, vb):
@@ -91,22 +88,28 @@ def simulation_run_step(sim):
 
 
 class CTM():
-    def __init__(self, net_ipt, tick_interval):
+    def __init__(self, network, tick_interval):
         super().__init__()
         self.current_step = 0
-        
+        self.tick = tick_interval  # time interval for CTM calculation
+        self.net = network  # current network input is based on SUMO, the input format is net.xml
+        self.link_ls = []
+
+    def init(self):
+        print(f'Initializing CTM for network{self.net.net_config}...')
 
 
-
-if __name__ == '__main__':
-    start = datetime.now()
-    sim = initializeCTM()
-    for t in range(sim.total_steps):
-        sim.simulationStep()
-    sim.join()
-
-    for key in Corridor.idcase:
-        Corridor.idcase[key].printResults()
-    end = datetime.now()
-    print("Elapsed Time:", end - start)
+#
+#
+# if __name__ == '__main__':
+#     start = datetime.now()
+#     sim = initializeCTM()
+#     for t in range(sim.total_steps):
+#         sim.simulationStep()
+#     sim.join()
+#
+#     for key in Corridor.idcase:
+#         Corridor.idcase[key].printResults()
+#     end = datetime.now()
+#     print("Elapsed Time:", end - start)
 
