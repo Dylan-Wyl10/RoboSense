@@ -45,8 +45,12 @@ class Simulation:
         # self.cover_idTable = np.array(self.cover_idTable)
         self.cav_route = {}
 
-    def sim(self, save_path, config, flextable, parameters, flex=0, k=32):
-        traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
+    def sim(self, save_path, config, flextable, parameters, flex=0, k=32, GUImode=False):
+        if GUImode:
+            traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
+                         "--step-length={}".format(str(self.resolution))])
+        else:
+            traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.flex = flex  # default flexibility of the vehicle
         self.time = 0  # simulation time index
@@ -65,25 +69,28 @@ class Simulation:
 
             # the following steps only apply in a GIVEN TIME Interval
             if self.step % (self.time_interval * 10) == 0:
-                # step1: update cav dictionary information, add new and remove completed cav
+                # step1: update cav dictionary information, the following inforamtion will be updated:
+                # - 1.1 select and update the flexibility for current cav in the list.
+                # - 1.2 determine the next intended link based on no changing zone constrains.
                 self.updateCAVinfo()
 
                 # step2: enumerate all cav from list, choose proper route and update vehicle information
                 # if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
-                self.getCAVctrlList()
+                self.getCAVList()
                 print('step is:', self.step, parameters[1])
-                # print(f'current cav ctrl list is {self.cav_list}')
-                # -steps:
-                # -2A: enumerate all cav. for each cav.
-                #       -2AA: get k-shortest path considering distance
-                #       -2AB: calculate travel time and cover rate for each candidate route
-                #       -2AC: choose the best route and apply accordingly
-                #       -2AD: update CAV routing table
-                # $$$$$$$$$$$$$$$$$$$$$$$$$$
-                # 1103 update: update the path selection logic:
-                # current flexibility = original sp length + flexibility - number of edges traveled - current sp length
-                # self.getVecFlex()
+
+                # step2: enumerate all cav. for each cav.
+                #       -2.1: get k-shortest path considering distance
+                #       -2.2: calculate travel time and cover rate for each candidate route
+                #       -2.3: choose the best route and apply accordingly
+                #       -2.4: update CAV routing table
+
                 self.updateRoute(k, parameters)
+
+                # """temp set route for debug 20231130"""
+                # cavtestroute = ["E108", "E38", "E39", "-E16", "-E35", "-E11", "E31", "-E14", "-E27", "-E9", "E23", "-E118"]
+                # traci.vehicle.setRoute('cav1', cavtestroute)
+
 
                 """
                 # stepXXXX: (this will be added on next): adjust signal time plan. 
@@ -163,29 +170,11 @@ class Simulation:
     def getCAVctrlList(self):
         self.cav_list = []
         for v_id in traci.vehicle.getIDList():
-            if re.findall(r'[0-9]+|[a-z]+', v_id)[0] == "cav" and traci.vehicle.getLanePosition(
-                    v_id) < 350:  # type and no changing zone constrain
+            if re.findall(r'[0-9]+|[a-z]+', v_id)[0] == "cav":
                 edge_id = traci.vehicle.getRoadID(v_id)
                 if not (edge_id[0] == '-' and int(re.findall(r'[0-9]+|[a-z]+', edge_id)[0]) > self.link_num):
                     # print(edge_id)
                     self.cav_list.append(v_id)  # return the cav list that needs to be controlled
-
-    # def getVecFlex(self):
-    #     """
-    #     calculate cav flexibility through cav information dictionary.
-    #     1103 update: current flexibility = original sp length + flexibility - number of edges traveled - current sp length
-    #
-    #     """
-    #
-    #     for cav_id in self.cav_list:
-    #         # tmp_route = ('E5', 'E26', 'E10', 'E31', 'E15', 'E36', 'E20', '-E112')
-    #         # traci.vehicle.setRoute(cav_id, tmp_route)
-    #         orig_node = self.Network.getNextNode(traci.vehicle.getRoute(cav_id)[0])
-    #         des_node = self.Network.getFromNode(traci.vehicle.getRoute(cav_id)[-1])
-    #
-    #
-    #         tmp = traci.vehicle.getRoute(cav_id)
-    #         print(tmp)
 
     def updateObsv(self):
         """
@@ -238,9 +227,9 @@ class Simulation:
     def updateCAVinfo(self):
         for v_id in traci.vehicle.getIDList():
             if traci.vehicle.getTypeID(v_id) == 'cav':
-                vidx = int(re.findall(r'[0-9]+|[a-z]+', v_id)[1])
+                # vidx = int(re.findall(r'[0-9]+|[a-z]+', v_id)[1])
                 if v_id not in self.cav_dic:
-                    # default add vehicle
+                    # default add vehicle initial state
                     sp_length = self.network.getShortDistance(self.network.getNextNode(traci.vehicle.getRoute(v_id)[0]),
                                                               self.network.getFromNode(
                                                                   traci.vehicle.getRoute(v_id)[-1]))
@@ -249,38 +238,30 @@ class Simulation:
                                           'Flex': [self.flex],  # initial flexibility, must be even number
                                           'currentFlex': self.flex,
                                           'spLength': sp_length,
-                                          'currentRoute': []}
+                                          'currentRoute': [None],
+                                          'isControl': True,  # this is the flag that determines if cav need to be controlled.
+                                          'nextEdge': None}
                 else:
-                    # calculate and update current flexibility
-                    veh_cover = self.cover_LinkTimeVeh[:, :, vidx]
-                    links, time = veh_cover.shape
-                    tmp = []
-                    for t in range(time):
-                        for l in range(links):
-                            if veh_cover[l, t] == 1:
-                                tmp.append(l + 1)  # sumo link index starts from 1 while matrix starts form zero
-                                # combined_paths[vehicle][scenario_index].append(link)
-                    edge_current = traci.vehicle.getRoadID(v_id)
+                    edge_current = traci.vehicle.getRoadID(v_id)  # check if the vehicle in the network
                     if int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) <= self.link_num:
-                        tmp.append(
-                            int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) if edge_current[0] == 'E' else int(
-                                re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) + self.link_num)
-                    route_tmp = [key for key, group in groupby(tmp)]
-                    self.cav_dic[v_id]['currentRoute'] = route_tmp
-                    # edge_current = traci.vehicle.getRoadID(v_id)
-                    # edgelink_idx = int(re.findall(r'[0-9]+|[a-z]+', '-E22')[0])
-                    if not (edge_current[0] == '-' and int(
-                            re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) > self.link_num):
+                        # step1: calculate and update flexibility
+                        last_edge = self.cav_dic[v_id]['currentRoute'][-1]
+                        if edge_current != last_edge:
+                            self.cav_dic[v_id]['currentRoute'].append(edge_current)
+                        # if not (edge_current[0] == '-' and int(
+                        #         re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) > self.link_num):
                         nextNode_tmp = self.network.getNextNode(edge_current)
                         sp_current = self.network.getShortDistance(nextNode_tmp, self.cav_dic[v_id]['destination'])
-                        # 1103 update: current flexibility = original sp length + flexibility - number of edges traveled - current sp length
-                        tmp_flex = self.cav_dic[v_id]['spLength'] + self.cav_dic[v_id]['currentFlex'] - len(
-                            route_tmp) - sp_current
-                        # if tmp_flex == 3:
-                        #     print('we have something')
+                        # 1103 update: current flexibility = original sp length + initial flexibility - number of edges traveled - current sp length
+                        tmp_flex = self.cav_dic[v_id]['spLength'] + self.cav_dic[v_id]['Flex'][0] - len(
+                            self.cav_dic[v_id]['currentRoute']) + 1 - sp_current
+                        if tmp_flex == 0:
+                            print('we have something')
                         self.cav_dic[v_id]['Flex'].append(max(tmp_flex, 0))
                         self.cav_dic[v_id]['currentFlex'] = max(tmp_flex, 0)
                         print(f'vehicle {v_id} has flex {self.cav_dic[v_id]["currentFlex"]}')
+                        # step2: determine the intended next edge if in no changing zone
+
 
     def updateRoute(self, k, parameters):
         """
