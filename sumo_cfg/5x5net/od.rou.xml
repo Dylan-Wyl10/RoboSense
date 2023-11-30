@@ -42047,4 +42047,4 @@
     <vehicle id="bgv2151" type="bgv" depart="7199.92" departLane="free" departSpeed="max" fromTaz="AC_in" toTaz="EC_out">
         <route edges="E104 E3 E33 E34 E35 -E15 E32 -E114"/>
     </vehicle>
-</routes>
+

@@ -2,6 +2,7 @@
 Date: May 26, 2023
 Author: Yilin Wang
 Note: this script is the main script that simulates the CAV rerouting with TSC
+Note!!!!: this is the test temporoal script for debugging (yilin, 20231129)
 """
 # Status check for Sumo environment
 import sys
@@ -60,13 +61,13 @@ if __name__ == '__main__':
     for alpha in a_set:
         save_info['cover_table{}'.format(alpha)] = "../result/{}/PR{} TestingNew/pr{}_cover_{}_step{}.npy".format(args.netname, pr, pr, alpha, step)
 
-        netpath = "../sumo_cfg/{}/simcfg/case{}.sumocfg".format(args.netname, alpha)
+        netpath = "../sumo_cfg/{}/simcfg/case{}tmp.sumocfg".format(args.netname, alpha)
         flextable = "../result/{}/flextable/pr{}_cover{}Flex.json".format(args.netname, pr, alpha, step)
         # lf_table_path = "../result/{}/link_flow/pr{}_link_flow_3600.json".format(args.netname, pr)
         s = Simulation(start_time=600, max_time=args.maxtime, link_num=40, resolution=0.1,
                        net_file='../sumo_cfg/5x5net/5x5net.net.xml',
                        time_interval=20, sizeX=5, sizeY=5)
         s.load_lf(lf_table_path)
-        s.sim(save_info, netpath, flextable=flextable, parameters=(1, alpha), flex=4, k=256)
+        s.sim(save_info, netpath, flextable=flextable, parameters=(1, alpha), flex=4, k=256, GUImode=False)
         traci.close()
     # s.sim_benchmark(save_info)

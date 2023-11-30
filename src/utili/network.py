@@ -194,7 +194,7 @@ class Network:
         :return: node index
         """
         # retrieve the successor node ID of an edge
-        nextNodeID = self.net.getEdge(edge_id).getToNode().getID()
+        nextNodeID = self.sumonet.getEdge(edge_id).getToNode().getID()
         return nextNodeID
 
     def getFromNode(self, edge_id):
