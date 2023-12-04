@@ -68,6 +68,6 @@ if __name__ == '__main__':
                        net_file='../sumo_cfg/5x5net/5x5net.net.xml',
                        time_interval=20, sizeX=5, sizeY=5)
         s.load_lf(lf_table_path)
-        s.sim(save_info, netpath, flextable=flextable, parameters=(1, alpha), flex=4, k=256, GUImode=False)
+        s.sim(save_info, netpath, flextable=flextable, parameters=(1, alpha), flex=4, k=128, GUImode=True)
         traci.close()
     # s.sim_benchmark(save_info)
