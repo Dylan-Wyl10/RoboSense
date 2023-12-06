@@ -1,9 +1,9 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="5x5net.net.xml"/>
-        <route-files value="od.rou.xml"/>
-        <additional-files value="v_type.add.xml"/>
+        <net-file value="../5x5net.net.xml"/>
+        <route-files value="../od.rou.xml"/>
+        <additional-files value="../v_type.add.xml"/>
     </input>
 
     <processing>
@@ -16,9 +16,9 @@
     </processing>
 
     <output>
-        <summary-output value="../../result/5x5net/sumolog_tmp/summary100.xml"/>
-        <tripinfo-output value="../../result/5x5net/sumolog_tmp/tripinfo100.xml"/>
-        <statistic-output value="../../result/5x5net/sumolog_tmp/overall100.xml"/>
+        <summary-output value="../../../result/5x5net/sumolog_tmp/summary10.xml"/>
+        <tripinfo-output value="../../../result/5x5net/sumolog_tmp/tripinfo10.xml"/>
+        <statistic-output value="../../../result/5x5net/sumolog_tmp/overall10.xml"/>
     </output>
 
     <time>
@@ -39,7 +39,7 @@
     </report>
 
     <gui_only>
-        <gui-settings-file value="toy_net.view.xml"/>
+        <gui-settings-file value="../toy_net.view.xml"/>
     </gui_only>
 
 </configuration>
