@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
 
     # p_set = [100, 300, 500, 1000, 2000]
-    a_set = [100000, 0, 10000]
+    a_set = [100000, 10000]
     # pr = 2  # penetration
     step = 20
 
@@ -68,6 +68,6 @@ if __name__ == '__main__':
                        net_file='../sumo_cfg/5x5net/5x5net.net.xml',
                        time_interval=20, sizeX=5, sizeY=5)
         s.load_lf(lf_table_path)
-        s.sim(save_info, netpath, flextable=flextable, parameters=(1, alpha), flex=4, k=128, GUImode=True)
+        s.sim(save_info, netpath, flextable=flextable, parameters=(1, 10), flex=4, k=128, GUImode=False)
         traci.close()
     # s.sim_benchmark(save_info)

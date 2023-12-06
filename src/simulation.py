@@ -228,7 +228,8 @@ class Simulation:
         for v_id in traci.vehicle.getIDList():
             if traci.vehicle.getTypeID(v_id) == 'cav':
                 edge_current = traci.vehicle.getRoadID(v_id)  # check if the vehicle in the network
-                # vidx = int(re.findall(r'[0-9]+|[a-z]+', v_id)[1])
+                nextNode = self.network.getNextNode((edge_current))
+                # step1: calculate and update flexibility
                 if v_id not in self.cav_dic:
                     # default add vehicle initial state
                     sp_length = self.network.getShortDistance(self.network.getNextNode(traci.vehicle.getRoute(v_id)[0]),
@@ -238,15 +239,14 @@ class Simulation:
                                           'destination': self.network.getFromNode(traci.vehicle.getRoute(v_id)[-1]),
                                           'Flex': [self.flex],  # initial flexibility, must be even number
                                           'currentFlex': self.flex,
+                                          'deltaCover': 1,
                                           'spLength': sp_length,
                                           'currentRoute': [None],
                                           'isControl': True,  # this is the flag that determines if cav need to be controlled.
                                           'nextEdges': None}
-                else:
-                    # edge_current = traci.vehicle.getRoadID(v_id)  # check if the vehicle in the network
-                    nextNode = self.network.getNextNode((edge_current))
+                else: # if not first time
                     if int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) <= self.link_num:
-                        # step1: calculate and update flexibility
+
                         last_edge = self.cav_dic[v_id]['currentRoute'][-1]
                         if edge_current != last_edge:
                             self.cav_dic[v_id]['currentRoute'].append(edge_current)
@@ -257,8 +257,8 @@ class Simulation:
                         # 1103 update: current flexibility = original sp length + initial flexibility - number of edges traveled - current sp length
                         tmp_flex = self.cav_dic[v_id]['spLength'] + self.cav_dic[v_id]['Flex'][0] - len(
                             self.cav_dic[v_id]['currentRoute']) + 1 - sp_current
-                        if tmp_flex == 0:
-                            print('we have something')
+                        # if tmp_flex == 0:
+                        #     print('we have something')
                         self.cav_dic[v_id]['Flex'].append(max(tmp_flex, 0))
                         self.cav_dic[v_id]['currentFlex'] = max(tmp_flex, 0)
                         print(f'vehicle {v_id} has flex {self.cav_dic[v_id]["currentFlex"]}')
@@ -273,8 +273,9 @@ class Simulation:
                     if self.network.sumonet.getEdge(edge_current).getLength() - traci.vehicle.getLanePosition(v_id) <= 160:
                         self.cav_dic[v_id]['nextEdges'] = [cnt.getTo().getID() for cnt in lane_tmp.getOutgoing()] #  if vehicle in no changing zone
                     else:
+                        # print(f'next Node is {nextNode}, veh{v_id} in nochanging zone')
                         self.cav_dic[v_id]['nextEdges'] = [e.getID() for e in self.network.node_list[nextNode].link_idx['out']]  # if not in no-changing zone
-
+                #
 
     def updateRoute(self, k, parameters):
         """
@@ -295,10 +296,11 @@ class Simulation:
                 veh_idx = int(re.findall(r'[0-9]+|[a-z]+', cav_id)[1])
                 cav_edgeID = traci.vehicle.getRoadID(cav_id)
                 my_nextNode = self.network.getNextNode(cav_edgeID)
-                my_desNode = self.network.getFromNode(traci.vehicle.getRoute(cav_id)[-1])
+                sp_length = (self.cav_dic[cav_id]['spLength']*400)/14
 
                 k_shortest_path = self.network.findKShortPath(k, my_nextNode, self.cav_dic[cav_id]['destination'],
                                                               self.cav_dic[cav_id]['currentFlex'])
+
 
                 # filter k_shortest_path with the following rules: (20231203)
                 # 1. remove the routes that not realistic based on the no changing zone regulation
@@ -315,7 +317,7 @@ class Simulation:
                 path_obj_table = []  # store the object value for each candidate path
 
                 # objective value for last candidate path, since the objective is to get max, the default number is -1000000.
-                last_bestRoute_obj = -10000
+                last_bestRoute_obj = -1000000
 
                 # print(f'check cover table at start of {cav_id} at time {self.time}')
                 # self.checkCoverTable()
@@ -327,9 +329,12 @@ class Simulation:
                         self.cover_LinkTimeVeh[l, t, veh_idx] = 0
                 # print(f'begin to check if cover table is cleared for vehicle {cav_id} at time {self.time} on path {sp}')
                 self.checkCoverTable()
+                cover_LTV_tmp = copy.deepcopy(self.cover_LinkTimeVeh)
 
                 # enumerate all candidate path, select the possible paths that fits the no-changing zone restriction
+                route_candidate = []
                 for sp in k_shortest_path:
+                    # print(f'current route{sp} is for vehcile {cav_id}')
                     route = [cav_edgeID]
                     for node_idx in range(len(sp) - 1):
                         node2edge = self.network.node_list[sp[node_idx + 1]].getEdgeByUpperNode(sp[node_idx])
@@ -342,8 +347,11 @@ class Simulation:
                     - another input is an if table about if the edge is observed currently
                     """
                     if route[1] in self.cav_dic[cav_id]['nextEdges']:
-                        print ('yes')
+                        route_candidate.append([sp, route])  # pairing node path and edge path
 
+                del k_shortest_path
+
+                for (sp, route) in route_candidate:
                     node_time = self.network.getNodeArrTime(route[:-1], sp, self.time, cav_id,
                                                             self.link_flows_hisNum)  # arrive time on each node for given path route
                     arrive_time_table.append(node_time[-1])
@@ -361,11 +369,12 @@ class Simulation:
                     route_endTime = round(node_timeTmp[-1])
                     duration = route_endTime - route_startTime
                     # predicted cover rate for given route,  this is temp data point
-                    cover_ts_pre = np.copy(self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :])
+                    # cover_ts_pre = np.copy(self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :])
+                    cover_ts_pre = copy.deepcopy(cover_LTV_tmp[:, route_startTime: route_endTime, :])
 
                     for idx in range(len(route[:-1])):
                         edge_idx_num = int(re.findall(r'[0-9]+|[a-z]+', route[:-1][idx])[0])
-                        if edge_idx_num < self.link_num + 1:
+                        if edge_idx_num < self.link_num:
                             # # determine the start and end time point for each occupation
                             # start_idx = node_timeTmp[1]
                             # end_idx = int(node_timeTmp[2])
@@ -381,7 +390,7 @@ class Simulation:
                     # get the time-space cover table
                     cover_pre = np.where(np.sum(cover_ts_pre, axis=2) > 0, 1, 0)
                     cover_now = np.where(
-                        np.sum(self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :], axis=2) > 0,
+                        np.sum(cover_LTV_tmp[:, route_startTime: route_endTime, :], axis=2) > 0,
                         1, 0)
 
                     cover_delta = (np.sum(cover_pre) - np.sum(cover_now)) / duration
@@ -389,25 +398,47 @@ class Simulation:
 
                     # 4. calculate objective and get best route, update the routing based on best objective
                     #  0710 YW: update objective considering total travel time instead of current steps.
-                    current_route_obj = - parameters[0] * (node_time[-1] - dep_time) + parameters[1] * cover_delta
+                    current_route_obj = - (parameters[0]/sp_length) * (node_time[-1] - dep_time) + parameters[1] * cover_delta
                     path_obj_table.append(current_route_obj)
-                    if current_route_obj > last_bestRoute_obj:
-                        self.cover_LinkTimeVeh[:, route_startTime: route_endTime, :] = cover_ts_pre
+                    if current_route_obj >= 1.10 * last_bestRoute_obj:  # bubble up and get best
+                        best_cover = cover_ts_pre
+                        best_rou_end = route_endTime
                         best_route_node = sp  # get best route idx and path(node)
-                        best_route = [cav_edgeID]
+                        last_bestRoute_obj = current_route_obj
+                        best_travel_time = (node_time[-1] - dep_time)
 
+                        # best_route = [cav_edgeID]
+                        # # convert node path to edge path
+                        # for node_idx in range(len(best_route_node) - 1):
+                        #     node2edge = self.network.node_list[best_route_node[node_idx + 1]].getEdgeByUpperNode(
+                        #         best_route_node[node_idx])
+                        #     best_route.append(node2edge)
+
+                        self.cav_dic[cav_id]['deltaCover'] = cover_delta
+                        self.cav_dic[cav_id]['isControl'] = False if (abs(self.cav_dic[cav_id]['deltaCover'] - 1) < 0.01 and self.cav_dic[cav_id]['Flex'] == 0) else True
+                        isctrl = self.cav_dic[cav_id]['isControl']
+                        print(
+                            f'vehicle {cav_id} current node is {best_route_node} best obj is {last_bestRoute_obj} with time {best_travel_time} and cover {cover_delta}, control is {isctrl}')
+                        del cover_ts_pre, cover_pre
+                    if sp == route_candidate[-1][0]:  # in the last, update route and
+                        isctrl = self.cav_dic[cav_id]['isControl']
+                        best_route = [cav_edgeID]
                         # convert node path to edge path
                         for node_idx in range(len(best_route_node) - 1):
                             node2edge = self.network.node_list[best_route_node[node_idx + 1]].getEdgeByUpperNode(
                                 best_route_node[node_idx])
                             best_route.append(node2edge)
+                        self.cover_LinkTimeVeh[:, route_startTime: best_rou_end, :] = best_cover
                         best_route.append(traci.vehicle.getRoute(cav_id)[-1])
                         traci.vehicle.setRoute(cav_id, best_route)
-                        last_bestRoute_obj = current_route_obj
                         print(
-                            f'vehicle {cav_id} current route is {best_route} with best obj {last_bestRoute_obj} with time {(node_time[-1] - dep_time)} and cover {cover_delta}')
-                    del cover_ts_pre, cover_pre
+                            f'vehicle {cav_id} current route is {best_route} with best obj {last_bestRoute_obj} with time {best_travel_time}, control is {isctrl}')
+
+                        del cover_LTV_tmp
+
                 # print('yes')
+            else:
+                print(f'vehicle {cav_id} will not be controlled due to its best route')
         # return
 
     def save_lf(self, path):  # save link flow table to file, this is designed for history collection
