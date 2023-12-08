@@ -72,12 +72,15 @@ class Simulation:
                 # step1: update cav dictionary information, the following inforamtion will be updated:
                 # - 1.1 select and update the flexibility for current cav in the list.
                 # - 1.2 determine the next intended link based on no changing zone constrains.
+                print("###########################")
+                print('step is:', self.step, parameters[1])
+
                 self.updateCAVinfo()
 
                 # step2: enumerate all cav from list, choose proper route and update vehicle information
                 # if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
                 self.getCAVList()
-                print('step is:', self.step, parameters[1])
+                # print('step is:', self.step, parameters[1])
 
                 # step2: enumerate all cav. for each cav.
                 #       -2.1: get k-shortest path considering distance
@@ -244,7 +247,7 @@ class Simulation:
                                           'currentRoute': [None],
                                           'isControl': True,  # this is the flag that determines if cav need to be controlled.
                                           'nextEdges': None}
-                else: # if not first time
+                elif self.cav_dic[v_id]['isControl']: # if not first time, update flexibility
                     if int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) <= self.link_num:
 
                         last_edge = self.cav_dic[v_id]['currentRoute'][-1]
@@ -257,11 +260,11 @@ class Simulation:
                         # 1103 update: current flexibility = original sp length + initial flexibility - number of edges traveled - current sp length
                         tmp_flex = self.cav_dic[v_id]['spLength'] + self.cav_dic[v_id]['Flex'][0] - len(
                             self.cav_dic[v_id]['currentRoute']) + 1 - sp_current
-                        # if tmp_flex == 0:
-                        #     print('we have something')
                         self.cav_dic[v_id]['Flex'].append(max(tmp_flex, 0))
                         self.cav_dic[v_id]['currentFlex'] = max(tmp_flex, 0)
-                        print(f'vehicle {v_id} has flex {self.cav_dic[v_id]["currentFlex"]}')
+                        # if tmp_flex == 0:
+                        #     print('we have something')
+                print(f'vehicle {v_id} has flex {self.cav_dic[v_id]["currentFlex"]} with {self.cav_dic[v_id]["isControl"]}')
                 # step2: determine the intended next edge if in no changing zone
                 if not (edge_current[0] == '-' and int(
                         re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) > self.link_num):
@@ -289,6 +292,7 @@ class Simulation:
         :return:
         """
         for cav_id in self.cav_list:
+            print(f'start from veh {cav_id}')
             # 1204 update: check control flag first
             if self.cav_dic[cav_id]['isControl']:
                 # print(f'current veh idx is {cav_id} in a list of {self.cav_list}')
@@ -415,7 +419,24 @@ class Simulation:
                         #     best_route.append(node2edge)
 
                         self.cav_dic[cav_id]['deltaCover'] = cover_delta
-                        self.cav_dic[cav_id]['isControl'] = False if (abs(self.cav_dic[cav_id]['deltaCover'] - 1) < 0.01 and self.cav_dic[cav_id]['Flex'] == 0) else True
+                        # print(f'vehicle {cav_id} delta cover is {cover_delta}')
+
+                        # stop planning threshold
+                        if (abs(self.cav_dic[cav_id]['deltaCover'] - 1) < 0.01 or self.cav_dic[cav_id]['currentFlex'] == 0):
+                            self.cav_dic[cav_id]['isControl'] = False
+
+                            best_route = [cav_edgeID]
+                            # convert node path to edge path
+                            for node_idx in range(len(best_route_node) - 1):
+                                node2edge = self.network.node_list[best_route_node[node_idx + 1]].getEdgeByUpperNode(
+                                    best_route_node[node_idx])
+                                best_route.append(node2edge)
+                            self.cover_LinkTimeVeh[:, route_startTime: best_rou_end, :] = best_cover
+                            best_route.append(traci.vehicle.getRoute(cav_id)[-1])
+                            traci.vehicle.setRoute(cav_id, best_route)
+                            print(f'vehicle {cav_id} is set to False with route {best_route}, flex is {self.cav_dic[cav_id]["Flex"]} and cover is {self.cav_dic[cav_id]["deltaCover"]}')
+                            break
+                        # self.cav_dic[cav_id]['isControl'] = False if (abs(self.cav_dic[cav_id]['deltaCover'] - 1) < 0.05 or self.cav_dic[cav_id]['Flex'] == 0) else True
                         isctrl = self.cav_dic[cav_id]['isControl']
                         print(
                             f'vehicle {cav_id} current node is {best_route_node} best obj is {last_bestRoute_obj} with time {best_travel_time} and cover {cover_delta}, control is {isctrl}')
