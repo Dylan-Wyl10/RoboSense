@@ -134,7 +134,8 @@ class Network:
         self.net_config = net_file
         self.sumonet = sumolib.net.readNet(net_file)
         self.G = nx.Graph()  # initial a graph component
-        self.node_list = self.getNodeList(x_size, y_size, self.sumonet)  # restore the list of id on intersection
+        self.\
+            node_list = self.getNodeList(x_size, y_size, self.sumonet)  # restore the list of id on intersection
 
 
     def netInit(self, x_size, y_size):

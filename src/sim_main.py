@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
 
     # p_set = [100, 300, 500, 1000, 2000]
-    a_set = [10, 0, 1]
+    a_set = [0,1,2, 5, 10]
     # pr = 2  # penetration
     step = 20
 
@@ -41,7 +41,7 @@ if __name__ == '__main__':
                            type=int,
                            help='penetration rate in %')
     argparser.add_argument('--maxtime',
-                           default=2400,
+                           default=4200,
                            type=int,
                            help='max simulation length(unit:s)')
 
@@ -49,9 +49,15 @@ if __name__ == '__main__':
                            default='5x5net',
                            type=str,
                            help='network name used for configuration')
+    argparser.add_argument('--alpha',
+                           default='0',
+                           type=int,
+                           help='alpha value')
 
     args = argparser.parse_args()
     pr = args.penetration
+    # for scripts only
+    a_set = [args.alpha]
 
     save_info = {'cover_table_benchmark': "../result/{}/PR{} Testing/cover_table_benchmark.npy".format(args.netname,
                                                                                        pr)}
@@ -67,6 +73,6 @@ if __name__ == '__main__':
                        net_file='../sumo_cfg/5x5net/5x5net.net.xml',
                        time_interval=20, sizeX=5, sizeY=5)
         s.load_lf(lf_table_path)
-        s.sim(save_info, netpath, flextable=flextable, parameters=(1, alpha), flex=4, k=256)
+        s.sim(save_info, netpath, flextable=flextable, parameters=(1, alpha), flex=4, k=128)
         traci.close()
     # s.sim_benchmark(save_info)

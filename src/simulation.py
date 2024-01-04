@@ -123,7 +123,7 @@ class Simulation:
                 break
 
     def sim_benchmark(self, save_path, config="../sumo_cfg/5x5net/benchmark.sumocfg"):
-        traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
+        traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         self.step = 0
@@ -145,13 +145,13 @@ class Simulation:
             if self.step > self.MAXSTEP or (
                     traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
                 path = save_path['cover_table_benchmark']
-                np.save(path, self.cover_LinkTimeVeh)
+                np.save(path, self.cover_LinkTimeVeh[:, self.start_time:self.max_time, :])
                 print("CTMSim has ended due to no enough vehicle")
                 break
 
     # 06/18/2023 get historical link flow table through simulation
     def get_LF_table(self, config):
-        traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
+        traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
         # for step in range(self.MAXSTEP):
@@ -438,8 +438,8 @@ class Simulation:
                             break
                         # self.cav_dic[cav_id]['isControl'] = False if (abs(self.cav_dic[cav_id]['deltaCover'] - 1) < 0.05 or self.cav_dic[cav_id]['Flex'] == 0) else True
                         isctrl = self.cav_dic[cav_id]['isControl']
-                        print(
-                            f'vehicle {cav_id} current node is {best_route_node} best obj is {last_bestRoute_obj} with time {best_travel_time} and cover {cover_delta}, control is {isctrl}')
+                        # pr
+                        # hicle {cav_id} current node is {best_route_node} best obj is {last_bestRoute_obj} with time {best_travel_time} and cover {cover_delta}, control is {isctrl}')
                         del cover_ts_pre, cover_pre
                     if sp == route_candidate[-1][0]:  # in the last, update route and
                         isctrl = self.cav_dic[cav_id]['isControl']
