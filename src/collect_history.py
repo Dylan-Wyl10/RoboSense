@@ -57,10 +57,10 @@ if __name__ == '__main__':
     s = Simulation(start_time=600, max_time=args.maxtime, link_num=40, resolution=0.1,
                    net_file='../sumo_cfg/5x5net/5x5net.net.xml',
                    time_interval=20, sizeX=5, sizeY=5)
-    s.get_LF_table(config=path)
-    s.save_lf(lf_table_savepath)
+    # s.get_LF_table(config=path)
+    # s.save_lf(lf_table_savepath)
     print('lf table has been saved')
-    traci.close()
+    # traci.close()
     s.sim_benchmark(save_info, config=path)
 
 

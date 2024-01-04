@@ -15,3 +15,5 @@ sumo_cfg/toy_net/dualogs
 src/__pycache__
 src/utili/__pycache__
 ctm_temtest
+
+result/tmpnet
