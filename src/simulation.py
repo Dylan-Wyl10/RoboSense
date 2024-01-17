@@ -61,9 +61,9 @@ class Simulation:
         self.cav_dic = {}
         # self.link_flows_table = self.link_flows_hisNum  # get history link-flow table
 
-        # initial CTM
-        self.CTM = CTM(self.network, tick_interval=5)  # 20111128 defaultly set tick as 5s.
-        self.CTM.init()
+        # # initial CTM
+        # self.CTM = CTM(self.network, tick_interval=5)  # 20111128 defaultly set tick as 5s.
+        # self.CTM.init()
 
         while True:
 
@@ -121,6 +121,86 @@ class Simulation:
                     json.dump(self.cav_dic, flxfile)
                 print("Sim has ended due to no enough vehicle")
                 break
+
+    def simCTM(self, save_path, config, flextable, parameters, flex, k=32, GUImode=False):
+        if GUImode:
+            traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
+                         "--step-length={}".format(str(self.resolution))])
+        else:
+            traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
+                     "--step-length={}".format(str(self.resolution))])
+        self.flex = flex  # default flexibility of the vehicle
+        self.time = 0  # simulation time index
+        self.step = 0
+        self.network.netInit(self.sizeX, self.sizeY)
+
+        # initial the cav list
+        self.cav_dic = {}
+
+        # initial CTM
+        self.CTM = CTM(self.network, tick_interval=5)  # 20111128 defaultly set tick as 5s.
+        self.CTM.init()
+
+        while True:
+
+            # in a given time interval of CTM model, an observation will be updated each step, then the CTM needs to be
+            # implemented for a given range.
+            if self.step % (self.time_interval * 10) == 0:
+                # step1: update cav dictionary information, the following inforamtion will be updated:
+                # - 1.1 select and update the flexibility for current cav in the list.
+                # - 1.2 determine the next intended link based on no changing zone constrains.
+                print("###########################")
+                print('step is:', self.step, parameters[1])
+
+                self.updateCAVinfo()
+
+                # step2: update current observation and CTM model till the longest trip
+                # step2.1: get a list of cav that in the network
+                self.getCAVList()
+
+                # step3: enumerate all cav from list, choose proper route and update vehicle information
+
+
+                # step3.1: enumerate all cav. for each cav.
+                #       -1: get k-shortest path considering distance
+                #       -2: calculate travel time and cover rate for each candidate route based on CTM
+                #       -3: choose the best route and apply accordingly
+                
+
+                self.updateRoute(k, parameters)
+
+                # """temp set route for debug 20231130"""
+                # cavtestroute = ["E108", "E38", "E39", "-E16", "-E35", "-E11", "E31", "-E14", "-E27", "-E9", "E23", "-E118"]
+                # traci.vehicle.setRoute('cav1', cavtestroute)
+
+
+                """
+                # stepXXXX: (this will be added on next): adjust signal time plan. 
+                self.update_tsc()
+                self.update_veh()
+                """
+            # step3: update observation information every 1 second
+            if self.step % 10 == 0:
+                # self.getCAVctrlList()
+                # update observation
+                self.updateObsv()
+                self.checkCoverTable()
+            # step4: push simulation and update information
+            self.step += 1
+            self.time = self.step * self.resolution
+            traci.simulationStep()
+
+            # stop and save the results
+            # if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
+            if self.step > self.MAXSTEP or (
+                    traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
+                path = save_path['cover_table{}'.format(parameters[1])]
+                np.save(path, self.cover_LinkTimeVeh[:, self.start_time:self.max_time, :])
+                with open(flextable, 'w') as flxfile:
+                    json.dump(self.cav_dic, flxfile)
+                print("Sim has ended due to no enough vehicle")
+                break
+
 
     def sim_benchmark(self, save_path, config="../sumo_cfg/5x5net/benchmark.sumocfg"):
         traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
