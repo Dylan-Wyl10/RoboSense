@@ -392,6 +392,8 @@ class CTM():
         """next is create unified cells for each corridos. some assumptions holds:
         
         """
+
+
         print('testing')
 
 
