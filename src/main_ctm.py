@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
 
     # p_set = [100, 300, 500, 1000, 2000]
-    a_set = [100000, 10000]
+    a_set = [0, 1, 2, 5, 10]
     # pr = 2  # penetration
     step = 20
 
@@ -59,15 +59,16 @@ if __name__ == '__main__':
     lf_table_path = "../result/{}/link_flow/pr{}_link_flow_3600.json".format(args.netname, pr)
 
     for alpha in a_set:
-        save_info['cover_table{}'.format(alpha)] = "../result/{}/PR{} TestingNew/pr{}_cover_{}_step{}.npy".format(args.netname, pr, pr, alpha, step)
+        # save_info['cover_table{}'.format(alpha)] = "../result/{}//pr{}_cover_{}_step{}.npy".format(args.netname, pr, pr, alpha, step)
 
-        netpath = "../sumo_cfg/{}/simcfg/case{}tmp.sumocfg".format(args.netname, alpha)
+        save_info['cover_table{}'.format(alpha)] = "../result/{}/CTMTEST/pr{}_cover_{}_step{}.npy".format('tmpnet', pr, pr, alpha, step)
+
+        netpath = "../sumo_cfg/{}/simcfg/case{}ctm.sumocfg".format(args.netname, alpha)
         flextable = "../result/{}/flextable/pr{}_cover{}Flex.json".format(args.netname, pr, alpha, step)
-        # lf_table_path = "../result/{}/link_flow/pr{}_link_flow_3600.json".format(args.netname, pr)
         s = Simulation(start_time=600, max_time=args.maxtime, link_num=40, resolution=0.1,
                        net_file='../sumo_cfg/5x5net/5x5net.net.xml',
                        time_interval=20, sizeX=5, sizeY=5)
         s.load_lf(lf_table_path)
-        s.sim(save_info, netpath, flextable=flextable, parameters=(1, 10), flex=4, k=128, GUImode=False)
+        s.simCTM(save_info, netpath, flextable=flextable, parameters=(1, 10), flex=4, k=128, GUImode=False)
         traci.close()
     # s.sim_benchmark(save_info)

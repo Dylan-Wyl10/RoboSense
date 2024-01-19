@@ -16,9 +16,9 @@
     </processing>
 
     <output>
-        <summary-output value="../../../result/5x5net/sumolog_tmp/summary100000.xml"/>
-        <tripinfo-output value="../../../result/5x5net/sumolog_tmp/tripinfo100000.xml"/>
-        <statistic-output value="../../../result/5x5net/sumolog_tmp/overall100000.xml"/>
+        <summary-output value="../../../result/tmpnet/CTMTEST/sumolog_tmp/summary0.xml"/>
+        <tripinfo-output value="../../../result/tmpnet/CTMTEST/sumolog_tmp/tripinfo0.xml"/>
+        <statistic-output value="../../../result/tmpnet//CTMTEST/sumolog_tmp/overall0.xml"/>
     </output>
 
     <time>
