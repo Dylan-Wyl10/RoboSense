@@ -6,7 +6,7 @@ Features:
  - construct the network from network xml file directly linked with SUMO
  - uniformly
 """
-from src.utili.ctmcomponent import Cell, Corridor
+from src.utili.ctm.ctmcomponent import Cell, Corridor
 import pandas as pd
 import re
 import threading

@@ -175,7 +175,7 @@ class Network:
                     break
 
     @staticmethod
-    def getNodeList(x_size, y_size, net):
+    def getNodeList(x_size, y_size, net):  # return a dictionary of intersection objects
         tmp = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
         node_list = {}
         for x in range(x_size):

@@ -51,7 +51,7 @@ class Cell(object):
         else:
             raise Exception("This id has been used by other cell")
 
-    def addConnection(self, sink):
+    def addConnection(self, sink):  # self ahead, sink back
         if len(sink.cfrom) == 2 or len(self.cto) == 2:
             raise Exception("Cannot add more connection to cell %s and cell %s" % (
                 self.getCompleteAddress(), sink.getCompleteAddress()))
@@ -241,67 +241,67 @@ class Cell(object):
             self.updated = True
 
 
-class Node(object):
-    idcase = {}
+#
+# class Node(object):
+#     idcase = {}
+#
+#     def __init__(self, nid, x, y):
+#         self.id = nid
+#         self.x = x
+#         self.y = y
+#         self.link_in = []
+#         self.link_out = []
+#         Node.idcase[nid] = self
+#
+#     def getNodeFromID(nid):
+#         return Node.idcase[nid]
 
-    def __init__(self, nid, x, y):
-        self.id = nid
-        self.x = x
-        self.y = y
-        self.link_in = []
-        self.link_out = []
-        Node.idcase[nid] = self
+#
+# class Link(object):
+#     idcase = {}
+#
+#     def __init__(self, lid, fnode, tnode, speed, num_of_lanes, length):
+#         self.id = str(lid)
+#         self.source = str(fnode)
+#         self.sink = str(tnode)
+#         self.length = length
+#         self.speed = speed
+#         self.num_of_lanes = num_of_lanes
+#         Link.idcase[str(lid)] = self
+#
+#     def getLinkFromID(lid):
+#         return Link.idcase[lid]
 
-    def getNodeFromID(nid):
-        return Node.idcase[nid]
-
-
-class Link(object):
-    idcase = {}
-
-    def __init__(self, lid, fnode, tnode, speed, num_of_lanes, length):
-        self.id = str(lid)
-        self.source = str(fnode)
-        self.sink = str(tnode)
-        self.length = length
-        self.speed = speed
-        self.num_of_lanes = num_of_lanes
-        Link.idcase[str(lid)] = self
-
-    def getLinkFromID(lid):
-        return Link.idcase[lid]
-
-
-class Corridor(object):
-    idcase = {}
-
-    def __init__(self, corr_name, cells, corr_demand, corr_link, corr_supply,
-                 total_tick, supply_period, main_roads, ramps, df, flowdf,
-                 ramp_df, ramp_demand_df, dfindex):
-        self.name = corr_name
-        self.cells = cells
-        self.demand = corr_demand
-        self.link = corr_link
-        self.supply = corr_supply
-        self.total_tick = total_tick
-        self.supply_period = supply_period
-        self.main_roads = main_roads
-        self.ramps = ramps
-        self.df = df
-        self.flowdf = flowdf
-        self.ramp_df = ramp_df
-        self.ramp_demand_df = ramp_demand_df
-        self.current_step = 0
-        self.dfindex = dfindex
-        Corridor.idcase[corr_name] = self
-
-    def printResults(self):
-        self.df.to_csv("Density_profile_{0}.csv".format(self.name))
-        self.flowdf.to_csv("Flow_profile_{0}.csv".format(self.name))
-
-    def update(self):
-        pass
-
+#
+# class Corridor(object):
+#     idcase = {}
+#
+#     def __init__(self, corr_name, cells, corr_demand, corr_link, corr_supply,
+#                  total_tick, supply_period, main_roads, ramps, df, flowdf,
+#                  ramp_df, ramp_demand_df, dfindex):
+#         self.name = corr_name
+#         self.cells = cells
+#         self.demand = corr_demand
+#         self.link = corr_link
+#         self.supply = corr_supply
+#         self.total_tick = total_tick
+#         self.supply_period = supply_period
+#         self.main_roads = main_roads
+#         self.ramps = ramps
+#         self.df = df
+#         self.flowdf = flowdf
+#         self.ramp_df = ramp_df
+#         self.ramp_demand_df = ramp_demand_df
+#         self.current_step = 0
+#         self.dfindex = dfindex
+#         Corridor.idcase[corr_name] = self
+#
+#     def printResults(self):
+#         self.df.to_csv("Density_profile_{0}.csv".format(self.name))
+#         self.flowdf.to_csv("Flow_profile_{0}.csv".format(self.name))
+#
+#     def update(self):
+#         pass
 
 
 def getCrossProduct(va, vb):
@@ -347,6 +347,64 @@ def quicklyCreateCells(number, linkid, vf=60, kjam=220):
 
     return cells
 
+# creat cells for a given link
+def linkCreateCells(linkid, link_type='normal'):
+    """
+    number: total number of cells in one link
+    Note that for 202402version, the tepology for the cells in link is fixed
+    """
+    cells = []
+    if link_type == 'normal':
+        cells.append(Cell('C' + str(1), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
+        cells.append(Cell('C' + str(2), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
+        cells.append(Cell('C' + str(3), linkid, 'A0', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0, dis_rate=3600))
+        cells.append(Cell('C' + str(4), linkid, 'A0', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0, dis_rate=3600))
+        cells.append(Cell('C' + str(5), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
+        cells.append(Cell('C' + str(6), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
+        cells.append(Cell('C' + str(7), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
+        cells.append(Cell('C' + str(8), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
+
+        # add connection
+        cells[0].addConnection(cells[2])
+        cells[1].addConnection(cells[2])
+        cells[2].addConnection(cells[3])
+        cells[3].addConnection(cells[4])
+        cells[4].addConnection(cells[6])
+        cells[3].addConnection(cells[5])
+        cells[5].addConnection(cells[7])
+    elif link_type == 'entry':
+
+        cells.append(Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0,
+                          dis_rate=3600))
+        cells.append(Cell('C' + str(5), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
+        cells.append(Cell('C' + str(6), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
+        cells.append(Cell('C' + str(7), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
+        cells.append(Cell('C' + str(8), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
+
+        cells[0].addConnection(cells[1])
+        cells[1].addConnection(cells[2])
+        cells[0].addConnection(cells[2])
+        cells[2].addConnection(cells[4])
+
+    elif link_type == 'exit':
+        cells.append(Cell('C' + str(1), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
+        cells.append(Cell('C' + str(2), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
+        cells.append(Cell('C' + str(3), linkid, 'A1', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0,
+                          dis_rate=3600))
+
+        cells[0].addConnection(cells[2])
+        cells[1].addConnection(cells[2])
+
+    return cells
+
+
+
 
 def notifyThreads(condition):
     with condition:
@@ -363,6 +421,7 @@ def timeDependentDemand(order, t, miu, gamma, t0, t2=0, t3=0):
         return miu + gamma * (t - t0) * (t - t2) * (t - tbar)
     else:
         raise Exception("Invaild input parameter! Order of time dependtent demand formula must be 1, 2 or 3")
+
 
 def initializeCTM():
     event = threading.Event()
@@ -384,18 +443,74 @@ class CTM():
         self.current_step = 0
         self.tick = tick_interval  # time interval for CTM calculation
         self.net = network  # current network input is based on SUMO, the input format is net.xml
-        self.link_ls = []
+        self.link_ls = {}
 
     def init(self):
         print(f'Initializing CTM for network{self.net.net_config}...')
-        self.link_ls = [i[0] + i[1] for i in np.array(self.net.G.edges)] # get link index for ctm model
-        """next is create unified cells for each corridos. some assumptions holds:
-        
-        """
+        # self.link_ls = [i[0] + i[1] for i in np.array(self.net.G.edges)] # get link index for ctm model
+        link_info = {'link_id': [],
+                     'from_link_id': [],
+                     'to_link_id': [],
+                     'length': [],
+                     }
+        for e in self.net.sumonet.getEdges():  # enumerate all edges in the sumo net file
+            # 1. get link id and length
+            link_info['link_id'].append(e.getID())
+            link_info['length'].append(e.getLength())
+            # 2. get from link id
+            from_node_id = e.getFromNode().getID()
+            if from_node_id in self.net.node_list.keys():
+                inter = self.net.node_list[from_node_id]  # get intersection class by given node ID
+                tmp = []
+                for e_f in inter.link_idx['in']:
+                    if re.findall(r'[0-9]+|[a-z]+', e_f.getID()) != re.findall(r'[0-9]+|[a-z]+', e.getID()):
+                        tmp.append(e_f.getID())
+                link_info['from_link_id'].append(tmp)
+            else:
+                link_info['from_link_id'].append('0')  # when link is the start link
+            # 3. get to link id
+            to_node_id = e.getToNode().getID()
+            if to_node_id in self.net.node_list.keys():
+                inter = self.net.node_list[to_node_id]  # get intersection class by given node ID
+                tmp = []
+                for e_t in inter.link_idx['in']:
+                    if re.findall(r'[0-9]+|[a-z]+', e_t.getID()) != re.findall(r'[0-9]+|[a-z]+', e.getID()):
+                        tmp.append(e_t.getID())
+                link_info['to_link_id'].append(tmp)
+            else:
+                link_info['to_link_id'].append('0')  # when link is the start link
 
+        linkdf = pd.DataFrame(link_info)
+        """next is create unified cells for each corridos"""
+
+        # linkdf1 = pd.read_csv('link.csv', dtype={'link_id': object, 'to_link_id': object, 'from_link_id': object})
+        # demand = pd.read_csv('demand.csv', index_col=0)
+        # supply = pd.read_csv('supply.csv', dtype={'to_node_id': object, 'from_node_id': object})
+
+        # corridors = linkdf['corridor_id'].drop_duplicates()
+        link = {}
+        for i in range(len(linkdf)):
+            # if the links is the entry link, creat two big cell for each lane
+            if linkdf.iloc[i]['from_link_id'] == '0' and linkdf.iloc[i]['to_link_id'] != '0':
+                print('creating cells for entry link {}'.format(linkdf.iloc[i]['link_id']))
+                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='entry')
+            # normal link, need connections from both side with 8 cells for one link
+            elif linkdf.iloc[i]['from_link_id'] != '0' and linkdf.iloc[i]['to_link_id'] != '0':
+                print('creating cells for normal link {}'.format(linkdf.iloc[i]['link_id']))
+                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='normal')
+            elif linkdf.iloc[i]['from_link_id'] != '0' and linkdf.iloc[i]['to_link_id'] == '0':
+                print('creating cells for exit link {}'.format(linkdf.iloc[i]['link_id']))
+                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='exit')
+            # tmpp = linkdf.iloc[i]['link_id']
+            print('cells has been created')
+        aa = Cell.idcase
+
+        # add conncetions on each intersection
+        for node_key in self.net.node_list.keys():
+            node = self.net.node_list[node_key]
+        print("Initialize Complete!")
 
         print('testing')
-
 
 #
 #
@@ -410,4 +525,3 @@ class CTM():
 #         Corridor.idcase[key].printResults()
 #     end = datetime.now()
 #     print("Elapsed Time:", end - start)
-

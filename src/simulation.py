@@ -11,10 +11,8 @@ import copy
 from utili.tools import *
 from utili.network import Network
 import traci
-import re
 import json
-from itertools import groupby
-from utili.ctmcomponent import *
+from src.utili.ctm.ctmcomponent import *
 
 
 class Simulation:
