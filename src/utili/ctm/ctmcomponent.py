@@ -374,15 +374,15 @@ def linkCreateCells(linkid, link_type='normal'):
         cells[5].addConnection(cells[7])
     elif link_type == 'entry':
 
-        cells.append(Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0,
+        cells.append(Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=16, kjam=18, qmax=3600, length=66, arr_rate=0,
                           dis_rate=3600))
-        cells.append(Cell('C' + str(5), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+        cells.append(Cell('C' + str(5), linkid, 'A1', time_interval=5, vf=16, kjam=9, qmax=1800, length=66, arr_rate=0,
                           dis_rate=1800))
-        cells.append(Cell('C' + str(6), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+        cells.append(Cell('C' + str(6), linkid, 'A1', time_interval=5, vf=16, kjam=9, qmax=1800, length=66, arr_rate=0,
                           dis_rate=1800))
-        cells.append(Cell('C' + str(7), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+        cells.append(Cell('C' + str(7), linkid, 'A1', time_interval=5, vf=16, kjam=9, qmax=1800, length=66, arr_rate=0,
                           dis_rate=1800))
-        cells.append(Cell('C' + str(8), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+        cells.append(Cell('C' + str(8), linkid, 'A1', time_interval=5, vf=16, kjam=9, qmax=1800, length=66, arr_rate=0,
                           dis_rate=1800))
 
         cells[0].addConnection(cells[1])
@@ -391,11 +391,11 @@ def linkCreateCells(linkid, link_type='normal'):
         cells[2].addConnection(cells[4])
 
     elif link_type == 'exit':
-        cells.append(Cell('C' + str(1), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+        cells.append(Cell('C' + str(1), linkid, 'A1', time_interval=5, vf=16, kjam=13, qmax=1800, length=100, arr_rate=0,
                           dis_rate=1800))
-        cells.append(Cell('C' + str(2), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+        cells.append(Cell('C' + str(2), linkid, 'A1', time_interval=5, vf=16, kjam=13, qmax=1800, length=100, arr_rate=0,
                           dis_rate=1800))
-        cells.append(Cell('C' + str(3), linkid, 'A1', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0,
+        cells.append(Cell('C' + str(3), linkid, 'A1', time_interval=5, vf=16, kjam=26, qmax=3600, length=200, arr_rate=0,
                           dis_rate=3600))
 
         cells[0].addConnection(cells[2])
@@ -474,7 +474,7 @@ class CTM():
                 inter = self.net.node_list[to_node_id]  # get intersection class by given node ID
                 tmp = []
                 for e_t in inter.link_idx['in']:
-                    if re.findall(r'[0-9]+|[a-z]+', e_t.getID()) != re.findall(r'[0-9]+|[a-z]+', e.getID()):
+                    if re.findall(r'[0-9]+|[a-z]+', e_t.getID())[0] != re.findall(r'[0-9]+|[a-z]+', e.getID())[0]:
                         tmp.append(e_t.getID())
                 link_info['to_link_id'].append(tmp)
             else:
@@ -488,7 +488,7 @@ class CTM():
         # supply = pd.read_csv('supply.csv', dtype={'to_node_id': object, 'from_node_id': object})
 
         # corridors = linkdf['corridor_id'].drop_duplicates()
-        link = {}
+        link = {}  # 20240222 update: save for future development on link cell list
         for i in range(len(linkdf)):
             # if the links is the entry link, creat two big cell for each lane
             if linkdf.iloc[i]['from_link_id'] == '0' and linkdf.iloc[i]['to_link_id'] != '0':
@@ -503,14 +503,63 @@ class CTM():
                 linkCreateCells(linkdf.iloc[i]['link_id'], link_type='exit')
             # tmpp = linkdf.iloc[i]['link_id']
             print('cells has been created')
-        aa = Cell.idcase
+        # aa = Cell.idcase
 
         # add conncetions on each intersection
         for node_key in self.net.node_list.keys():
             node = self.net.node_list[node_key]
+            link_in, link_out = node.link_idx.values()
+
+            # get node tepology, by default it should be (up, right, down, left), the output is a serise
+            link_tplgy = node.link_node.loc[node.link_node['node_id'] == node_key].values.tolist()[0][1:]
+
+            for l_idx in range(len(link_tplgy)):
+
+                # get edge id in
+                e_id = next((edge.getID() for edge in link_in if int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[l_idx]), None)
+                # get cell id in
+                c7_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C7')
+                c8_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C8')
+
+                # get other connected edge id, external out
+
+                # idx = l_idx + 1
+                lidx_tmp = (l_idx + 1) % 4
+                ex_id1 = next((edge.getID() for edge in link_out if
+                             int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[lidx_tmp]), None)
+                c2_ex1_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id1, 'C2')
+
+                # idx = l_idx + 2
+                lidx_tmp = (l_idx + 2) % 4
+                ex_id2 = next((edge.getID() for edge in link_out if int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[(l_idx+2)%4]), None)
+                c1_ex2_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id2, 'C1')
+                c2_ex2_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id2, 'C2')
+
+                # idx = l_idx + 3
+                lidx_tmp = (l_idx + 3) % 4
+                ex_id3 = next((edge.getID() for edge in link_out if int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[(l_idx+3)%4]), None)
+                c1_ex3_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id3, 'C1')
+
+                Cell.getCell(c7_id).addConnection(Cell.getCell(c1_ex2_id))
+                Cell.getCell(c7_id).addConnection(Cell.getCell(c1_ex3_id))
+                Cell.getCell(c8_id).addConnection(Cell.getCell(c2_ex1_id))
+                Cell.getCell(c8_id).addConnection(Cell.getCell(c2_ex2_id))
+
+        self.cells_dic = Cell.idcase
+        print('network established')
+        # update inbound flow
         print("Initialize Complete!")
 
-        print('testing')
+    def getStatus(self, target_time):
+        pass
+
+    def updateCTM(self, target_time, update_list):
+        pass
+
+    def getVehDelay(self, route_info):
+        pass
+
+
 
 #
 #

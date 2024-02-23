@@ -16,7 +16,7 @@ from src.utili.ctm.ctmcomponent import *
 
 
 class Simulation:
-    def __init__(self, start_time, max_time, link_num, resolution, net_file, time_interval, sizeX, sizeY):
+    def __init__(self, start_time, max_time, link_num, resolution, net_file, time_interval, sizeX, sizeY, link_dirct_file):
         self.step = 0
         self.time = 0
         self.start_time = start_time
@@ -29,7 +29,7 @@ class Simulation:
         self.link_flows_num = {}
         self.link_flows_observation = {}
         # self.config = config  # 06/14/2023: temporaryly set sumo config path
-        self.network = Network(5, 5, net_file)
+        self.network = Network(5, 5, net_file, link_dirct_file)
         self.cav_list = []
         self.cover_LinkTimeVeh = np.zeros((2 * link_num, 7000, 1000))  # index = [link, time, veh], value is hardcoded as 0 (binary)
         self.sizeX, self.sizeY = sizeX, sizeY
