@@ -10,14 +10,16 @@ import numpy as np
 import sumolib
 import networkx as nx
 import re
+import pandas as pd
 
 
 class Intersection:
-    def __init__(self, inter_id, net):
+    def __init__(self, inter_id, net, link_dirct_file):
         self.net = net
         self.id = inter_id
         self.link_idx = {'in': self.net.getNode(self.id).getIncoming(),
                          'out': self.net.getNode(self.id).getOutgoing()}
+        self.link_node = pd.read_csv(link_dirct_file, dtype={'node_id': object})
         self.link_flow = {}
         self.link_phaseIdx_table = {}
         self.phase_split_time = [20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2, 20, 3, 2]
@@ -129,13 +131,13 @@ class Intersection:
 
 
 class Network:
-    def __init__(self, x_size, y_size, net_file):
+    def __init__(self, x_size, y_size, net_file, link_dirction_file):
         # self.link_num = (x_size - 1) * y_size + (y_size - 1) * x_size
         self.net_config = net_file
         self.sumonet = sumolib.net.readNet(net_file)
         self.G = nx.Graph()  # initial a graph component
         self.\
-            node_list = self.getNodeList(x_size, y_size, self.sumonet)  # restore the list of id on intersection
+            node_list = self.getNodeList(x_size, y_size, self.sumonet, link_dirction_file)  # restore the list of id on intersection
 
 
     def netInit(self, x_size, y_size):
@@ -175,13 +177,13 @@ class Network:
                     break
 
     @staticmethod
-    def getNodeList(x_size, y_size, net):  # return a dictionary of intersection objects
+    def getNodeList(x_size, y_size, net, link_dirct):  # return a dictionary of intersection objects
         tmp = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
         node_list = {}
         for x in range(x_size):
             for y in range(y_size):
                 node_id = tmp[x] + tmp[y]
-                node_list[node_id] = Intersection(node_id, net)
+                node_list[node_id] = Intersection(node_id, net, link_dirct)
         return node_list
 
     def updateIntersection(self, link_flows_table):

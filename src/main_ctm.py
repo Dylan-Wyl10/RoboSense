@@ -67,7 +67,8 @@ if __name__ == '__main__':
         flextable = "../result/{}/flextable/pr{}_cover{}Flex.json".format(args.netname, pr, alpha, step)
         s = Simulation(start_time=600, max_time=args.maxtime, link_num=40, resolution=0.1,
                        net_file='../sumo_cfg/5x5net/5x5net.net.xml',
-                       time_interval=20, sizeX=5, sizeY=5)
+                       time_interval=20, sizeX=5, sizeY=5,
+                       link_dirct_file="../sumo_cfg/5x5net/linkdirction_5x5.csv")
         s.load_lf(lf_table_path)
         s.simCTM(save_info, netpath, flextable=flextable, parameters=(1, 10), flex=4, k=128, GUImode=False)
         traci.close()
