@@ -110,7 +110,7 @@ class Cell(object):
     def updateDensity(self):  # This method can only be used by normal cell instance.
         if not self.updated:
             self.oldk = self.k
-        if self.type == 'merg':  # Merge at here, we need to update density among this cell and two other upstream cells.
+        if len(self.cfrom) == 2:  # Merge at here, we need to update density among this cell and two other upstream cells.
             pk = self.pk  # probability from upstream normal cell
             pck = 1 - self.pk  # probability from upstream merge cell
             for elem in self.cfrom:
@@ -165,7 +165,7 @@ class Cell(object):
 
             prov.updated, self.updated, merge.updated = True, True, True
 
-        elif self.type == 'div':  # Diverge at here
+        elif len(self.cto) == 2:  # Diverge at here
             ptnc = self.pk  # Propotion towards to next normal cell
             ptdc = 1 - self.pk  # Propotion towards to diverge cell
             for elem in self.cto:
@@ -216,7 +216,7 @@ class Cell(object):
             self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
             next_c.updated, self.updated, diverge.updated = True, True, True
 
-        elif self.type == 'norm':  # Normal cell
+        else:  # Normal cell
             if self.updated:
                 return
 
@@ -347,6 +347,7 @@ def quicklyCreateCells(number, linkid, vf=60, kjam=220):
 
     return cells
 
+
 # creat cells for a given link
 def linkCreateCells(linkid, link_type='normal'):
     """
@@ -354,56 +355,72 @@ def linkCreateCells(linkid, link_type='normal'):
     Note that for 202402version, the tepology for the cells in link is fixed
     """
     cells = []
-    if link_type == 'normal':
-        cells.append(Cell('C' + str(1), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
-        cells.append(Cell('C' + str(2), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
-        cells.append(Cell('C' + str(3), linkid, 'A0', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0, dis_rate=3600))
-        cells.append(Cell('C' + str(4), linkid, 'A0', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0, dis_rate=3600))
-        cells.append(Cell('C' + str(5), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
-        cells.append(Cell('C' + str(6), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
-        cells.append(Cell('C' + str(7), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
-        cells.append(Cell('C' + str(8), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0, dis_rate=1800))
+    if link_type == 'normal':  # normal line 400m, 7 cells
+        cells.append(Cell('C' + str(1), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
+        cells.append(Cell('C' + str(2), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
+        cells.append(Cell('C' + str(3), linkid, 'A0', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0,
+                          dis_rate=3600))
+        cells.append(Cell('C' + str(4), linkid, 'A0', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0,
+                          dis_rate=3600))
+        cells.append(Cell('C' + str(5), linkid, 'A0', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0,
+                          dis_rate=1800))
+        cells.append(Cell('C' + str(6), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
+        cells.append(Cell('C' + str(7), linkid, 'A0', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
 
         # add connection
-        cells[0].addConnection(cells[2])
-        cells[1].addConnection(cells[2])
-        cells[2].addConnection(cells[3])
-        cells[3].addConnection(cells[4])
-        cells[4].addConnection(cells[6])
-        cells[3].addConnection(cells[5])
-        cells[5].addConnection(cells[7])
-    elif link_type == 'entry':
+        cells[0].addConnection(cells[2])  # 1-3
+        cells[1].addConnection(cells[2])  # 2-3
+        cells[2].addConnection(cells[3])  # 3-4
+        cells[3].addConnection(cells[4])  # 4-5
+        cells[4].addConnection(cells[5])  # 5-6
+        cells[4].addConnection(cells[6])  # 5-7
 
-        cells.append(Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=16, kjam=18, qmax=3600, length=66, arr_rate=0,
+    elif link_type == 'entry':  # entry line 240m, 4 cells
+
+        #dummy cell, id C0
+        cells.append(Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=16, kjam=99999, qmax=99999, length=80, arr_rate=99999,
                           dis_rate=3600))
-        cells.append(Cell('C' + str(5), linkid, 'A1', time_interval=5, vf=16, kjam=9, qmax=1800, length=66, arr_rate=0,
-                          dis_rate=1800))
-        cells.append(Cell('C' + str(6), linkid, 'A1', time_interval=5, vf=16, kjam=9, qmax=1800, length=66, arr_rate=0,
-                          dis_rate=1800))
-        cells.append(Cell('C' + str(7), linkid, 'A1', time_interval=5, vf=16, kjam=9, qmax=1800, length=66, arr_rate=0,
-                          dis_rate=1800))
-        cells.append(Cell('C' + str(8), linkid, 'A1', time_interval=5, vf=16, kjam=9, qmax=1800, length=66, arr_rate=0,
-                          dis_rate=1800))
-
-        cells[0].addConnection(cells[1])
-        cells[1].addConnection(cells[2])
-        cells[0].addConnection(cells[2])
-        cells[2].addConnection(cells[4])
-
-    elif link_type == 'exit':
-        cells.append(Cell('C' + str(1), linkid, 'A1', time_interval=5, vf=16, kjam=13, qmax=1800, length=100, arr_rate=0,
-                          dis_rate=1800))
-        cells.append(Cell('C' + str(2), linkid, 'A1', time_interval=5, vf=16, kjam=13, qmax=1800, length=100, arr_rate=0,
-                          dis_rate=1800))
-        cells.append(Cell('C' + str(3), linkid, 'A1', time_interval=5, vf=16, kjam=26, qmax=3600, length=200, arr_rate=0,
+        cells.append(Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0,
                           dis_rate=3600))
+        cells.append(Cell('C' + str(5), linkid, 'A1', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0,
+                          dis_rate=3600))
+        cells.append(Cell('C' + str(6), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
+        cells.append(Cell('C' + str(7), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                          dis_rate=1800))
 
-        cells[0].addConnection(cells[2])
-        cells[1].addConnection(cells[2])
+        cells[0].addConnection(cells[1])  # dummy-4
+        cells[1].addConnection(cells[2])  # 4-5
+        cells[2].addConnection(cells[3])  # 5-6
+        cells[2].addConnection(cells[4])  # 5-7
+
+    elif link_type == 'exit':  # entry line 240m, 4 cells
+        cells.append(
+            Cell('C' + str(1), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                 dis_rate=1800))
+        cells.append(
+            Cell('C' + str(2), linkid, 'A1', time_interval=5, vf=16, kjam=10, qmax=1800, length=80, arr_rate=0,
+                 dis_rate=1800))
+        cells.append(
+            Cell('C' + str(3), linkid, 'A1', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0,
+                 dis_rate=3600))
+        cells.append(
+            Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=16, kjam=21, qmax=3600, length=80, arr_rate=0,
+                 dis_rate=3600))
+        cells.append(
+            Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=16, kjam=99999, qmax=99999, length=80, arr_rate=0,
+                 dis_rate=99999))
+
+        cells[0].addConnection(cells[2])  # 1-3
+        cells[1].addConnection(cells[2])  # 2-3
+        cells[2].addConnection(cells[3])  # 3-4
+        cells[3].addConnection(cells[4])  # 4-dummy
 
     return cells
-
-
 
 
 def notifyThreads(condition):
@@ -514,30 +531,32 @@ class CTM():
             link_tplgy = node.link_node.loc[node.link_node['node_id'] == node_key].values.tolist()[0][1:]
 
             for l_idx in range(len(link_tplgy)):
-
                 # get edge id in
-                e_id = next((edge.getID() for edge in link_in if int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[l_idx]), None)
+                e_id = next((edge.getID() for edge in link_in if
+                             int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[l_idx]), None)
                 # get cell id in
-                c7_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C7')
-                c8_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C8')
+                c7_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C6')
+                c8_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C7')
 
                 # get other connected edge id, external out
 
                 # idx = l_idx + 1
                 lidx_tmp = (l_idx + 1) % 4
                 ex_id1 = next((edge.getID() for edge in link_out if
-                             int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[lidx_tmp]), None)
+                               int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[lidx_tmp]), None)
                 c2_ex1_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id1, 'C2')
 
                 # idx = l_idx + 2
                 lidx_tmp = (l_idx + 2) % 4
-                ex_id2 = next((edge.getID() for edge in link_out if int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[(l_idx+2)%4]), None)
+                ex_id2 = next((edge.getID() for edge in link_out if
+                               int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[(l_idx + 2) % 4]), None)
                 c1_ex2_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id2, 'C1')
                 c2_ex2_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id2, 'C2')
 
                 # idx = l_idx + 3
                 lidx_tmp = (l_idx + 3) % 4
-                ex_id3 = next((edge.getID() for edge in link_out if int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[(l_idx+3)%4]), None)
+                ex_id3 = next((edge.getID() for edge in link_out if
+                               int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[(l_idx + 3) % 4]), None)
                 c1_ex3_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id3, 'C1')
 
                 Cell.getCell(c7_id).addConnection(Cell.getCell(c1_ex2_id))
@@ -558,8 +577,6 @@ class CTM():
 
     def getVehDelay(self, route_info):
         pass
-
-
 
 #
 #
