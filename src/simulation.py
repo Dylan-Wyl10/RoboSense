@@ -16,7 +16,7 @@ from src.utili.ctm.ctmcomponent import *
 
 
 class Simulation:
-    def __init__(self, start_time, max_time, link_num, resolution, net_file, time_interval, sizeX, sizeY, link_dirct_file, demand_file):
+    def __init__(self, start_time, max_time, link_num, resolution, net_file, time_interval, sizeX, sizeY, link_dirct_file, demand_file, turn_ratio):
         self.step = 0
         self.time = 0
         self.start_time = start_time

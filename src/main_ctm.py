@@ -69,7 +69,8 @@ if __name__ == '__main__':
                        net_file='../sumo_cfg/5x5net/5x5net.net.xml',
                        time_interval=20, sizeX=5, sizeY=5,
                        link_dirct_file="../sumo_cfg/5x5net/linkdirction_5x5.csv",
-                       demand_file="../sumo_cfg/5x5net/demand.csv")
+                       demand_file="../sumo_cfg/5x5net/demand.csv",
+                       turn_ratio="../sumo_cfg/5x5net/turnRatio.add.xml")
         s.load_lf(lf_table_path)
         s.simCTM(save_info, netpath, flextable=flextable, parameters=(1, 10), flex=4, k=128, GUImode=False)
         traci.close()

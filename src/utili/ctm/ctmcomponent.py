@@ -522,7 +522,7 @@ class CTM():
             print('cells has been created')
         # aa = Cell.idcase
 
-        # add conncetions on each intersection
+        # add conncetions and add turn ratio on each intersection
         for node_key in self.net.node_list.keys():
             node = self.net.node_list[node_key]
             link_in, link_out = node.link_idx.values()
@@ -569,6 +569,9 @@ class CTM():
         # initial demand flow.
         self.demand = self.net.demand
         self.links = linkdf
+
+        # initial turning rate.
+
 
         # for l_idx in link_info['link_id']:  # enumerate all links in the network
         #     # aaa = re.findall(r'[0-9]+|[a-z]+', l_idx)
