@@ -131,14 +131,14 @@ class Intersection:
 
 
 class Network:
-    def __init__(self, x_size, y_size, net_file, link_dirction_file):
+    def __init__(self, x_size, y_size, net_file, link_dirction_file, demand):
         # self.link_num = (x_size - 1) * y_size + (y_size - 1) * x_size
         self.net_config = net_file
         self.sumonet = sumolib.net.readNet(net_file)
         self.G = nx.Graph()  # initial a graph component
         self.\
             node_list = self.getNodeList(x_size, y_size, self.sumonet, link_dirction_file)  # restore the list of id on intersection
-
+        self.demand = pd.read_csv(demand, index_col=0)
 
     def netInit(self, x_size, y_size):
         for n in self.node_list.values():

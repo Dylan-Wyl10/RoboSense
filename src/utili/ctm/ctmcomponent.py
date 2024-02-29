@@ -43,8 +43,8 @@ class Cell(object):
         self.time_hour = time_interval / 3600
         self.inflow = 0
         self.outflow = 0
-        self.pk = 0.75
-        self.pck = 0.25
+        self.plk = 0.5  # probability from left cells, default 0.5
+        self.prk = 0.5  # probability from right cells, default 0.5
         self.ramp_flag = ramp_flag
         if Cell.idcase.get(self.getCompleteAddress()) == None:
             Cell.idcase.setdefault(self.getCompleteAddress(), self)
@@ -535,8 +535,8 @@ class CTM():
                 e_id = next((edge.getID() for edge in link_in if
                              int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[l_idx]), None)
                 # get cell id in
-                c7_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C6')
-                c8_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C7')
+                c6_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C6')
+                c7_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C7')
 
                 # get other connected edge id, external out
 
@@ -559,20 +559,34 @@ class CTM():
                                int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[(l_idx + 3) % 4]), None)
                 c1_ex3_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id3, 'C1')
 
-                Cell.getCell(c7_id).addConnection(Cell.getCell(c1_ex2_id))
-                Cell.getCell(c7_id).addConnection(Cell.getCell(c1_ex3_id))
-                Cell.getCell(c8_id).addConnection(Cell.getCell(c2_ex1_id))
-                Cell.getCell(c8_id).addConnection(Cell.getCell(c2_ex2_id))
+                Cell.getCell(c6_id).addConnection(Cell.getCell(c1_ex2_id))
+                Cell.getCell(c6_id).addConnection(Cell.getCell(c1_ex3_id))
+                Cell.getCell(c7_id).addConnection(Cell.getCell(c2_ex1_id))
+                Cell.getCell(c7_id).addConnection(Cell.getCell(c2_ex2_id))
 
         self.cells_dic = Cell.idcase
         print('network established')
-        # update inbound flow
-        print("Initialize Complete!")
+        # initial demand flow.
+        self.demand = self.net.demand
+        self.links = linkdf
 
-    def getStatus(self, target_time):
+        # for l_idx in link_info['link_id']:  # enumerate all links in the network
+        #     # aaa = re.findall(r'[0-9]+|[a-z]+', l_idx)
+        #     # print('yes')
+        #     if int(re.findall(r'[0-9]+|[a-z]+', l_idx) > 100:
+        #         Cell.getFirstCell()
+
+        print("Initialize Complete!")
+    def updateCTM(self, target_time, update_list):
+        """
+        update current cell information based on observations.
+        """
         pass
 
-    def updateCTM(self, target_time, update_list):
+    def getFutureStatus(self, target_time):
+        """
+        get the CTM cell status given the target time based on current cell status
+        """
         pass
 
     def getVehDelay(self, route_info):
