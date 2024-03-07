@@ -11,6 +11,8 @@ import sumolib
 import networkx as nx
 import re
 import pandas as pd
+import xml.etree.ElementTree as ET
+
 
 
 class Intersection:
@@ -131,7 +133,7 @@ class Intersection:
 
 
 class Network:
-    def __init__(self, x_size, y_size, net_file, link_dirction_file, demand):
+    def __init__(self, x_size, y_size, net_file, link_dirction_file, demand, turn_rate):
         # self.link_num = (x_size - 1) * y_size + (y_size - 1) * x_size
         self.net_config = net_file
         self.sumonet = sumolib.net.readNet(net_file)
@@ -139,6 +141,25 @@ class Network:
         self.\
             node_list = self.getNodeList(x_size, y_size, self.sumonet, link_dirction_file)  # restore the list of id on intersection
         self.demand = pd.read_csv(demand, index_col=0)
+
+        # load turn rate
+        # Parse the XML file
+        tree = ET.parse(turn_rate)
+        root = tree.getroot()
+
+        # Extract edgeRelation data
+        data = []
+        for edgeRelation in root.findall('.//edgeRelation'):
+            row = {
+                'from': edgeRelation.get('from'),
+                'to': edgeRelation.get('to'),
+                'count': int(edgeRelation.get('count')),
+            }
+            data.append(row)
+
+        # Convert to DataFrame
+        self.turn_rate = pd.DataFrame(data)
+        del data
 
     def netInit(self, x_size, y_size):
         for n in self.node_list.values():

@@ -3,4 +3,4 @@ read -p "provide the path for route file": -e route_file
 
 cd ../../$config_path
 
-python3 ../../src/turn-defs/generateTurnRatios.py -r $route_file -p
+python3 ../../src/turn-defs/generateTurnRatios.py -r $route_file
