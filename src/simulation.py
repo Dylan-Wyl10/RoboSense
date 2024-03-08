@@ -572,6 +572,8 @@ class Simulation:
         update_table = []
         for cav_id in self.cav_list:
             cav_linklongitude_coord = traci.vehicle.getDistance(cav_id)
-            # edge_idx, lane_idx = re.findall(r'[0-9]+|[a-z]+', traci.vehicle.getIDList(cav_id))
-            edge_idx, lane_idx = re.search(r'([-\w]+)_(\d+)', '-E101_1').group(1), re.search(r'([-\w]+)_(\d+)', '-E101_1').group(2)
+            edge_idx, lane_idx = re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(cav_id)).group(1), re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(cav_id)).group(2)
+            length = self.network.sumonet.getEdge(edge_idx).getLength()
+            if length < 400:  # hardcoding here as extry and exit link
+                
             print('cav_lane')
