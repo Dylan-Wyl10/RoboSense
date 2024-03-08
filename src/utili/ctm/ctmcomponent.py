@@ -16,7 +16,7 @@ import socket
 class Cell(object):
     idcase = {}
 
-    def __init__(self, cellid, linkid, zoneid, time_interval=6, k=0, qmax=1800, kjam=220, vf=60, w=12,
+    def __init__(self, cellid, linkid, zoneid, time_interval=6, k=0, qmax=1800, kjam=220, vf=16, w=3.2,
                  length=0.1, updated=False, arr_rate=0, dis_rate=2160, ramp_flag=0):
         self.kjam = kjam
         self.cellid = cellid  # local address
@@ -159,29 +159,29 @@ class Cell(object):
             #             elem.oldk = elem.k
             #
             #         merge = elem
-
-            try:  # In order to cope with situation that provious cell is the first cell (cfrom is empty)
+            if sbk + sck >= rek:
+                if len(prov.cfrom):  # In order to cope with situation that provious cell is the first cell (cfrom is empty)
                 # prov.inflow = np.min([prov.qmax, prov.vf * prov.cfrom[0].oldk, prov.w * (prov.kjam - prov.oldk)]) * prov.time_hour / prov.length
-                prov.inflow = prov.cfrom[0].outflow
-                prov.outflow = np.min(
-                    [np.median([pk * rek, sbk, rek - sck]), prov.vf * prov.oldk * prov.time_hour / prov.length])
+                    prov.inflow = prov.cfrom[0].outflow
+                    prov.outflow = np.min(
+                        [np.median([pk * rek, sbk, rek - sck]), prov.vf * prov.oldk * prov.time_hour / prov.length])
 
-            except:
-                prov.inflow = np.min(
-                    [prov.qmax, prov.arr_rate, prov.w * (prov.kjam - prov.oldk)]) * prov.time_hour / prov.length
-                prov.outflow = np.min(
-                    [np.median([pk * rek, sbk, rek - sck]), prov.vf * prov.oldk * prov.time_hour / prov.length])
+                else:
+                    prov.inflow = np.min(
+                        [prov.qmax, prov.arr_rate, prov.w * (prov.kjam - prov.oldk)]) * prov.time_hour / prov.length
+                    prov.outflow = np.min(
+                        [np.median([pk * rek, sbk, rek - sck]), prov.vf * prov.oldk * prov.time_hour / prov.length])
 
-            if len(merge.cfrom):
+                if len(merge.cfrom):
                 # merge.inflow = np.min([merge.qmax, merge.vf * merge.cfrom[0].oldk, merge.w * (merge.kjam - merge.oldk)]) * merge.time_hour / merge.length
-                merge.inflow = merge.cfrom[0].outflow
-                merge.outflow = np.min(
-                    [np.median([pck * rek, sck, rek - sbk]), merge.vf * merge.oldk * merge.time_hour / merge.length])
-            else:
-                merge.inflow = np.min(
-                    [merge.qmax, merge.arr_rate, merge.w * (merge.kjam - merge.oldk)]) * merge.time_hour / merge.length
-                merge.outflow = np.min(
-                    [np.median([pck * rek, sck, rek - sbk]), merge.vf * merge.oldk * merge.time_hour / merge.length])
+                    merge.inflow = merge.cfrom[0].outflow
+                    merge.outflow = np.min(
+                        [np.median([pck * rek, sck, rek - sbk]), merge.vf * merge.oldk * merge.time_hour / merge.length])
+                else:
+                    merge.inflow = np.min(
+                        [merge.qmax, merge.arr_rate, merge.w * (merge.kjam - merge.oldk)]) * merge.time_hour / merge.length
+                    merge.outflow = np.min(
+                        [np.median([pck * rek, sck, rek - sbk]), merge.vf * merge.oldk * merge.time_hour / merge.length])
             if len(self.cto):
                 self.inflow = np.min([self.qmax * self.time_hour / self.length, sbk + sck,
                                       self.w * (self.kjam - self.oldk) * self.time_hour / self.length])
@@ -666,7 +666,7 @@ class CTM():
         self.links = linkdf
 
         for i in range(len(self.demand)):
-            Cell.getFirstCell(self.links.iloc[i]['link_id']).arr_rate = self.links.iloc[i]['demand']
+            Cell.getFirstCell(self.demand.iloc[i]['link_id']).arr_rate = self.demand.iloc[i]['demand']
 
         print("Initialize Complete!")
     def updateCTM(self, target_time, update_list):

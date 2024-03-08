@@ -155,6 +155,10 @@ class Simulation:
                 # step2: update current observation and CTM model till the longest trip
                 # step2.1: get a list of cav that in the network
                 self.getCAVList()
+                # step2.2: enumearte cav list, update observations
+                self.updateObservToCTM()
+
+                print('yes')
 
                 # step3: enumerate all cav from list, choose proper route and update vehicle information
 
@@ -165,7 +169,7 @@ class Simulation:
                 #       -3: choose the best route and apply accordingly
                 
 
-                self.updateRoute(k, parameters)
+                # self.updateRoute(k, parameters)
 
                 # """temp set route for debug 20231130"""
                 # cavtestroute = ["E108", "E38", "E39", "-E16", "-E35", "-E11", "E31", "-E14", "-E27", "-E9", "E23", "-E118"]
@@ -562,3 +566,12 @@ class Simulation:
                     # print(np.sum(tableLinkTime[:, t]))
                     if np.sum(tableLinkTime[:, t]) > 1:
                         print(f"Vehicle {cav_idx + 1} is more than one pos at time {t}, current time is {self.time}:")
+
+
+    def updateObservToCTM(self):
+        update_table = []
+        for cav_id in self.cav_list:
+            cav_linklongitude_coord = traci.vehicle.getDistance(cav_id)
+            # edge_idx, lane_idx = re.findall(r'[0-9]+|[a-z]+', traci.vehicle.getIDList(cav_id))
+            edge_idx, lane_idx = re.search(r'([-\w]+)_(\d+)', '-E101_1').group(1), re.search(r'([-\w]+)_(\d+)', '-E101_1').group(2)
+            print('cav_lane')
