@@ -139,6 +139,8 @@ class Simulation:
         self.CTM = CTM(self.network, tick_interval=5)  # 20111128 defaultly set tick as 5s.
         self.CTM.init()
 
+        # self.CTM.runCTM(3000)
+
         while True:
 
             # in a given time interval of CTM model, an observation will be updated each step, then the CTM needs to be
@@ -157,6 +159,8 @@ class Simulation:
                 self.getCAVList()
                 # step2.2: enumearte cav list, update observations
                 self.updateObservToCTM()
+                # step 2.3: update CTM including: demand, signal timing, cell density, cell information
+                self.CTM.runCTM(500+self.step*10)
 
                 print('yes')
 
@@ -569,11 +573,85 @@ class Simulation:
 
 
     def updateObservToCTM(self):
-        update_table = []
+        update_table = {}
         for cav_id in self.cav_list:
             cav_linklongitude_coord = traci.vehicle.getDistance(cav_id)
             edge_idx, lane_idx = re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(cav_id)).group(1), re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(cav_id)).group(2)
             length = self.network.sumonet.getEdge(edge_idx).getLength()
-            if length < 400:  # hardcoding here as extry and exit link
-                
-            print('cav_lane')
+            # idx = divmod(cav_linklongitude_coord, 80)[0]
+            idx = cav_linklongitude_coord//80
+            if length < 400 and edge_idx[0] != '-':  # hard-coding here as entry link
+                if idx == 0:
+                    c_id = 'A1.{}.{}'.format(edge_idx, 'C4')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 80, 0, [0, 1])
+                elif idx == 1:
+                    c_id = 'A1.{}.{}'.format(edge_idx, 'C5')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 160, 80, [0, 1])
+                elif idx == 2 and lane_idx == '0':
+                    c_id = 'A1.{}.{}'.format(edge_idx, 'C6')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 240, 160, [0])
+                elif idx == 2 and lane_idx == '1':
+                    c_id = 'A1.{}.{}'.format(edge_idx, 'C7')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 240, 160, [1])
+            elif length < 400 and edge_idx[0] == '-':  # hard-coding here as exit link
+                if idx == 0 and lane_idx == '0':
+                    c_id = 'A1.{}.{}'.format(edge_idx, 'C1')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 80, 0, [0])
+                elif idx == 0 and lane_idx == '1':
+                    c_id = 'A1.{}.{}'.format(edge_idx, 'C2')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 80, 0, [1])
+                elif idx == 1:
+                    c_id = 'A1.{}.{}'.format(edge_idx, 'C3')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 160, 80, [0, 1])
+                elif idx == 2:
+                    c_id = 'A1.{}.{}'.format(edge_idx, 'C4')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 240, 160, [0, 1])
+
+            else:  # normal link
+                if idx == 0 and lane_idx == '0':
+                    c_id = 'A0.{}.{}'.format(edge_idx, 'C1')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 80, 0, [0])
+                elif idx == 0 and lane_idx == '1':
+                    c_id = 'A0.{}.{}'.format(edge_idx, 'C2')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 80, 0, [1])
+                elif idx == 1:
+                    c_id = 'A0.{}.{}'.format(edge_idx, 'C3')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 160, 80, [0, 1])
+                elif idx == 2:
+                    c_id = 'A0.{}.{}'.format(edge_idx, 'C4')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 240, 160, [0, 1])
+                elif idx == 3:
+                    c_id = 'A0.{}.{}'.format(edge_idx, 'C5')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 320, 240, [0, 1])
+                elif idx == 4 and lane_idx == '0':
+                    c_id = 'A0.{}.{}'.format(edge_idx, 'C6')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 400, 320, [0])
+                elif idx == 4 and lane_idx == '1':
+                    c_id = 'A0.{}.{}'.format(edge_idx, 'C7')
+                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 400, 320, [1])
+
+        for cid, v_num in update_table.items():
+            Cell.getCell(cid).k = v_num
+
+        print('yes')
+
+
+
+    @staticmethod
+    def getVehNumfromEdge(edge_id, upper, lower, lanes):
+        """
+        this function returns the number of vehicles in a cell in given edge.
+        :param edge_id: the idx for the edge
+        :param upper: the upper boundary for the distance (start as 0)
+        :param lower: the lower boundary for the distance (end as 0)
+        :param lanes: lane indexes included in the cell
+        """
+        count = 0
+        veh_ls = list(traci.edge.getLastStepVehicleIDs(edge_id))
+        for v in veh_ls:
+            lane_idx = re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(v)).group(2)
+            # aa = traci.vehicle.getDistance(v)
+            if ((traci.vehicle.getDistance(v) <= upper and traci.vehicle.getDistance(v) >= lower) and (int(lane_idx) in lanes)):
+                count += 1
+
+        return count
