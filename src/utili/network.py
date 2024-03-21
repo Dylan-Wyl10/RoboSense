@@ -12,6 +12,7 @@ import networkx as nx
 import re
 import pandas as pd
 import xml.etree.ElementTree as ET
+from src.utili.ctm.ctmcomponent import Cell
 
 
 
@@ -130,6 +131,60 @@ class Intersection:
                 return link_tt + time, link_tt + time
             elif est_arriveTime <= x_pr:
                 return link_tt + time, link_tt + time + 2 * (queue_seq+1)  # 0628 YW: hardcoding time headway=2s
+
+
+    def getEdgeSignalPhase(self, time_range):
+        """
+        this function is used to get the signal phase given edge idx and target time(time range from current status)
+        :param time_range: time range from current status
+        """
+        time_range = 105
+
+        self.setLinkPhaseIndex()  # initial and get tls id
+        current_time = traci.simulation.getTime()
+        cycle_length = sum(self.phase_split_time[:12])
+        for edge in self.link_idx['in']:
+            e_id = edge.getID()
+            c6_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', e_id)[0]) > 100 else 'A0',
+                                      e_id, 'C6')
+            c7_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', e_id)[0]) > 100 else 'A0',
+                                      e_id, 'C7')
+            phase_string = traci.trafficlight.getRedYellowGreenState(self.tls_id)
+            if phase_string[self.link_phaseIdx_table[e_id][0]].lower() == 'g':
+                green_time = traci.trafficlight.getNextSwitch(self.tls_id) - current_time  # current phase remain time
+                SPaT = [phase_string[self.link_phaseIdx_table[e_id][0]].lower(), green_time]
+            else:
+                edge_phaseSeq = self.link_phaseIdx_table[e_id][0] // 5  # 5 = number of connection in each phase
+                phase_id = traci.trafficlight.getPhase(self.tls_id)  # current phase id
+                if phase_id < 3 * edge_phaseSeq:
+                    red_time = traci.trafficlight.getNextSwitch(self.tls_id) - current_time + sum(
+                        self.phase_split_time[phase_id + 1:edge_phaseSeq * 3])
+                elif phase_id > 3 * edge_phaseSeq:
+                    # tmp = self.phase_split_time[phase_id+1: 12 +edge_phaseSeq*3]
+                    red_time = traci.trafficlight.getNextSwitch(self.tls_id) - current_time + sum(
+                        self.phase_split_time[phase_id + 1: 12 + edge_phaseSeq * 3])
+                SPaT = [phase_string[self.link_phaseIdx_table[e_id][0]],
+                             red_time]
+            # SPaT [status, time]: when status = 'g', time means remaining green time
+            #                      when status = 'r', time means remaining red time
+            if SPaT[0] == 'g':
+                #  t_idx means the absolute time-idx in one cycle
+                t_idx = 20 - SPaT[1]
+            else:
+                t_idx = cycle_length - SPaT[1]
+            SPaT_target = 'g' if (t_idx + time_range)%cycle_length <= 20 else 'r'
+
+            if SPaT_target == 'r':
+                Cell.getCell(c6_id).sig_flag = 0
+                Cell.getCell(c7_id).sig_flag = 0
+            else:
+                Cell.getCell(c6_id).sig_flag = 1
+                Cell.getCell(c7_id).sig_flag = 1
+
+            # aa = Cell.getCell(c6_id)
+            # bb = Cell.getCell(c7_id)
+            # print('yesyes')
+
 
 
 class Network:
