@@ -158,10 +158,18 @@ class Simulation:
                 # step2.1: get a list of cav that in the network
                 self.getCAVList()
                 # step2.2: enumearte cav list, update observations
-                self.updateObservToCTM()
-                # step 2.3: update CTM including: demand, signal timing, cell density, cell information
-                self.CTM.runCTM(500+self.step*10)
 
+                update_table = self.getCTMObservation()
+                for cid, v_num in update_table.items():
+                    self.CTM.cells_dic[cid].k = v_num/0.08
+
+                # step 2.3: update CTM including: demand, signal timing, cell density, cell information
+                self.Cells_saved_next = self.CTM.runCTM(traci.simulation.getTime(), 500)
+                # aaaa = Cell.getCell('A0.-E1.C1')
+                self.CTM.cells_dic = self.Cells_saved_next
+                Cell.idcase = self.Cells_saved_next
+                # aaaaaa = Cell.getCell('A0.-E1.C1')
+                # bbb = Cell.idcase
                 print('yes')
 
                 # step3: enumerate all cav from list, choose proper route and update vehicle information
@@ -572,7 +580,7 @@ class Simulation:
                         print(f"Vehicle {cav_idx + 1} is more than one pos at time {t}, current time is {self.time}:")
 
 
-    def updateObservToCTM(self):
+    def getCTMObservation(self):
         update_table = {}
         for cav_id in self.cav_list:
             cav_linklongitude_coord = traci.vehicle.getDistance(cav_id)
@@ -630,8 +638,7 @@ class Simulation:
                     c_id = 'A0.{}.{}'.format(edge_idx, 'C7')
                     update_table[c_id] = self.getVehNumfromEdge(edge_idx, 400, 320, [1])
 
-        for cid, v_num in update_table.items():
-            Cell.getCell(cid).k = v_num
+        return update_table
 
         print('yes')
 
