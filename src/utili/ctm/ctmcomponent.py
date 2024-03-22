@@ -776,7 +776,7 @@ class CTM():
         """
         density = {}
         flow = {}
-        number = {}
+        # number = {}
         steps = time_range//self.tick
         time_start = time.time()
         # cells_old = copy.deepcopy(self.cells_dic)
@@ -810,11 +810,12 @@ class CTM():
         time_end = time.time()
         # numbers = density*0.08
         print('time spend for {} steps: {}'.format(steps, time_end-time_start))
-        self.density_df = pd.DataFrame(density).T
-        self.flow_df = pd.DataFrame(flow).T
-        self.number_df = self.density_df * 0.08
+        density_df = pd.DataFrame(density).T
+        flow_df = pd.DataFrame(flow).T
+        number_df = density_df * 0.08
+        # speed_df = min[flow_df/density_df, 50]
         print('yes')
-        return cells_old
+        return cells_old, [density_df, flow_df, number_df]
 
     def updateSignalTime(self, time_index):
         """

@@ -164,7 +164,7 @@ class Simulation:
                     self.CTM.cells_dic[cid].k = v_num/0.08
 
                 # step 2.3: update CTM including: demand, signal timing, cell density, cell information
-                self.Cells_saved_next = self.CTM.runCTM(traci.simulation.getTime(), 500)
+                self.Cells_saved_next, current_result = self.CTM.runCTM(traci.simulation.getTime(), 500)
                 # aaaa = Cell.getCell('A0.-E1.C1')
                 self.CTM.cells_dic = self.Cells_saved_next
                 Cell.idcase = self.Cells_saved_next
