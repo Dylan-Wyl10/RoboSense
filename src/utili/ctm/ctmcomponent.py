@@ -206,11 +206,11 @@ class Cell(object):
                 prov.inflow = sum(fc.outflow for fc in prov.cfrom)
             if len(prov.cto) == 2:
                 if pk == 0:
-                    prov.outflow = np.min([0, prov.vf * prov.oldk * prov.time_hour / prov.length])
+                    prov.outflow = np.min([0, prov.vf * prov.oldk * prov.time_hour / prov.length])*prov.sig_flag
                 else:
-                    prov.outflow = np.min([yk / pk, prov.vf * prov.oldk * prov.time_hour / prov.length])
+                    prov.outflow = np.min([yk / pk, prov.vf * prov.oldk * prov.time_hour / prov.length])*prov.sig_flag
             else:
-                prov.outflow = np.min([yk, prov.vf * prov.oldk * prov.time_hour / prov.length])
+                prov.outflow = np.min([yk, prov.vf * prov.oldk * prov.time_hour / prov.length])*prov.sig_flag
 
             if not len(merge.cfrom): # start from first cell
                 merge.inflow = np.min([merge.qmax, merge.arr_rate, merge.w * (merge.kjam - merge.oldk)]) * merge.time_hour / merge.length
@@ -219,11 +219,11 @@ class Cell(object):
 
             if len(merge.cto) == 2:
                 if pck == 0:
-                    merge.outflow = np.min([0, merge.vf * merge.oldk * merge.time_hour / merge.length])
+                    merge.outflow = np.min([0, merge.vf * merge.oldk * merge.time_hour / merge.length])*merge.sig_flag
                 else:
-                    merge.outflow = np.min([yck / pck, merge.vf * merge.oldk * merge.time_hour / merge.length])
+                    merge.outflow = np.min([yck / pck, merge.vf * merge.oldk * merge.time_hour / merge.length])*merge.sig_flag
             else:
-                merge.outflow = np.min([yck, merge.vf * merge.oldk * merge.time_hour / merge.length])
+                merge.outflow = np.min([yck, merge.vf * merge.oldk * merge.time_hour / merge.length])*merge.sig_flag
 
             ##################################################################################
 
@@ -483,19 +483,19 @@ def linkCreateCells(linkid, link_type='normal'):
     """
     cells = []
     if link_type == 'normal':  # normal line 400m, 7 cells
-        cells.append(Cell('C' + str(1), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, arr_rate=0,
+        cells.append(Cell('C' + str(1), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
                           dis_rate=1100))
-        cells.append(Cell('C' + str(2), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, arr_rate=0,
+        cells.append(Cell('C' + str(2), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
                           dis_rate=1100))
-        cells.append(Cell('C' + str(3), linkid, 'A0', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, arr_rate=0,
+        cells.append(Cell('C' + str(3), linkid, 'A0', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
                           dis_rate=2200))
-        cells.append(Cell('C' + str(4), linkid, 'A0', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, arr_rate=0,
+        cells.append(Cell('C' + str(4), linkid, 'A0', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
                           dis_rate=2200))
-        cells.append(Cell('C' + str(5), linkid, 'A0', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, arr_rate=0,
+        cells.append(Cell('C' + str(5), linkid, 'A0', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
                           dis_rate=2200))
-        cells.append(Cell('C' + str(6), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, arr_rate=0,
+        cells.append(Cell('C' + str(6), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
                           dis_rate=1100))
-        cells.append(Cell('C' + str(7), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, arr_rate=0,
+        cells.append(Cell('C' + str(7), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
                           dis_rate=1100))
 
         # add connection
@@ -510,15 +510,15 @@ def linkCreateCells(linkid, link_type='normal'):
 
         # sink cell, id C0
         cells.append(
-            Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=50, kjam=99999, qmax=2200, length=0.08, arr_rate=0,
+            Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=50, kjam=99999, qmax=2200, length=0.08, w=18.57, arr_rate=0,
                  dis_rate=2200))
-        cells.append(Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, arr_rate=0,
+        cells.append(Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
                           dis_rate=2200))
-        cells.append(Cell('C' + str(5), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, arr_rate=0,
+        cells.append(Cell('C' + str(5), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
                           dis_rate=2200))
-        cells.append(Cell('C' + str(6), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, arr_rate=0,
+        cells.append(Cell('C' + str(6), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
                           dis_rate=1100))
-        cells.append(Cell('C' + str(7), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, arr_rate=0,
+        cells.append(Cell('C' + str(7), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
                           dis_rate=1100))
 
         cells[0].addConnection(cells[1])  # dummy-4
@@ -528,19 +528,19 @@ def linkCreateCells(linkid, link_type='normal'):
 
     elif link_type == 'exit':  # entry line 240m, 4 cells
         cells.append(
-            Cell('C' + str(1), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, arr_rate=0,
+            Cell('C' + str(1), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
                  dis_rate=1100))
         cells.append(
-            Cell('C' + str(2), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, arr_rate=0,
+            Cell('C' + str(2), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
                  dis_rate=1100))
         cells.append(
-            Cell('C' + str(3), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, arr_rate=0,
+            Cell('C' + str(3), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
                  dis_rate=2200))
         cells.append(
-            Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, arr_rate=0,
+            Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
                  dis_rate=2200))
         cells.append(
-            Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=99999, length=0.08, arr_rate=0,
+            Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=99999, length=0.08, w=18.57, arr_rate=0,
                  dis_rate=99999))
 
         cells[0].addConnection(cells[2])  # 1-3
@@ -781,17 +781,6 @@ class CTM():
         time_start = time.time()
         # cells_old = copy.deepcopy(self.cells_dic)
         for t in range(steps):
-            # update demand
-            for i in range(len(self.demand)):
-                Cell.getFirstCell(self.demand.iloc[i]['link_id']).arr_rate = self.demand.iloc[i]['demand']
-
-            # update signal timing for current step t
-            # print('start update signal')
-            for n in self.net.node_list.values():
-                n.getEdgeSignalPhase(t*5)  # YW: the time current and input time here is absolute time.
-            # update cell density
-            for cell in self.cells_dic.values():
-                cell.updateDensity()
             # collect cell result
             for cell in self.cells_dic.values():
                 cell_id = cell.getCompleteAddress()
@@ -804,8 +793,31 @@ class CTM():
                 else:
                     flow[cell_id].append(cell.outflow)
                 cell.updated = False
+            # update demand
+            for i in range(len(self.demand)):
+                Cell.getFirstCell(self.demand.iloc[i]['link_id']).arr_rate = self.demand.iloc[i]['demand']
 
-            if t == 1:
+            # update signal timing for current step t
+            # print('start update signal')
+            for n in self.net.node_list.values():
+                n.getEdgeSignalPhase(t*5)  # YW: the time current and input time here is absolute time.
+            # update cell density
+            for cell in self.cells_dic.values():
+                cell.updateDensity()
+            # # collect cell result
+            # for cell in self.cells_dic.values():
+            #     cell_id = cell.getCompleteAddress()
+            #     if cell_id not in density.keys():
+            #         density[cell_id] = [cell.k]
+            #     else:
+            #         density[cell_id].append(cell.k)
+            #     if cell_id not in flow.keys():
+            #         flow[cell_id] = [cell.outflow]
+            #     else:
+            #         flow[cell_id].append(cell.outflow)
+            #     cell.updated = False
+
+            if t == 0:
                 cells_old = copy.deepcopy(self.cells_dic)  # save the next step cells for update
         time_end = time.time()
         # numbers = density*0.08
@@ -815,7 +827,7 @@ class CTM():
         number_df = density_df * 0.08
         # speed_df = min[flow_df/density_df, 50]
         print('yes')
-        return cells_old, [density_df, flow_df, number_df]
+        return cells_old, density_df, flow_df, number_df
 
     def updateSignalTime(self, time_index):
         """

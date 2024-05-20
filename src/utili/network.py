@@ -138,7 +138,6 @@ class Intersection:
         this function is used to get the signal phase given edge idx and target time(time range from current status)
         :param time_range: time range from current status
         """
-        time_range = 105
 
         self.setLinkPhaseIndex()  # initial and get tls id
         current_time = traci.simulation.getTime()

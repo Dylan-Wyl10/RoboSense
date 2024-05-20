@@ -164,13 +164,15 @@ class Simulation:
                     self.CTM.cells_dic[cid].k = v_num/0.08
 
                 # step 2.3: update CTM including: demand, signal timing, cell density, cell information
-                self.Cells_saved_next, current_result = self.CTM.runCTM(traci.simulation.getTime(), 500)
-                # aaaa = Cell.getCell('A0.-E1.C1')
+                self.Cells_saved_next, density, flow, number = self.CTM.runCTM(traci.simulation.getTime(), 100)
+
                 self.CTM.cells_dic = self.Cells_saved_next
                 Cell.idcase = self.Cells_saved_next
                 # aaaaaa = Cell.getCell('A0.-E1.C1')
                 # bbb = Cell.idcase
                 print('yes')
+                if self.step == 600:
+                    print('okey')
 
                 # step3: enumerate all cav from list, choose proper route and update vehicle information
 
@@ -194,11 +196,11 @@ class Simulation:
                 self.update_veh()
                 """
             # step3: update observation information every 1 second
-            if self.step % 10 == 0:
-                # self.getCAVctrlList()
-                # update observation
-                self.updateObsv()
-                self.checkCoverTable()
+            # if self.step % 5 == 0:
+            #     # self.getCAVctrlList()
+            #     # update observation
+            #     self.updateObsv()
+            #     self.checkCoverTable()
             # step4: push simulation and update information
             self.step += 1
             self.time = self.step * self.resolution
@@ -583,7 +585,7 @@ class Simulation:
     def getCTMObservation(self):
         update_table = {}
         for cav_id in self.cav_list:
-            cav_linklongitude_coord = traci.vehicle.getDistance(cav_id)
+            cav_linklongitude_coord = traci.vehicle.getLanePosition(cav_id)
             edge_idx, lane_idx = re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(cav_id)).group(1), re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(cav_id)).group(2)
             length = self.network.sumonet.getEdge(edge_idx).getLength()
             # idx = divmod(cav_linklongitude_coord, 80)[0]
@@ -658,7 +660,7 @@ class Simulation:
         for v in veh_ls:
             lane_idx = re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(v)).group(2)
             # aa = traci.vehicle.getDistance(v)
-            if ((traci.vehicle.getDistance(v) <= upper and traci.vehicle.getDistance(v) >= lower) and (int(lane_idx) in lanes)):
+            if ((traci.vehicle.getLanePosition(v) <= upper and traci.vehicle.getLanePosition(v) >= lower) and (int(lane_idx) in lanes)):
                 count += 1
 
         return count
