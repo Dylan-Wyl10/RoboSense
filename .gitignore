@@ -18,3 +18,5 @@ src/utili/__pycache__
 ctm_temtest
 
 result/tmpnet
+
+src/*.mp4

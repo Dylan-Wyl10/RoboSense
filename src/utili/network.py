@@ -180,8 +180,6 @@ class Intersection:
                 Cell.getCell(c6_id).sig_flag = 1
                 Cell.getCell(c7_id).sig_flag = 1
 
-            # aa = Cell.getCell(c6_id)
-            # bb = Cell.getCell(c7_id)
             # print('yesyes')
 
 

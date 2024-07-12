@@ -45,7 +45,8 @@ class Cell(object):
         self.time_hour = time_interval / 3600
         self.inflow = 0
         self.outflow = 0
-        self.connection_counts = []
+        self.connection_counts_his = []
+        self.connection_counts_now = []
         self.pk = 0.5  # probability from first cells, default 0.5
         # self.psk = 0.5  # probability from side stream cells, default 0.5
         # self.ramp_flag = ramp_flag  # define if the current cell is main road. [0:main, 1:side]
@@ -81,8 +82,8 @@ class Cell(object):
         self.cto.append(sink)  # An instance of cell class is stored, in order to use cto and cfrom as pointer.
         sink.cfrom.append(self)
 
-        self.connection_counts.append(count)
-        sink.connection_counts.append(count)
+        self.connection_counts_his.append(count)
+        sink.connection_counts_his.append(count)
 
     def deleteConnection(self, sink):
         if sink not in self.cto:
@@ -130,17 +131,29 @@ class Cell(object):
         return "%s.%s.%s" % (self.zoneid, self.linkid, self.cellid)
 
     def updateRatio(self):
-        # defaultly, pk shows the first ratio.
-        if self.connection_counts:
-            self.pk = self.connection_counts[0] / sum(self.connection_counts)
+        # defaultly, pk shows the first ratio, defaultly the first one is from the left
+        if self.connection_counts_now:
+            if sum(self.connection_counts_now) == 0:
+                self.pk = 0.5
+            else:
+                self.pk = self.connection_counts_now[0] / sum(self.connection_counts_now)
+        # print('link {} cell {} pk is {}'.format(self.linkid, self.cellid, self.pk))
+
+    def updateConnection(self):
+        if self.cellid =='C7' or self.cellid =='C6':
+            cto1 = self.cto[0]
+            cto2 = self.cto[1]
+            cto1.connection_counts_now[0] = self.sig_flag * cto1.connection_counts_his[0]
+            cto2.connection_counts_now[1] = self.sig_flag * cto2.connection_counts_his[1]
+
 
     def updateDensity(self):  # This method can only be used by normal cell instance.
         if not self.updated:
             self.oldk = self.k
         # self.qmax = self.sig_flag * self.qmax
         if len(self.cfrom) == 2:  # Merge at here, we need to update density among this cell and two other upstream cells.
-            pk = self.pk  # probability from upstream normal cell
-            pck = 1 - self.pk  # probability from upstream merge cell
+            pk = self.pk  # probability from upstream left cell
+            pck = 1 - self.pk  # probability from upstream right cell
 
             rek = np.min([self.qmax, self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
             prov = self.cfrom[0]  # first cell note as 1
@@ -357,15 +370,15 @@ class Cell(object):
             self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
             self.updated = True
 
-    def switchConnection(self):
+    def switchConnection(self): # this is a function for initialization
         if len(self.cto) == 2 and len(self.cfrom) == 2:
             raise Exception("Invaild cell connection! A cell cannot connect to merge and diverge cell simultaneously")
         if len(self.cto) == 2:
             self.cto[0], self.cto[1] = self.cto[1], self.cto[0]
-            self.connection_counts[0], self.connection_counts[1] = self.connection_counts[1], self.connection_counts[0]
+            self.connection_counts_his[0], self.connection_counts_his[1] = self.connection_counts_his[1], self.connection_counts_his[0]
         if len(self.cfrom) == 2:
             self.cfrom[0], self.cfrom[1] = self.cfrom[1], self.cfrom[0]
-            self.connection_counts[0], self.connection_counts[1] = self.connection_counts[1], self.connection_counts[0]
+            self.connection_counts_his[0], self.connection_counts_his[1] = self.connection_counts_his[1], self.connection_counts_his[0]
 
 
 #
@@ -679,7 +692,7 @@ class CTM():
                 lidx_tmp = (l_idx + 1) % 4
                 ex_id_left = next((edge.getID() for edge in link_out if
                                    int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[lidx_tmp]), None)
-                c2_ex1_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id_left, 'C2')
+                c1_ex1_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id_left, 'C1')
 
                 # idx = l_idx + 2, through
                 lidx_tmp = (l_idx + 2) % 4
@@ -694,7 +707,7 @@ class CTM():
                 ex_id_right = next((edge.getID() for edge in link_out if
                                     int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[(l_idx + 3) % 4]),
                                    None)
-                c1_ex3_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id_right, 'C1')
+                c2_ex3_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id_right, 'C2')
 
                 """
                 Next, update turning ratio, for each link phase, there are three merging cells and three diverging cell
@@ -716,50 +729,54 @@ class CTM():
                     elif ex_id_right == turn_count_tmpdf.iloc[i]['to']:
                         turn_counts['right'][-1] = turn_count_tmpdf.iloc[i]['count']
 
-                # add connections in the intersection, on both side
+                # add connections in the intersection, on both side, the
                 # right lane through
-                Cell.getCell(c6_id).addConnectionCounts(Cell.getCell(c1_ex2_id), 0.5 * turn_counts['thr'][-1])
-                # right lane right
-                Cell.getCell(c6_id).addConnectionCounts(Cell.getCell(c1_ex3_id), turn_counts['right'][-1])
-                # left lane left
-                Cell.getCell(c7_id).addConnectionCounts(Cell.getCell(c2_ex1_id), turn_counts['left'][-1])
-                # left lane through
                 Cell.getCell(c7_id).addConnectionCounts(Cell.getCell(c2_ex2_id), 0.5 * turn_counts['thr'][-1])
+                # right lane right
+                Cell.getCell(c7_id).addConnectionCounts(Cell.getCell(c2_ex3_id), turn_counts['right'][-1])
+                # left lane left
+                Cell.getCell(c6_id).addConnectionCounts(Cell.getCell(c1_ex1_id), turn_counts['left'][-1])
+                # left lane through
+                Cell.getCell(c6_id).addConnectionCounts(Cell.getCell(c1_ex2_id), 0.5 * turn_counts['thr'][-1])
 
             # print('start to shift')
-            del c1_ex2_id, c1_ex3_id, c2_ex1_id, c2_ex2_id, ex_id_thr, ex_id_right, ex_id_left
+            del c1_ex1_id, c1_ex2_id, c2_ex2_id, c2_ex3_id, ex_id_thr, ex_id_right, ex_id_left
 
             turn_countsdf = pd.DataFrame(turn_counts)
             # then we need to:
-            # 1. shift cell7 for link in, and cell1 for link out
+            # 1. shift cell2 for link in, and cell1 for link out
             # 2. update the in link cells counts
             for l in link_in:
                 # e_id = l.getID()
-                c7_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
-                                          l.getID(), 'C7')
-                Cell.getCell(c7_id).switchConnection()
+                # c2_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                #                           l.getID(), 'C2')
+                # Cell.getCell(c2_id).switchConnection()
 
                 c5_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
                                           l.getID(), 'C5')
-                Cell.getCell(c5_id).connection_counts.append(sum(Cell.getCell(c5_id).cto[0].connection_counts))
-                Cell.getCell(c5_id).connection_counts.append(sum(Cell.getCell(c5_id).cto[1].connection_counts))
-                del c7_id, c5_id
+                Cell.getCell(c5_id).connection_counts_his.append(sum(Cell.getCell(c5_id).cto[0].connection_counts_his))
+                Cell.getCell(c5_id).connection_counts_his.append(sum(Cell.getCell(c5_id).cto[1].connection_counts_his))
+                del c5_id
 
             for l in link_out:
                 # e_id = l.getID()
                 c1_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
                                           l.getID(), 'C1')
                 Cell.getCell(c1_id).switchConnection()
+
+                c2_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                                          l.getID(), 'C2')
+                Cell.getCell(c2_id).switchConnection()
                 c3_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
                                           l.getID(), 'C3')
                 # c3 = Cell.getCell(c3_id)
-                Cell.getCell(c3_id).connection_counts.append(sum(Cell.getCell(c3_id).cfrom[0].connection_counts))
-                Cell.getCell(c3_id).connection_counts.append(sum(Cell.getCell(c3_id).cfrom[1].connection_counts))
-                del c1_id, c3_id
+                Cell.getCell(c3_id).connection_counts_his.append(sum(Cell.getCell(c3_id).cfrom[0].connection_counts_his))
+                Cell.getCell(c3_id).connection_counts_his.append(sum(Cell.getCell(c3_id).cfrom[1].connection_counts_his))
+                del c1_id, c2_id, c3_id
 
         self.cells_dic = Cell.idcase
-        for c in self.cells_dic.values():
-            c.updateRatio()
+        # for c in self.cells_dic.values():
+        #     c.updateRatio()
         print('network established')
         # initial demand flow.
         self.demand = self.net.demand
@@ -801,9 +818,18 @@ class CTM():
             # print('start update signal')
             for n in self.net.node_list.values():
                 n.getEdgeSignalPhase(t*5)  # YW: the time current and input time here is absolute time.
+            for cell in self.cells_dic.values():
+                cell.connection_counts_now = copy.deepcopy(cell.connection_counts_his)
+            # update current connection and pk
+            for cell in self.cells_dic.values():
+                cell.updateConnection()
+            for c in self.cells_dic.values():
+                c.updateRatio()
             # update cell density
             for cell in self.cells_dic.values():
                 cell.updateDensity()
+
+            # print(t, Cell.getCell('A0.E1.C6').qmax)
             # # collect cell result
             # for cell in self.cells_dic.values():
             #     cell_id = cell.getCompleteAddress()
