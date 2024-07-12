@@ -122,7 +122,7 @@ class Simulation:
 
     def simCTM(self, save_path, config, flextable, parameters, flex, k=32, GUImode=False):
         if GUImode:
-            traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
+            traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                          "--step-length={}".format(str(self.resolution))])
         else:
             traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
@@ -161,17 +161,44 @@ class Simulation:
 
                 update_table = self.getCTMObservation()
                 for cid, v_num in update_table.items():
-                    self.CTM.cells_dic[cid].k = v_num/0.08
+                    self.CTM.cells_dic[cid].k = v_num/0.08  # update density
+
+
+                # addon temo code
+
+                if self.step == 50:
+                    CTM_time = 1000
+                else:
+                    CTM_time = 10
 
                 # step 2.3: update CTM including: demand, signal timing, cell density, cell information
-                self.Cells_saved_next, density, flow, number = self.CTM.runCTM(traci.simulation.getTime(), 100)
+                self.Cells_saved_next, density, flow, number = self.CTM.runCTM(traci.simulation.getTime(), CTM_time)
 
                 self.CTM.cells_dic = self.Cells_saved_next
                 Cell.idcase = self.Cells_saved_next
                 # aaaaaa = Cell.getCell('A0.-E1.C1')
                 # bbb = Cell.idcase
+
+                # # save results
+                # density.to_csv('../result/CTMnumber.csv')
+                #
+                # # CTM visulization
+                # # time_id_matrix = pd.read_csv('../result/CTMnumber.csv')
+                # # cell_coordinates_df = pd.read_csv('../sumo_cfg/5x5net/CTMcfg/Cells.csv')
+                # # cell_coordinates = cell_coordinates_df.set_index('cell_id').T.to_dict('list')
+                # CTM_visulization('../result/CTMnumber.csv', '../sumo_cfg/5x5net/CTMcfg/Cells.csv')
+
+
                 print('yes')
-                if self.step == 600:
+                if self.step == 50:
+                    # save results
+                    density.to_csv('../result/CTMnumber.csv')
+
+                    # CTM visulization
+                    # time_id_matrix = pd.read_csv('../result/CTMnumber.csv')
+                    # cell_coordinates_df = pd.read_csv('../sumo_cfg/5x5net/CTMcfg/Cells.csv')
+                    # cell_coordinates = cell_coordinates_df.set_index('cell_id').T.to_dict('list')
+                    CTM_visulization('../result/CTMnumber.csv', '../sumo_cfg/5x5net/CTMcfg/Cells.csv')
                     print('okey')
 
                 # step3: enumerate all cav from list, choose proper route and update vehicle information

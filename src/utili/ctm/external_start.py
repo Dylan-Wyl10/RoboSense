@@ -1,4 +1,4 @@
-import CTMsim as CTM
+import CTMsimbkup as CTM
 from datetime import datetime
 
 start = datetime.now()
