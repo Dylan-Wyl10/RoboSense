@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # s.save_lf(lf_table_savepath)
     print('lf table has been saved')
     # traci.close()
-    s.sim_benchmark(save_info, config=path)
+    s.sim_getBench(save_info, config=path)
 
 
     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])

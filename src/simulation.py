@@ -137,7 +137,7 @@ class Simulation:
 
         # initial CTM
         self.CTM = CTM(self.network, tick_interval=5)  # 20111128 defaultly set tick as 5s.
-        self.CTM.init()
+        self.CTM.init(max_flow=2400)
 
         # self.CTM.runCTM(3000)
 
@@ -166,17 +166,19 @@ class Simulation:
 
                 # addon temo code
 
-                if self.step == 50:
-                    CTM_time = 1000
+                if self.step == 6000:
+                    CTM_time = 1800
                 else:
                     CTM_time = 10
 
                 # step 2.3: update CTM including: demand, signal timing, cell density, cell information
-                self.Cells_saved_next, density, flow, number = self.CTM.runCTM(traci.simulation.getTime(), CTM_time)
+                self.Cells_saved_next, density, flow, inflow, number, oldk = self.CTM.runCTM(traci.simulation.getTime(), CTM_time)
 
+
+                # aaaaaa = Cell.getCell('A0.-E1.C1')
                 self.CTM.cells_dic = self.Cells_saved_next
                 Cell.idcase = self.Cells_saved_next
-                # aaaaaa = Cell.getCell('A0.-E1.C1')
+
                 # bbb = Cell.idcase
 
                 # # save results
@@ -190,15 +192,15 @@ class Simulation:
 
 
                 print('yes')
-                if self.step == 50:
+                if self.step == 6000:
                     # save results
-                    density.to_csv('../result/CTMnumber.csv')
+                    number.to_csv('../result/ctmResult/CTMnumber_600_2400.csv')
 
                     # CTM visulization
                     # time_id_matrix = pd.read_csv('../result/CTMnumber.csv')
                     # cell_coordinates_df = pd.read_csv('../sumo_cfg/5x5net/CTMcfg/Cells.csv')
                     # cell_coordinates = cell_coordinates_df.set_index('cell_id').T.to_dict('list')
-                    CTM_visulization('../result/CTMnumber.csv', '../sumo_cfg/5x5net/CTMcfg/Cells.csv')
+                    CTM_visulization('../result/ctmResult/CTMnumber_600_2400.csv', '../sumo_cfg/5x5net/CTMcfg/Cells.csv')
                     print('okey')
 
                 # step3: enumerate all cav from list, choose proper route and update vehicle information
@@ -245,7 +247,7 @@ class Simulation:
                 break
 
 
-    def sim_benchmark(self, save_path, config="../sumo_cfg/5x5net/benchmark.sumocfg"):
+    def sim_getBench(self, save_path, config="../sumo_cfg/5x5net/benchmark.sumocfg"):
         traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index

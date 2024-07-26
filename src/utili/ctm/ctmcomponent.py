@@ -56,6 +56,7 @@ class Cell(object):
             Cell.idcase.setdefault(self.getCompleteAddress(), self)
         else:
             raise Exception("This id has been used by other cell")
+        self.updatevalue = 0
 
     def addConnection(self, sink):  # self ahead, sink back
         if len(sink.cfrom) == 2 or len(self.cto) == 2:
@@ -145,6 +146,8 @@ class Cell(object):
             cto2 = self.cto[1]
             cto1.connection_counts_now[0] = self.sig_flag * cto1.connection_counts_his[0]
             cto2.connection_counts_now[1] = self.sig_flag * cto2.connection_counts_his[1]
+            self.connection_counts_now[0] = self.sig_flag * self.connection_counts_his[0]
+            self.connection_counts_now[1] = self.sig_flag * self.connection_counts_his[1]
 
 
     def updateDensity(self):  # This method can only be used by normal cell instance.
@@ -221,7 +224,7 @@ class Cell(object):
                 if pk == 0:
                     prov.outflow = np.min([0, prov.vf * prov.oldk * prov.time_hour / prov.length])*prov.sig_flag
                 else:
-                    prov.outflow = np.min([yk / pk, prov.vf * prov.oldk * prov.time_hour / prov.length])*prov.sig_flag
+                    prov.outflow = np.min([yk, prov.vf * prov.oldk * prov.time_hour / prov.length])*prov.sig_flag
             else:
                 prov.outflow = np.min([yk, prov.vf * prov.oldk * prov.time_hour / prov.length])*prov.sig_flag
 
@@ -234,7 +237,7 @@ class Cell(object):
                 if pck == 0:
                     merge.outflow = np.min([0, merge.vf * merge.oldk * merge.time_hour / merge.length])*merge.sig_flag
                 else:
-                    merge.outflow = np.min([yck / pck, merge.vf * merge.oldk * merge.time_hour / merge.length])*merge.sig_flag
+                    merge.outflow = np.min([yck, merge.vf * merge.oldk * merge.time_hour / merge.length])*merge.sig_flag
             else:
                 merge.outflow = np.min([yck, merge.vf * merge.oldk * merge.time_hour / merge.length])*merge.sig_flag
 
@@ -380,6 +383,22 @@ class Cell(object):
             self.cfrom[0], self.cfrom[1] = self.cfrom[1], self.cfrom[0]
             self.connection_counts_his[0], self.connection_counts_his[1] = self.connection_counts_his[1], self.connection_counts_his[0]
 
+    def checkConnection(self): # this is to check if the deverge cell connect to correct merge cell
+        if len(self.cto) == 2 and len(self.cfrom) == 2:
+            raise Exception("Invaild cell connection! A cell cannot connect to merge and diverge cell simultaneously")
+        if len(self.cto) == 2:
+            cto1, cto2 = self.cto[0], self.cto[1]
+            if (self.connection_counts_his[0] != cto1.connection_counts_his[0] and self.connection_counts_his[0] == cto1.connection_counts_his[1]):
+                # print('correct connection for first cell{}'.format(self.cellid))
+                cto1.cfrom[0], cto1.cfrom[1] = cto1.cfrom[1], cto1.cfrom[0]
+                cto1.connection_counts_his[0], cto1.connection_counts_his[1] = cto1.connection_counts_his[1], cto1.connection_counts_his[0]
+
+            if (self.connection_counts_his[1] != cto2.connection_counts_his[1] and self.connection_counts_his[1] ==
+                    cto2.connection_counts_his[0]):
+                # print('correct connection for second cell{}'.format(self.cellid))
+                cto2.cfrom[0], cto2.cfrom[1] = cto2.cfrom[1], cto2.cfrom[0]
+                cto2.connection_counts_his[0], cto2.connection_counts_his[1] = cto2.connection_counts_his[1], \
+                cto2.connection_counts_his[0]
 
 #
 # class Node(object):
@@ -489,27 +508,42 @@ def quicklyCreateCells(number, linkid, vf=60, kjam=220):
 
 
 # creat cells for a given link
-def linkCreateCells(linkid, link_type='normal'):
+def linkCreateCells(linkid, link_type='normal', max_laneFlow=1800):
     """
     number: total number of cells in one link
     Note that for 202402version, the tepology for the cells in link is fixed
     """
+
+    CTM_param = {
+        'v_f': 106,
+        'k_jam': 114,
+        'q_max': 2400,
+        'w': 69
+    }
+
+    v_f = CTM_param['v_f']
+    k_jam = CTM_param['k_jam']
+    q_max = CTM_param['q_max']
+    w = CTM_param['w']
+
     cells = []
+    flow_one = v_f
+    flow_two = 2 * v_f
     if link_type == 'normal':  # normal line 400m, 7 cells
-        cells.append(Cell('C' + str(1), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
-                          dis_rate=1100))
-        cells.append(Cell('C' + str(2), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
-                          dis_rate=1100))
-        cells.append(Cell('C' + str(3), linkid, 'A0', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
-                          dis_rate=2200))
-        cells.append(Cell('C' + str(4), linkid, 'A0', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
-                          dis_rate=2200))
-        cells.append(Cell('C' + str(5), linkid, 'A0', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
-                          dis_rate=2200))
-        cells.append(Cell('C' + str(6), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
-                          dis_rate=1100))
-        cells.append(Cell('C' + str(7), linkid, 'A0', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
-                          dis_rate=1100))
+        cells.append(Cell('C' + str(1), linkid, 'A0', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w, arr_rate=0,
+                          dis_rate=flow_one))
+        cells.append(Cell('C' + str(2), linkid, 'A0', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w, arr_rate=0,
+                          dis_rate=flow_one))
+        cells.append(Cell('C' + str(3), linkid, 'A0', time_interval=5, vf=v_f, kjam=2*k_jam, qmax=2*q_max, length=0.08, w=w, arr_rate=0,
+                          dis_rate=flow_two))
+        cells.append(Cell('C' + str(4), linkid, 'A0', time_interval=5, vf=v_f, kjam=2*k_jam, qmax=2*q_max, length=0.08, w=w, arr_rate=0,
+                          dis_rate=flow_two))
+        cells.append(Cell('C' + str(5), linkid, 'A0', time_interval=5, vf=v_f, kjam=2*k_jam, qmax=2*q_max, length=0.08, w=w, arr_rate=0,
+                          dis_rate=flow_two))
+        cells.append(Cell('C' + str(6), linkid, 'A0', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w, arr_rate=0,
+                          dis_rate=flow_one))
+        cells.append(Cell('C' + str(7), linkid, 'A0', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w, arr_rate=0,
+                          dis_rate=flow_one))
 
         # add connection
         cells[0].addConnection(cells[2])  # 1-3
@@ -523,16 +557,16 @@ def linkCreateCells(linkid, link_type='normal'):
 
         # sink cell, id C0
         cells.append(
-            Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=50, kjam=99999, qmax=2200, length=0.08, w=18.57, arr_rate=0,
-                 dis_rate=2200))
-        cells.append(Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
-                          dis_rate=2200))
-        cells.append(Cell('C' + str(5), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
-                          dis_rate=2200))
-        cells.append(Cell('C' + str(6), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
-                          dis_rate=1100))
-        cells.append(Cell('C' + str(7), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
-                          dis_rate=1100))
+            Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=v_f, kjam=99999, qmax=2*q_max, length=0.08, w=w, arr_rate=0,
+                 dis_rate=flow_two))
+        cells.append(Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=v_f, kjam=2*k_jam, qmax=2*q_max, length=0.08, w=w, arr_rate=0,
+                          dis_rate=flow_two))
+        cells.append(Cell('C' + str(5), linkid, 'A1', time_interval=5, vf=v_f, kjam=2*k_jam, qmax=2*q_max, length=0.08, w=w, arr_rate=0,
+                          dis_rate=flow_two))
+        cells.append(Cell('C' + str(6), linkid, 'A1', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w, arr_rate=0,
+                          dis_rate=flow_one))
+        cells.append(Cell('C' + str(7), linkid, 'A1', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w, arr_rate=0,
+                          dis_rate=flow_one))
 
         cells[0].addConnection(cells[1])  # dummy-4
         cells[1].addConnection(cells[2])  # 4-5
@@ -541,19 +575,19 @@ def linkCreateCells(linkid, link_type='normal'):
 
     elif link_type == 'exit':  # entry line 240m, 4 cells
         cells.append(
-            Cell('C' + str(1), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
-                 dis_rate=1100))
+            Cell('C' + str(1), linkid, 'A1', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w, arr_rate=0,
+                 dis_rate=flow_one))
         cells.append(
-            Cell('C' + str(2), linkid, 'A1', time_interval=5, vf=50, kjam=133, qmax=1100, length=0.08, w=18.57, arr_rate=0,
-                 dis_rate=1100))
+            Cell('C' + str(2), linkid, 'A1', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w, arr_rate=0,
+                 dis_rate=flow_one))
         cells.append(
-            Cell('C' + str(3), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
-                 dis_rate=2200))
+            Cell('C' + str(3), linkid, 'A1', time_interval=5, vf=v_f, kjam=2*k_jam, qmax=2*q_max, length=0.08, w=w, arr_rate=0,
+                 dis_rate=flow_two))
         cells.append(
-            Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=2200, length=0.08, w=18.57, arr_rate=0,
-                 dis_rate=2200))
+            Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=v_f, kjam=2*k_jam, qmax=2*q_max, length=0.08, w=w, arr_rate=0,
+                 dis_rate=flow_two))
         cells.append(
-            Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=50, kjam=266, qmax=99999, length=0.08, w=18.57, arr_rate=0,
+            Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=v_f, kjam=2*k_jam, qmax=99999, length=0.08, w=w, arr_rate=0,
                  dis_rate=99999))
 
         cells[0].addConnection(cells[2])  # 1-3
@@ -603,7 +637,7 @@ class CTM():
         self.net = network  # current network input is based on SUMO, the input format is net.xml
         self.link_ls = {}
 
-    def init(self):
+    def init(self, max_flow):
         print(f'Initializing CTM for network{self.net.net_config}...')
         # self.link_ls = [i[0] + i[1] for i in np.array(self.net.G.edges)] # get link index for ctm model
         link_info = {'link_id': [],
@@ -651,14 +685,14 @@ class CTM():
             # if the links is the entry link, creat two big cell for each lane
             if linkdf.iloc[i]['from_link_id'] == '0' and linkdf.iloc[i]['to_link_id'] != '0':
                 print('creating cells for entry link {}'.format(linkdf.iloc[i]['link_id']))
-                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='entry')
+                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='entry', max_laneFlow=max_flow)
             # normal link, need connections from both side with 8 cells for one link
             elif linkdf.iloc[i]['from_link_id'] != '0' and linkdf.iloc[i]['to_link_id'] != '0':
                 print('creating cells for normal link {}'.format(linkdf.iloc[i]['link_id']))
-                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='normal')
+                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='normal', max_laneFlow=max_flow)
             elif linkdf.iloc[i]['from_link_id'] != '0' and linkdf.iloc[i]['to_link_id'] == '0':
                 print('creating cells for exit link {}'.format(linkdf.iloc[i]['link_id']))
-                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='exit')
+                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='exit', max_laneFlow=max_flow)
             # tmpp = linkdf.iloc[i]['link_id']
             print('cells has been created')
         # aa = Cell.idcase
@@ -744,9 +778,19 @@ class CTM():
 
             turn_countsdf = pd.DataFrame(turn_counts)
             # then we need to:
-            # 1. shift cell2 for link in, and cell1 for link out
+            # 1. check all the cell 6 and cell 7 for connection correctness
             # 2. update the in link cells counts
             for l in link_in:
+                # 2024 0722: the connection confirmation is only important to sending cells (cell 6 and cell7)\
+
+                c6_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                                          l.getID(), 'C6')
+                Cell.getCell(c6_id).checkConnection()
+
+                c7_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                                          l.getID(), 'C7')
+                Cell.getCell(c7_id).checkConnection()
+
                 # e_id = l.getID()
                 # c2_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
                 #                           l.getID(), 'C2')
@@ -760,19 +804,22 @@ class CTM():
 
             for l in link_out:
                 # e_id = l.getID()
-                c1_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
-                                          l.getID(), 'C1')
-                Cell.getCell(c1_id).switchConnection()
 
-                c2_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
-                                          l.getID(), 'C2')
-                Cell.getCell(c2_id).switchConnection()
+                # c1_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                #                           l.getID(), 'C1')
+                # Cell.getCell(c1_id).switchConnection()
+                #
+                # c2_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                #                           l.getID(), 'C2')
+                # Cell.getCell(c2_id).switchConnection()
+
+
                 c3_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
                                           l.getID(), 'C3')
                 # c3 = Cell.getCell(c3_id)
                 Cell.getCell(c3_id).connection_counts_his.append(sum(Cell.getCell(c3_id).cfrom[0].connection_counts_his))
                 Cell.getCell(c3_id).connection_counts_his.append(sum(Cell.getCell(c3_id).cfrom[1].connection_counts_his))
-                del c1_id, c2_id, c3_id
+                del c3_id
 
         self.cells_dic = Cell.idcase
         # for c in self.cells_dic.values():
@@ -793,22 +840,45 @@ class CTM():
         """
         density = {}
         flow = {}
-        # number = {}
+        number_inflow = {}
+        # this is debug part
+        old_k = {}
+        update_flag = {}
+
+
         steps = time_range//self.tick
         time_start = time.time()
         # cells_old = copy.deepcopy(self.cells_dic)
         for t in range(steps):
+            if t == 1:
+                cells_old = copy.deepcopy(self.cells_dic)
+
             # collect cell result
             for cell in self.cells_dic.values():
                 cell_id = cell.getCompleteAddress()
+                #1. record density
                 if cell_id not in density.keys():
                     density[cell_id] = [cell.k]
                 else:
                     density[cell_id].append(cell.k)
+                # record flow
                 if cell_id not in flow.keys():
                     flow[cell_id] = [cell.outflow]
                 else:
                     flow[cell_id].append(cell.outflow)
+                # record inflow
+                if cell_id not in number_inflow.keys():
+                    number_inflow[cell_id] = [cell.inflow]
+                else:
+                    number_inflow[cell_id].append(cell.inflow)
+
+                # record oldk
+                if cell_id not in old_k.keys():
+                    old_k[cell_id] = [cell.inflow]
+                else:
+                    old_k[cell_id].append(cell.inflow)
+
+
                 cell.updated = False
             # update demand
             for i in range(len(self.demand)):
@@ -828,32 +898,20 @@ class CTM():
             # update cell density
             for cell in self.cells_dic.values():
                 cell.updateDensity()
+                # aaaaaa = Cell.getCell('A0.E1.C1')
+                # print('yeah')
 
-            # print(t, Cell.getCell('A0.E1.C6').qmax)
-            # # collect cell result
-            # for cell in self.cells_dic.values():
-            #     cell_id = cell.getCompleteAddress()
-            #     if cell_id not in density.keys():
-            #         density[cell_id] = [cell.k]
-            #     else:
-            #         density[cell_id].append(cell.k)
-            #     if cell_id not in flow.keys():
-            #         flow[cell_id] = [cell.outflow]
-            #     else:
-            #         flow[cell_id].append(cell.outflow)
-            #     cell.updated = False
-
-            if t == 0:
-                cells_old = copy.deepcopy(self.cells_dic)  # save the next step cells for update
         time_end = time.time()
         # numbers = density*0.08
         print('time spend for {} steps: {}'.format(steps, time_end-time_start))
         density_df = pd.DataFrame(density).T
         flow_df = pd.DataFrame(flow).T
+        inflow_df = pd.DataFrame(number_inflow).T
         number_df = density_df * 0.08
+        oldk_df = pd.DataFrame(old_k).T
         # speed_df = min[flow_df/density_df, 50]
         print('yes')
-        return cells_old, density_df, flow_df, number_df
+        return cells_old, density_df, flow_df, inflow_df, number_df, oldk_df
 
     def updateSignalTime(self, time_index):
         """

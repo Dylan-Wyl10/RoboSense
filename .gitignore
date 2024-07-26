@@ -19,4 +19,4 @@ ctm_temtest
 
 result/tmpnet
 
-src/*.mp4
+*.mp4

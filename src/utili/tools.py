@@ -12,6 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.colors import LinearSegmentedColormap
+from datetime import datetime
 
 def gen_LF_table(link_num):
     '''
@@ -26,13 +27,13 @@ def gen_LF_table(link_num):
     return table
 
 # Function to plot cells as non-contiguous rectangles with the same size and color them based on the number of vehicles, including the time step
-def CTM_visulization(time_id_matrix, cell_coordinates):  # the inputs are file_directory
+def CTM_visulization(time_id_matrix_path, cell_coordinates):  # the inputs are file_directory
     """
     :param time_id_matrix:(data-frame) dataframe with time-space number for the cells.
     :param cell_coordinates:network tepology, read as adictionary.
     """
 
-    time_id_matrix = pd.read_csv('../result/CTMnumber.csv')
+    time_id_matrix = pd.read_csv(time_id_matrix_path)
     cell_coordinates_df = pd.read_csv('../sumo_cfg/5x5net/CTMcfg/Cells.csv')
     cell_coordinates = cell_coordinates_df.set_index('cell_id').T.to_dict('list')
 
@@ -99,7 +100,9 @@ def CTM_visulization(time_id_matrix, cell_coordinates):  # the inputs are file_d
     writer = Writer(fps=2, metadata=dict(artist='Me'), bitrate=1800)
 
     # Save the animation as a video file
-    ani.save('urban_network_traffic_with_timestep1.mp4', writer=writer)
+    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_name = f'../result/ctmResult/urban_network_traffic_with_timestep1_{current_time}.mp4'
+    ani.save(file_name, writer=writer)
 
     plt.close(fig)  # Close the plot to prevent it from displaying in the notebook
 
