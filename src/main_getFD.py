@@ -25,26 +25,48 @@ def get_FD(sim_args, GUImode=False):
     step = 0
 
     links = traci.edge.getIDList()
+    # detects = traci.inductionloop.getIDList()
 
     density = {}
     speed_mean = {}
     flow = {}
 
-    for edge in links:
-        density[edge] = []
-        speed_mean[edge] = []
-        flow[edge] = []
+    # for det in detects:
+    #     density[det] = []
+    #     speed_mean[det] = []
+    #     flow[det] = []
+
+    for e in links:
+        density[e] = []
+        speed_mean[e] = []
+        flow[e] = []
 
     while True:
         if (step % (time_interval * 10) == 0 and step > start_time/resolution):
             print('yes')
+
+            # for det in detects:
+            #     v_ids = traci.inductionloop.getIntervalVehicleIDs(det)
+            #     t_head = traci.inductionloop.getTimeSinceDetection(det)
+            #     speed_tmp = []
+            #     occ = traci.inductionloop.getIntervalOccupancy(det)
+            #
+            #     if t_head != 0:
+            #         density[det].append(10*occ/5)
+            #         flow[det].append(3600/t_head)
+            #     else:
+            #         density[det].append(0)
+            #         flow[det].append(0)
+
+
             for edge_id in links:
+                v_ids = traci.edge.getLastStepVehicleIDs(edge_id)
+                d_edge = len(v_ids)
                 # density
-                density[edge_id].append(traci.edge.getLastStepVehicleNumber(edge_id))
-                # mean speed
-                speed_mean[edge_id].append(traci.edge.getLastStepMeanSpeed(edge_id))
-                # flow rate
-                flow[edge_id].append(len(traci.edge.getLastStepVehicleIDs(edge_id)))
+                density[edge_id].append(d_edge)
+            #     # mean speed
+            #     speed_mean[edge_id].append(speed_all/d_edge if d_edge > 0 else 0)
+
         step += 1
         traci.simulationStep()
 
@@ -53,13 +75,14 @@ def get_FD(sim_args, GUImode=False):
                 traci.simulation.getMinExpectedNumber() <= 10 and step > start_time):
             # path = save_path['cover_table_benchmark']
             densitydf = pd.DataFrame(density).T
-            speeddf = pd.DataFrame(speed_mean).T
-            flowdf = densitydf*speeddf/0.08 # veh/hour
+            # speeddf = pd.DataFrame(speed_mean).T
+            # flowdf = pd.DataFrame(flow).T
+            # flowdf = densitydf*speeddf/0.08 # veh/hour
 
             # save the result
             densitydf.to_csv('../result/ctmResult/Linknumber_sim.csv')
-            speeddf.to_csv('../result/ctmResult/Linkspeed_sim.csv')
-            flowdf.to_csv('../result/ctmResult/Flow_sim.csv')
+            # speeddf.to_csv('../result/ctmResult/Linkspeed_sim.csv')
+            # flowdf.to_csv('../result/ctmResult/Flow_sim.csv')
             print("Sim has ended due to no enough vehicle")
             break
 
@@ -77,32 +100,11 @@ if __name__ == '__main__':
         print('SUMO_HOME fixed')
 
     # add configurations
-    args = [600, 2400, 0.1, 1,
-            '../sumo_cfg/5x5net/simcfg/benchmark.sumocfg',
+    args = [50, 2050, 0.1, 1,
+            '../sumo_cfg/5x5net/simcfg/ctmbench.sumocfg',
             '../sumo_cfg/5x5net/5x5net.net.xml']
     # start time, max time, resolution, time interval, net configuration
 
     get_FD(args, GUImode=False)
 
-
-#
-#     max_step = 10 * args.maxtime  # define the maximum steps for the simulation
-#     path = args.net_dirc + ("/simcfg/benchmark.sumocfg")
-#     pr = 5
-#     lf_table_savepath = "../result/{}/link_flow/pr{}_link_flow_3600.json".format(args.netname, pr)
-#     save_info = {'cover_table_benchmark': "../result/{}/PR5 TestingNew/pr5_cover_benchmark.npy".format(args.netname)}
-#
-#     s = Simulation(start_time=600, max_time=args.maxtime, link_num=40, resolution=0.1,
-#                    net_file='../sumo_cfg/5x5net/5x5net.net.xml',
-#                    time_interval=20, sizeX=5, sizeY=5)
-#     # s.get_LF_table(config=path)
-#     # s.save_lf(lf_table_savepath)
-#     print('lf table has been saved')
-#     # traci.close()
-#     s.sim_getBench(save_info, config=path)
-#
-#
-#     # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
-#
-#     # start simulation
 #

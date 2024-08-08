@@ -49,7 +49,7 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     max_step = 10 * args.maxtime  # define the maximum steps for the simulation
-    path = args.net_dirc + ("/simcfg/benchmark.sumocfg")
+    path = args.net_dirc + ("/simcfg/ctmbench.sumocfg")
     pr = 5
     lf_table_savepath = "../result/{}/link_flow/pr{}_link_flow_3600.json".format(args.netname, pr)
     save_info = {'cover_table_benchmark': "../result/{}/PR5 TestingNew/pr5_cover_benchmark.npy".format(args.netname)}

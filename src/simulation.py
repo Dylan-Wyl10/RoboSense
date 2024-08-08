@@ -166,7 +166,7 @@ class Simulation:
 
                 # addon temo code
 
-                if self.step == 6000:
+                if self.step == 50:
                     CTM_time = 1800
                 else:
                     CTM_time = 10
@@ -192,7 +192,7 @@ class Simulation:
 
 
                 print('yes')
-                if self.step == 6000:
+                if self.step == 50:
                     # save results
                     number.to_csv('../result/ctmResult/CTMnumber_600_2400.csv')
 
@@ -247,7 +247,7 @@ class Simulation:
                 break
 
 
-    def sim_getBench(self, save_path, config="../sumo_cfg/5x5net/benchmark.sumocfg"):
+    def sim_getBench(self, save_path, config="../sumo_cfg/5x5net/ctmbench.sumocfg"):
         traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                      "--step-length={}".format(str(self.resolution))])
         self.time = 0  # simulation time index
