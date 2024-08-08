@@ -3,7 +3,7 @@
     <input>
         <net-file value="../5x5net.net.xml"/>
         <route-files value="../od.rou.xml"/>
-        <additional-files value="../v_type.add.xml"/>
+        <additional-files value="../v_type.add.xml, ../detectors.add.xml"/>
     </input>
 
     <processing>
@@ -19,6 +19,10 @@
         <summary-output value="../../../result/5x5net/sumolog_tmp/summary_benchmark.xml"/>
         <tripinfo-output value="../../../result/5x5net/sumolog_tmp/tripinfo_benchmark.xml"/>
         <statistic-output value="../../../result/5x5net/sumolog_tmp/overall_benchmark.xml"/>
+        <edgedata-output value="../../../result/ctmResult/edge_data.xml"/>
+        <lanedata-output value="../../../result/ctmResult/lane_data.xml"/>
+
+
     </output>
 
     <time>

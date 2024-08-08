@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2024-07-31 10:50:49 by Eclipse SUMO GUI Version 1.19.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="../sumo_cfg/5x5net/simcfg/../5x5net.net.xml"/>
+        <route-files value="../sumo_cfg/5x5net/simcfg/../od.rou.xml"/>
+        <additional-files value="../sumo_cfg/5x5net/simcfg/../v_type.add.xml,../sumo_cfg/5x5net/simcfg/ ../detectors.add.xml"/>
+    </input>
+
+    <output>
+        <summary-output value="../sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog_tmp/summary_benchmark.xml"/>
+        <tripinfo-output value="../sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog_tmp/tripinfo_benchmark.xml"/>
+        <edgedata-output value="../sumo_cfg/5x5net/simcfg/../../../result/ctmResult/edge_data.xml"/>
+        <lanedata-output value="../sumo_cfg/5x5net/simcfg/../../../result/ctmResult/lane_data.xml"/>
+        <statistic-output value="../sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog_tmp/overall_benchmark.xml"/>
+    </output>
+
+    <time>
+        <begin value="0"/>
+        <end value="3600"/>
+        <step-length value="0.1"/>
+    </time>
+
+    <processing>
+        <lateral-resolution value="0.1"/>
+        <route-steps value="200"/>
+        <no-internal-links value="False"/>
+        <ignore-route-errors value="true"/>
+        <time-to-teleport value="200"/>
+        <time-to-teleport.highways value="0"/>
+        <eager-insert value="False"/>
+    </processing>
+
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <traci_server>
+        <remote-port value="53595"/>
+    </traci_server>
+
+    <gui_only>
+        <gui-settings-file value="../sumo_cfg/5x5net/simcfg/../toy_net.view.xml"/>
+    </gui_only>
+
+</configuration>
