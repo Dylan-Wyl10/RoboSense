@@ -1,6 +1,10 @@
 $O;D2
 0.00 1.0
 1.00
+AA_in AE_out 0
+AE_in AA_out 0
+EA_in EE_out 0
+EE_in EA_out 0
 AA_in EE_out 588
 AB_in ED_out 294
 AC_in EC_out 294

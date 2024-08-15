@@ -192,7 +192,7 @@ class Network:
         self.G = nx.Graph()  # initial a graph component
         self.\
             node_list = self.getNodeList(x_size, y_size, self.sumonet, link_dirction_file)  # restore the list of id on intersection
-        self.demand = pd.read_csv(demand, index_col=0)
+        self.demand = pd.read_csv(demand)
 
         # load turn rate
         # Parse the XML file
