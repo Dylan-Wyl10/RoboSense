@@ -54,7 +54,7 @@ def CTM_visulization(time_id_matrix_path, cell_coordinates):  # the inputs are f
 
     # Normalize vehicle numbers for color mapping
     vehicle_numbers = time_id_matrix.iloc[:, 1:].to_numpy().flatten()
-    norm = plt.Normalize(vmin=0, vmax=21)
+    norm = plt.Normalize(vmin=0, vmax=max(vehicle_numbers))
     # cmap = plt.cm.viridis
 
     fig, ax = plt.subplots(figsize=(12, 8), dpi=150)
@@ -109,3 +109,4 @@ def CTM_visulization(time_id_matrix_path, cell_coordinates):  # the inputs are f
     # print('urban_network_traffic_with_timestep_new1.mp4')
 
     # return '/mnt/data/urban_network_traffic_with_timestep.mp4'
+

@@ -151,6 +151,19 @@ class Cell(object):
             cto2.connection_counts_now[1] = self.sig_flag * cto2.connection_counts_his[1]
             self.connection_counts_now[0] = self.sig_flag * self.connection_counts_his[0]
             self.connection_counts_now[1] = self.sig_flag * self.connection_counts_his[1]
+        # 20240809 update: add compromise mechanism
+        elif self.cellid =='C5':  #link diverge cell
+            c6_left, c7_right = self.cto
+            leftN = c6_left.connection_counts_his[0]  # total number of turning left
+            rightN = c7_right.connection_counts_his[1]  # total number of turning right
+            thr = c6_left.connection_counts_his[1] + c7_right.connection_counts_his[0]
+            num_c6, num_c7 = c6_left.oldk * c6_left.length, c7_right.oldk * c7_right.length
+            cap_c6, cap_c7 = c6_left.kjam * c6_left.length, c7_right.kjam * c7_right.length
+            a1 = thr * (cap_c6 - num_c6)/(cap_c6 + cap_c7 - num_c6 - num_c7)
+            a2 = thr * (cap_c7 - num_c7)/(cap_c6 + cap_c7 - num_c6 - num_c7)
+            # if a1 != a2:
+            #     print('l;ololo')
+            self.connection_counts_now = [leftN + a1, rightN + a2]
 
     def initialCellType(self):
         if len(self.cto) == 2 and len(self.cfrom) == 2:
@@ -476,10 +489,10 @@ def linkCreateCells(linkid, link_type='normal', max_laneFlow=1800):
     """
 
     CTM_param = {
-        'v_f': 48.65,
+        'v_f': 55.18,
         'k_jam': 133,
-        'q_max': 1744,
-        'w': 17.94
+        'q_max': 1977,
+        'w': 20.35
     }
 
     v_f = CTM_param['v_f']
@@ -724,15 +737,18 @@ class CTM():
                     elif ex_id_right == turn_count_tmpdf.iloc[i]['to']:
                         turn_counts['right'][-1] = turn_count_tmpdf.iloc[i]['count']
 
-                # add connections in the intersection, on both side, the
+                # add connections in the intersection, on both side, distribute the turning ratio as a equal ratio
+                total_veh = turn_counts['left'][-1] + turn_counts['thr'][-1] + turn_counts['right'][-1]
+                right_thr = max(0, 0.5*total_veh - turn_counts['right'][-1])
+                left_thr = max(0, 0.5*total_veh - turn_counts['left'][-1])
                 # right lane through
-                Cell.getCell(c7_id).addConnectionCounts(Cell.getCell(c2_ex2_id), 0.5 * turn_counts['thr'][-1])
+                Cell.getCell(c7_id).addConnectionCounts(Cell.getCell(c2_ex2_id), right_thr)
                 # right lane right
                 Cell.getCell(c7_id).addConnectionCounts(Cell.getCell(c2_ex3_id), turn_counts['right'][-1])
                 # left lane left
                 Cell.getCell(c6_id).addConnectionCounts(Cell.getCell(c1_ex1_id), turn_counts['left'][-1])
                 # left lane through
-                Cell.getCell(c6_id).addConnectionCounts(Cell.getCell(c1_ex2_id), 0.5 * turn_counts['thr'][-1])
+                Cell.getCell(c6_id).addConnectionCounts(Cell.getCell(c1_ex2_id), left_thr)
 
             # print('start to shift')
             del c1_ex1_id, c1_ex2_id, c2_ex2_id, c2_ex3_id, ex_id_thr, ex_id_right, ex_id_left
@@ -785,6 +801,7 @@ class CTM():
         self.cells_dic = Cell.idcase
         for c in self.cells_dic.values():
             c.initialCellType()
+            c.connection_counts_now = copy.deepcopy(c.connection_counts_his)
         # for c in self.cells_dic.values():
         #     c.updateRatio()
         print('network established')
@@ -803,7 +820,7 @@ class CTM():
         """
         density = {}
         flow = {}
-        number_inflow = {}
+        dense_norm = {}
         # this is debug part
         old_k = {}
         update_flag = {}
@@ -830,28 +847,22 @@ class CTM():
                 else:
                     flow[cell_id].append(cell.outflow)
                 # record inflow
-                if cell_id not in number_inflow.keys():
-                    number_inflow[cell_id] = [cell.inflow]
+                if cell_id not in dense_norm.keys():
+                    dense_norm[cell_id] = [cell.k/cell.kjam]
                 else:
-                    number_inflow[cell_id].append(cell.inflow)
+                    dense_norm[cell_id].append(cell.k/cell.kjam)
 
-                # # record oldk
-                # if cell_id not in old_k.keys():
-                #     old_k[cell_id] = [cell.inflow]
-                # else:
-                #     old_k[cell_id].append(cell.inflow)
 
                 cell.updated = False
-            # update demand
-            for i in range(len(self.demand)):
-                Cell.getFirstCell(self.demand.iloc[i]['link_id']).arr_rate = self.demand.iloc[i]['demand']
+
+            demand_current = self.getDemandByTime(time_current + t*self.tick)
+            for i in range(len(demand_current)):
+                Cell.getFirstCell(demand_current.iloc[i]['link_id']).arr_rate = demand_current.iloc[i]['demand']
 
             # update signal timing for current step t
             # print('start update signal')
             for n in self.net.node_list.values():
                 n.getEdgeSignalPhase(t*5)  # YW: the time current and input time here is absolute time.
-            for cell in self.cells_dic.values():
-                cell.connection_counts_now = copy.deepcopy(cell.connection_counts_his)
             # update current connection and pk
             for cell in self.cells_dic.values():
                 cell.updateConnection()
@@ -870,12 +881,25 @@ class CTM():
         print('time spend for {} steps: {}'.format(steps, time_end-time_start))
         density_df = pd.DataFrame(density).T
         flow_df = pd.DataFrame(flow).T
-        inflow_df = pd.DataFrame(number_inflow).T
+        normdense_df = pd.DataFrame(dense_norm).T
         number_df = density_df * 0.08
-        oldk_df = pd.DataFrame(old_k).T
+        # oldk_df = pd.DataFrame(old_k).T
         # speed_df = min[flow_df/density_df, 50]
         print('yes')
-        return cells_old, density_df, flow_df, inflow_df, number_df, oldk_df
+        return cells_old, density_df, flow_df, normdense_df, number_df
+
+    def getDemandByTime(self, time):
+        df = self.demand
+        # Filter the dataframe to include only rows where time is less than or equal to the input time
+        filtered_df = df[df['time'] <= time]
+
+        # For each link_id, get the demand at the latest time before or equal to the input time
+        latest_demand = filtered_df.groupby('link_id').apply(lambda x: x.loc[x['time'].idxmax()])
+
+        # Drop the 'time' column since we're interested in the demand value at the input time
+        latest_demand = latest_demand.drop(columns='time').reset_index(drop=True)
+
+        return latest_demand
 
     def updateSignalTime(self, time_index):
         """
