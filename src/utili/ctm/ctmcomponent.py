@@ -819,12 +819,10 @@ class CTM():
         run CTM cell status from current status and stop at target time
         """
         density = {}
-        flow = {}
+        outflow = {}
         dense_norm = {}
         # this is debug part
         old_k = {}
-        update_flag = {}
-
 
         steps = time_range//self.tick
         time_start = time.time()
@@ -841,18 +839,16 @@ class CTM():
                     density[cell_id] = [cell.k]
                 else:
                     density[cell_id].append(cell.k)
-                # record flow
-                if cell_id not in flow.keys():
-                    flow[cell_id] = [cell.outflow]
+                # record outflow number
+                if cell_id not in outflow.keys():
+                    outflow[cell_id] = [cell.outflow]
                 else:
-                    flow[cell_id].append(cell.outflow)
-                # record inflow
+                    outflow[cell_id].append(cell.outflow)
+                # record density ratio
                 if cell_id not in dense_norm.keys():
                     dense_norm[cell_id] = [cell.k/cell.kjam]
                 else:
                     dense_norm[cell_id].append(cell.k/cell.kjam)
-
-
                 cell.updated = False
 
             demand_current = self.getDemandByTime(time_current + t*self.tick)
@@ -871,22 +867,17 @@ class CTM():
             # update cell density
             for cell in self.cells_dic.values():
                 # if cell.getCompleteAddress() == 'A1.E101.C0':
-                #     print('yeah')
                 cell.updateDensity()
-                # aaaaaa = Cell.getCell('A0.E1.C1')
-
 
         time_end = time.time()
         # numbers = density*0.08
         print('time spend for {} steps: {}'.format(steps, time_end-time_start))
         density_df = pd.DataFrame(density).T
-        flow_df = pd.DataFrame(flow).T
+        numberOut_df = pd.DataFrame(outflow).T * 0.08
         normdense_df = pd.DataFrame(dense_norm).T
         number_df = density_df * 0.08
-        # oldk_df = pd.DataFrame(old_k).T
-        # speed_df = min[flow_df/density_df, 50]
         print('yes')
-        return cells_old, density_df, flow_df, normdense_df, number_df
+        return cells_old, density_df, numberOut_df, normdense_df, number_df
 
     def getDemandByTime(self, time):
         df = self.demand
