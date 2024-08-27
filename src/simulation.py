@@ -13,6 +13,7 @@ from utili.network import Network
 import traci
 import json
 from src.utili.ctm.ctmcomponent import *
+from utili.routeOptim import  RouteOptim
 
 
 class Simulation:
@@ -172,7 +173,7 @@ class Simulation:
                     CTM_time = 10
 
                 # step 2.3: update CTM including: demand, signal timing, cell density, cell information
-                self.Cells_saved_next, density, flow, normdense, number = self.CTM.runCTM(traci.simulation.getTime(), CTM_time)
+                self.Cells_saved_next, density, number_out, normdense, number = self.CTM.runCTM(traci.simulation.getTime(), CTM_time)
 
 
                 # aaaaaa = Cell.getCell('A0.-E1.C1')
@@ -197,14 +198,13 @@ class Simulation:
                     normdense.to_csv('../result/ctmResult/CTMdensityNorm.csv')
                     number.to_csv('../result/ctmResult/CTMnumber_3600_1800dis.csv')
                     density.to_csv('../result/ctmResult/CTMdensity_3600_1800dis.csv')
-                    flow.to_csv('../result/ctmResult/CTMflow_3600_1800dis.csv')
+                    number_out.to_csv('../result/ctmResult/CTMnumber_out_3600_1800dis.csv')
 
                     # CTM visulization
-                    # time_id_matrix = pd.read_csv('../result/CTMnumber.csv')
-                    # cell_coordinates_df = pd.read_csv('../sumo_cfg/5x5net/CTMcfg/Cells.csv')
-                    # cell_coordinates = cell_coordinates_df.set_index('cell_id').T.to_dict('list')
                     CTM_visulization('../result/ctmResult/CTMdensityNorm.csv', '../sumo_cfg/5x5net/CTMcfg/Cells.csv')
                     print('okey')
+
+
 
                 # step3: enumerate all cav from list, choose proper route and update vehicle information
 
