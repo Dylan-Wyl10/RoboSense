@@ -20,21 +20,52 @@ class RouteOptim:
         self.CTM_numberMatrix_ori = pd.read_csv(CTM_resultPath['number']).iloc[:, 1:].to_numpy()
         self.CTM_numberOutMatrix_ori = pd.read_csv(CTM_resultPath['outnumber']).iloc[:, 1:].to_numpy()
         self.CTM_signalMatrix_ori = pd.read_csv(CTM_resultPath['sigflag']).iloc[:, 1:].to_numpy()
-        self.CTM_connection = np.loadtxt(CTM_resultPath['connectionMatrix'])
+        self.CTM_connection_ori = np.loadtxt(CTM_resultPath['connectionMatrix'])
 
         with open(CTM_resultPath['cellIdx'], 'r') as file:
-            self.CTM_cellIdx = [line.strip() for line in file]
+            self.CTM_cellIdx_ori = [line.strip() for line in file]
 
         # with open(CTM_resultPath['cellIdx'], 'r') as file:
         #     self.CTM_cellIdx = [line.strip() for line in file]
 
         # in future development, this two inputs will be replaced by direct dataframe
 
-        # temp downgrade dimensions from the input [veh, time]
-        self.max_time = 10
-        self.CTM_numberMatrix = self.CTM_numberMatrix_ori[:, 0:self.max_time]
-        self.CTM_numberOutMatrix = self.CTM_numberOutMatrix_ori[:, 0:self.max_time]
-        self.CTM_signalMatrix = self.CTM_signalMatrix_ori[:, 0:self.max_time]
+        # temp downgrade dimensions from the input [cell, time]
+        """code for dimension downgrade"""
+        self.max_time = 35
+        self.CTM_cellIdx_downgrade = ['A1.E101.C0', 'A1.E101.C4', 'A1.E101.C5', 'A1.E101.C6', 'A1.E101.C7',
+                            'A1.E102.C0', 'A1.E102.C4', 'A1.E102.C5', 'A1.E102.C6', 'A1.E102.C7',
+                            'A1.E103.C0', 'A1.E103.C4', 'A1.E103.C5', 'A1.E103.C6', 'A1.E103.C7',
+                            'A1.E120.C0', 'A1.E120.C4', 'A1.E120.C5', 'A1.E120.C6', 'A1.E120.C7',
+                            'A1.-E101.C0', 'A1.-E101.C4', 'A1.-E101.C3', 'A1.-E101.C2', 'A1.-E101.C1',
+                            'A1.-E102.C0', 'A1.-E102.C4', 'A1.-E102.C3', 'A1.-E102.C2', 'A1.-E102.C1',
+                            'A1.-E103.C0', 'A1.-E103.C4', 'A1.-E103.C3', 'A1.-E103.C2', 'A1.-E103.C1',
+                            'A1.-E120.C0', 'A1.-E120.C4', 'A1.-E120.C3', 'A1.-E120.C2', 'A1.-E120.C1',
+                            'A0.E1.C1', 'A0.E1.C2', 'A0.E1.C3', 'A0.E1.C4', 'A0.E1.C5', 'A0.E1.C6', 'A0.E1.C7',
+                            'A0.-E1.C1', 'A0.-E1.C2', 'A0.-E1.C3', 'A0.-E1.C4', 'A0.-E1.C5', 'A0.-E1.C6', 'A0.-E1.C7',
+                            'A0.E2.C1', 'A0.E2.C2', 'A0.E2.C3', 'A0.E2.C4', 'A0.E2.C5',
+                            'A0.-E2.C1', 'A0.-E2.C2', 'A0.-E2.C3', 'A0.-E2.C4', 'A0.-E2.C5',
+                            'A0.E5.C1', 'A0.E5.C2', 'A0.E5.C3', 'A0.E5.C4', 'A0.E5.C5', 'A0.E5.C6', 'A0.E5.C7',
+                            'A0.-E5.C1', 'A0.-E5.C2', 'A0.-E5.C3', 'A0.-E5.C4', 'A0.-E5.C5', 'A0.-E5.C6', 'A0.-E5.C7',
+                            'A0.E6.C1', 'A0.E6.C2', 'A0.E6.C3', 'A0.E6.C4', 'A0.E6.C5',
+                            'A0.-E6.C1', 'A0.-E6.C2', 'A0.-E6.C3', 'A0.-E6.C4', 'A0.-E6.C5',
+                            'A0.E21.C1', 'A0.E21.C2', 'A0.E21.C3', 'A0.E21.C4', 'A0.E21.C5', 'A0.E21.C6', 'A0.E21.C7',
+                            'A0.-E21.C1', 'A0.-E21.C2', 'A0.-E21.C3', 'A0.-E21.C4', 'A0.-E21.C5', 'A0.-E21.C6','A0.-E21.C7',
+                            'A0.E22.C1', 'A0.E22.C2', 'A0.E22.C3', 'A0.E22.C4', 'A0.E22.C5',
+                            'A0.-E22.C1', 'A0.-E22.C2', 'A0.-E22.C3', 'A0.-E22.C4', 'A0.-E22.C5',
+                            'A0.E25.C1', 'A0.E25.C2', 'A0.E25.C3', 'A0.E25.C4', 'A0.E25.C5', 'A0.E25.C6', 'A0.E25.C7',
+                            'A0.-E25.C1', 'A0.-E25.C2', 'A0.-E25.C3', 'A0.-E25.C4', 'A0.-E25.C5', 'A0.-E25.C6', 'A0.-E25.C7',
+                            'A0.E26.C1', 'A0.E26.C2', 'A0.E26.C3', 'A0.E26.C4', 'A0.E26.C5',
+                            'A0.-E26.C1', 'A0.-E26.C2', 'A0.-E26.C3', 'A0.-E26.C4', 'A0.-E26.C5',
+                            ]
+        downgrageIdx = [self.CTM_cellIdx_ori.index(ci) for ci in self.CTM_cellIdx_downgrade]
+
+        # aa = self.CTM_numberMatrix_ori[cidx, 0:self.max_time]
+
+        self.CTM_numberMatrix = self.CTM_numberMatrix_ori[downgrageIdx, 100:100+self.max_time]
+        self.CTM_numberOutMatrix = self.CTM_numberOutMatrix_ori[downgrageIdx, 100:100+self.max_time]
+        self.CTM_signalMatrix = self.CTM_signalMatrix_ori[downgrageIdx, 100:100+self.max_time]
+        self.CTM_connection = self.CTM_connection_ori[np.ix_(downgrageIdx, downgrageIdx)]
 
         self.ctm_fd = CTM_FDParam
         # self.CTM_cellCost = pd.read_csv(CTM_resultPath['number'])
@@ -81,7 +112,7 @@ class RouteOptim:
         self.model.deltaT = Param(default=5 / 3600)
         self.model.M = Param(default=999999)
 
-        self.model.x = Var(self.model.A, self.model.Z, self.model.T, within=Binary, bounds=[0,None])
+        self.model.x = Var(self.model.A, self.model.Z, self.model.T, within=Binary, bounds=[0, 1])
 
         def add_cell_time_parameter(m):  # the input is a numpy array, with a dimension of [cell_idx, time_idx]
             return {(i, t): m[i, t] for i in range(m.shape[0]) for t in range(m.shape[1])}
@@ -126,12 +157,11 @@ class RouteOptim:
             return sum(model.x[a, i, m] * model.v[i, m] * model.deltaT for m in range(t + 1)) <= model.eta[
                 i, t] * model.l + model.M * (1 - model.eta[i, t])
 
-        self.model.travelDistanceConst = Constraint(self.model.A, self.model.Z, self.model.T, rule=travel_distance_rule)
+        self.model.travelDistanceConst = Constraint(self.model.A, self.model.Z, self.model.TT, rule=travel_distance_rule)
 
         # 3. cell signal constringts
         def cell_signal_rule(model, a):
             for i in model.Z:
-
                 for t in model.T:
                     return (1 - model.eta[i, t]) * (model.x[a, i, t + 1] - model.x[a, i, t]) >= 0
 
@@ -202,42 +232,42 @@ class RouteOptim:
         # for testing purpose, hardcoding the o-d origins,
         # test case1: veh 1: from E101 to E107
         # test case2: veh 2: from E101 to E108
-        veh_od = {0: {'from': self.CTM_cellIdx.index('A1.E101.C0'), 'to': self.CTM_cellIdx.index('A0.E6.C7')},
-                  1: {'from': self.CTM_cellIdx.index('A1.E101.C0'), 'to': self.CTM_cellIdx.index('A0.E2.C7')}}
+        veh_od = {0: {'from': self.CTM_cellIdx_downgrade.index('A1.E101.C0'), 'to': self.CTM_cellIdx_downgrade.index('A0.E6.C4')},
+                  1: {'from': self.CTM_cellIdx_downgrade.index('A1.E101.C0'), 'to': self.CTM_cellIdx_downgrade.index('A0.E6.C4')}}
 
         # veh_od = {0: {'from': self.CTM_cellIdx.index('A1.E101.C0'), 'to': self.CTM_cellIdx.index('A1.-E107.C0')},
         #           1: {'from': self.CTM_cellIdx.index('A1.E101.C0'), 'to': self.CTM_cellIdx.index('A1.-E108.C0')}}
 
         # vi_id = 0
         # fixed cell list
-        fixlist = ['A1.E119.C0', 'A1.E119.C4', 'A1.E119.C5', 'A1.E119.C6', 'A1.E119.C7',
-                   'A1.E118.C0', 'A1.E118.C4', 'A1.E118.C5', 'A1.E118.C6', 'A1.E118.C7',
-                   'A1.E117.C0', 'A1.E117.C4', 'A1.E117.C5', 'A1.E117.C6', 'A1.E117.C7',
-                   'A1.E116.C0', 'A1.E116.C4', 'A1.E116.C5', 'A1.E116.C6', 'A1.E116.C7',
-                   'A1.E115.C0', 'A1.E115.C4', 'A1.E115.C5', 'A1.E115.C6', 'A1.E115.C7',
-                   'A1.E114.C0', 'A1.E114.C4', 'A1.E114.C5', 'A1.E114.C6', 'A1.E114.C7',
-                   'A1.E113.C0', 'A1.E113.C4', 'A1.E113.C5', 'A1.E113.C6', 'A1.E113.C7',
-                   'A1.E112.C0', 'A1.E112.C4', 'A1.E112.C5', 'A1.E112.C6', 'A1.E112.C7',
-                   'A1.E111.C0', 'A1.E111.C4', 'A1.E111.C5', 'A1.E111.C6', 'A1.E111.C7',
-                   'A1.E110.C0', 'A1.E110.C4', 'A1.E110.C5', 'A1.E110.C6', 'A1.E110.C7',
-                   'A1.E109.C0', 'A1.E109.C4', 'A1.E109.C5', 'A1.E109.C6', 'A1.E109.C7',
-                   'A1.E108.C0', 'A1.E108.C4', 'A1.E108.C5', 'A1.E108.C6', 'A1.E108.C7',
-                   'A1.E106.C0', 'A1.E106.C4', 'A1.E106.C5', 'A1.E106.C6', 'A1.E106.C7',
-                   'A1.E105.C0', 'A1.E105.C4', 'A1.E105.C5', 'A1.E105.C6', 'A1.E105.C7',
-                   'A1.E104.C0', 'A1.E104.C4', 'A1.E104.C5', 'A1.E104.C6', 'A1.E104.C7',
-                   'A1.E103.C0', 'A1.E103.C4', 'A1.E103.C5', 'A1.E103.C6', 'A1.E103.C7',
-                   'A0.E9.C1', 'A0.E9.C2', 'A0.E9.C3', 'A0.E9.C4', 'A0.E9.C5', 'A0.E9.C6', 'A0.E9.C7',
-                   'A0.-E9.C1', 'A0.-E9.C2', 'A0.-E9.C3', 'A0.-E9.C4', 'A0.-E9.C5', 'A0.-E9.C6','A0.-E9.C7',
-                   'A0.E10.C1', 'A0.E10.C2', 'A0.E10.C3', 'A0.E10.C4', 'A0.E10.C5', 'A0.E10.C6', 'A0.E10.C7',
-                   'A0.-E10.C1', 'A0.-E10.C2', 'A0.-E10.C3', 'A0.-E10.C4', 'A0.-E10.C5', 'A0.-E10.C6','A0.-E10.C7',
-
-                   ]
-        for fxcellidx in fixlist:
-            for t in range(self.max_time):
-                self.model.x[0, self.CTM_cellIdx.index(fxcellidx), t].fixed = True
-                self.model.x[0, self.CTM_cellIdx.index(fxcellidx), t].fixed = 0
-                self.model.x[1, self.CTM_cellIdx.index(fxcellidx), t].fixed = True
-                self.model.x[1, self.CTM_cellIdx.index(fxcellidx), t].fixed = 0
+        # fixlist = ['A1.E119.C0', 'A1.E119.C4', 'A1.E119.C5', 'A1.E119.C6', 'A1.E119.C7',
+        #            'A1.E118.C0', 'A1.E118.C4', 'A1.E118.C5', 'A1.E118.C6', 'A1.E118.C7',
+        #            'A1.E117.C0', 'A1.E117.C4', 'A1.E117.C5', 'A1.E117.C6', 'A1.E117.C7',
+        #            'A1.E116.C0', 'A1.E116.C4', 'A1.E116.C5', 'A1.E116.C6', 'A1.E116.C7',
+        #            'A1.E115.C0', 'A1.E115.C4', 'A1.E115.C5', 'A1.E115.C6', 'A1.E115.C7',
+        #            'A1.E114.C0', 'A1.E114.C4', 'A1.E114.C5', 'A1.E114.C6', 'A1.E114.C7',
+        #            'A1.E113.C0', 'A1.E113.C4', 'A1.E113.C5', 'A1.E113.C6', 'A1.E113.C7',
+        #            'A1.E112.C0', 'A1.E112.C4', 'A1.E112.C5', 'A1.E112.C6', 'A1.E112.C7',
+        #            'A1.E111.C0', 'A1.E111.C4', 'A1.E111.C5', 'A1.E111.C6', 'A1.E111.C7',
+        #            'A1.E110.C0', 'A1.E110.C4', 'A1.E110.C5', 'A1.E110.C6', 'A1.E110.C7',
+        #            'A1.E109.C0', 'A1.E109.C4', 'A1.E109.C5', 'A1.E109.C6', 'A1.E109.C7',
+        #            'A1.E108.C0', 'A1.E108.C4', 'A1.E108.C5', 'A1.E108.C6', 'A1.E108.C7',
+        #            'A1.E106.C0', 'A1.E106.C4', 'A1.E106.C5', 'A1.E106.C6', 'A1.E106.C7',
+        #            'A1.E105.C0', 'A1.E105.C4', 'A1.E105.C5', 'A1.E105.C6', 'A1.E105.C7',
+        #            'A1.E104.C0', 'A1.E104.C4', 'A1.E104.C5', 'A1.E104.C6', 'A1.E104.C7',
+        #            'A1.E103.C0', 'A1.E103.C4', 'A1.E103.C5', 'A1.E103.C6', 'A1.E103.C7',
+        #            'A0.E9.C1', 'A0.E9.C2', 'A0.E9.C3', 'A0.E9.C4', 'A0.E9.C5', 'A0.E9.C6', 'A0.E9.C7',
+        #            'A0.-E9.C1', 'A0.-E9.C2', 'A0.-E9.C3', 'A0.-E9.C4', 'A0.-E9.C5', 'A0.-E9.C6','A0.-E9.C7',
+        #            'A0.E10.C1', 'A0.E10.C2', 'A0.E10.C3', 'A0.E10.C4', 'A0.E10.C5', 'A0.E10.C6', 'A0.E10.C7',
+        #            'A0.-E10.C1', 'A0.-E10.C2', 'A0.-E10.C3', 'A0.-E10.C4', 'A0.-E10.C5', 'A0.-E10.C6','A0.-E10.C7',
+        #
+        #            ]
+        # for fxcellidx in fixlist:
+        #     for t in range(self.max_time):
+        #         self.model.x[0, self.CTM_cellIdx.index(fxcellidx), t].fixed = True
+        #         self.model.x[0, self.CTM_cellIdx.index(fxcellidx), t].fixed = 0
+        #         self.model.x[1, self.CTM_cellIdx.index(fxcellidx), t].fixed = True
+        #         self.model.x[1, self.CTM_cellIdx.index(fxcellidx), t].fixed = 0
 
         for k, v in veh_od.items():
             self.model.x[k, v['from'], 0].fixed = True
@@ -276,10 +306,13 @@ class RouteOptim:
         print('i will start')
         # self.model.cons1.pprint()
         solver.solve(self.model, tee=True).write()
+        print('#################################################')
+        print('this is the model detail')
         # self.model.x.display()
 
         # Extract the variable values into a numpy array
         print('start to convert output')
+        # self.model.feasRelax(relaxobjtive=0)
         x_np = np.zeros((len(self.model.A), len(self.model.Z), len(self.model.T)))
 
         for a_idx, a in enumerate(self.model.A):
@@ -333,7 +366,7 @@ if __name__ == '__main__':
 
     Ropt = RouteOptim(CTM_Path, FD_param)
     V = Ropt.build_model(veh_num=2)
-    x = Ropt.solve_model(solverString='gurobi_direct')
+    x = Ropt.solve_model(solverString='gurobi')
     # checkX(x)
 
     with open(CTM_Path['cellIdx'], 'r') as file:
