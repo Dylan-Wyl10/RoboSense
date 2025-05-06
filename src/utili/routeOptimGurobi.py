@@ -164,83 +164,7 @@ class RouteOptimGurobi:
         model.addConstrs(quicksum(x[a, i, t] for t in T) <= 1 for a in A for i in Z)
 
         """============================================================================================================================"""
-        # # 1. One vehicle constraint
-        # model.addConstrs((quicksum(x[a, i, t] for i in Z) == 1 for a in A for t in T), "OneVehicle rules")
-        #
-        # # 2. Speed constraint example (Placeholder)
-        # for t in T:
-        #     model.addConstrs(
-        #         quicksum(x[a, i, m] * v[i, m] * deltaT for m in range(t)) <= eta[i, t] * l + M * (1 - eta[i, t]) for a
-        #         in A for i in Z)
-        #
-        # # 3. Cell siganl COnstraint
-        # model.addConstrs((1 - eta[i, t]) * (x[a, i, t + 1] - x[a, i, t]) >= 0 for a in A for i in Z for t in TT)
-        #
-        # # 4. Flow conservation laws, since gurobi does not support bool value, so activation function is not working.,
-        #
-        # # delta1 = np.zeros((len(A), len(Z), len(T)), dtype=float)
-        # # delta1 = model.addVars(A, Z, T, vtype=GRB.CONTINUOUS)
-        # # delta2 = np.zeros((len(A), len(Z), len(T)), dtype=float)
-        # # delta2 = model.addVars(A, Z, T, vtype=GRB.CONTINUOUS)
-        # K1 = model.addVars(A, Z, T, lb=0, ub=1, vtype=GRB.INTEGER, name="k1")
-        # K2 = model.addVars(A, Z, T, lb=0, ub=1, vtype=GRB.INTEGER, name="k2")
-        # # for a in A:
-        # #     for i in Z:
-        # #         for t in TT:
-        # #
-        # #             d1 = quicksum(x[a, i, m] * v[i, m] * deltaT * eta[i, m] for m in range(t + 1))/l
-        # #             d2 = quicksum(Pi[k, i] * eta[i, t] * quicksum(x[a, k, m] * v[i, m] * deltaT * eta[k, m] for m in range(t + 1)) for k in Z)
-        # #             d1_v, d2_v = d1.X, d2.X
-        # #             if d1_v > 1:
-        # #                 k1 = 1
-        # #             else:
-        # #                 k1 = 0
-        # #             if d2_v > 1:
-        # #                 k2 = 1
-        # #             else:
-        # #                 k2 = 0
-        # #             model.addConstrs(x[a, i, t + 1] == (1-k1)*x[a, i, t]+k2*quicksum(Pi[k, i]*x[a, k, t] for k in Z) for a in A for i in Z for t in TT )
-        #
-        # # 4.1
-        # # model.addConstrs(quicksum(x[a, i, m] * v[i, m] * deltaT * eta[i, m] for m in range(t + 1))/l == delta1[a, i, t] for a in A for i in Z for t in TT)
-        # # 4.2
-        # # model.addConstrs(quicksum(Pi[k, i] * eta[i, t] * quicksum(x[a, k, m] * v[i, m] * deltaT * eta[k, m] for m in range(t + 1)) for k in Z) == delta2[a, i, t] for a in A for i in Z for t in TT)
-        #
-        #
-        # # # 4.3 K11
-        # # model.addConstrs(
-        # #     K1[a, i, t] - ((quicksum(
-        # #         x[a, i, m] * v[i, m] * deltaT * eta[i, m] for m in range(t + 1)) / l - 1 + M) / M) <= 0
-        # #     for a in A for i in Z for t in T)
-        # # # 4.3 K12
-        # # model.addConstrs(
-        # #     K1[a, i, t] - ((quicksum(x[a, i, m] * v[i, m] * deltaT * eta[i, m] for m in range(t + 1)) / l - 1) / M) >= eps
-        # #     for a in A for i in Z for t in T)
-        # # # 4.3 K11
-        # # model.addConstrs(K2[a, i, t] - ((quicksum(
-        # #     Pi[k, i] * eta[i, t] * quicksum(x[a, k, m] * v[i, m] * deltaT * eta[k, m] for m in range(t + 1)) for k in
-        # #     Z) - 1 + M) / M) <= 0 for a in A for i in Z for t in T)
-        # # # 4.3 K11
-        # # model.addConstrs(K2[a, i, t] - ((quicksum(
-        # #     Pi[k, i] * eta[i, t] * quicksum(x[a, k, m] * v[i, m] * deltaT * eta[k, m] for m in range(t + 1)) for k in
-        # #     Z) - 1) / M) >= eps for a in A for i in Z for t in T)
-        # #
-        # # model.addConstrs(
-        # #     x[a, t, t + 1] == (1 - K1[a, i, t]) * x[a, i, t] + K2[a, i, t] * quicksum(Pi[k, i] * x[a, k, t] for k in Z)
-        # #
-        #
-        # model.addConstrs(
-        #     x[a, t, t + 1] == (1 - 1) * x[a, i, t] + 0 * quicksum(Pi[k, i] * x[a, k, t] for k in Z)
-        #     for a in A for i in Z for t in TT)
-        #
-        #
-        #
-        #
-        # # model.addConstrs((x[a, i, t+1]==(1-actF(quicksum(x[a, i, m] * v[i, m] * deltaT * eta[i, m] for m in range(t + 1))/l))+ \
-        # #                  actF(quicksum(Pi[k, i] * eta[i, t] * quicksum(x[a, k, m] * v[i, m] * deltaT * eta[k, m] for m in range(t + 1)) for k in Z) / l) * quicksum(Pi[k, i] * x[a, k, t] for k in Z)
-        # #                           for a in A for i in Z for t in TT),"FlowConservation")
-        # # model.addConstrs((quicksum(Pi[i, j] * x[a, i, t] for j in Z) >= 0 for a in A for i in Z for t in TT),
-        # #                  "FlowConstraint")
+      
 
         veh_od = {0: {'from': self.CTM_cellIdx_downgrade.index('A1.E101.C0'),
                       'to': self.CTM_cellIdx_downgrade.index('A0.E6.C4')},
@@ -254,108 +178,6 @@ class RouteOptimGurobi:
 
             # x[k, v['to'], self.max_time - 1].lb = 1
             # x[k, v['to'], self.max_time - 1].ub = 1
-
-        self.model = model
-        return model
-
-    def build_model2(self, veh_num=100):
-        self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix, self.CTM_numberOutMatrix, self.ctm_fd,
-                                                          self.CTM_signalMatrix)
-
-        # Parameters
-        alpha1, alpha2, l, deltaT, M, eps = 0.5, 0.5, 0.08, 5 / 3600, 999999, 10e-5
-
-        # Sets
-        # Z = range(self.K.shape[0])
-        # T = range(self.K.shape[1])
-        # TT = range(self.K.shape[1] - 1)
-        # A = range(veh_num)
-
-        # Example Data
-        I = [i for i in range(self.K.shape[0])]  # Links (nodes)
-        A = [0, 1]  # Vehicles
-        T = range(self.K.shape[1])  # Time horizon
-        # d = {(i, j): 1 for i in I for j in I if i != j}  # Travel times/costs
-        q = {i: 1 for i in I}  # Demand at each link
-        Q = {a: 2 for a in A}  # Vehicle capacities
-
-        # start and end node
-        veh_od = {0: {'from': self.CTM_cellIdx_downgrade.index('A1.E101.C0'),
-                      'to': self.CTM_cellIdx_downgrade.index('A0.E6.C4')},
-                  1: {'from': self.CTM_cellIdx_downgrade.index('A1.E101.C0'),
-                      'to': self.CTM_cellIdx_downgrade.index('A0.E6.C4')}}
-
-        # for k, v in veh_od.items():
-        #     # a = v['from']
-        #     x[k, v['from'], 0].lb = 1
-        #     x[k, v['from'], 0].ub = 1
-
-        start = 0  # Start node
-        end = 3  # End node
-
-        # Parameters as dictionaries
-        c = {(i, t): self.C[i, t] for i in I for t in T}
-        v = {(i, t): self.V[i, t] for i in I for t in T}
-        eta = {(i, t): self.CTM_signalMatrix[i, t] for i in I for t in T}
-        Pi = {(i, j): self.CTM_connection[i, j] for i in I for j in I}
-        d = {(i, j, t): t + 1 for i in I for j in I if i != j for t in T}  # Example: Travel cost increases with time
-
-        # Model Initialization
-        model = Model("TDVRP")
-
-        # Decision Variables
-        x = model.addVars(I, A, T, vtype=GRB.BINARY, name="x")  # Vehicle on link at time t
-        z = model.addVars(I, I, A, T, vtype=GRB.BINARY, name="z")  # Vehicle moves between links
-
-        model.setObjective(
-            quicksum(d[i, j, t] * z[i, j, a, t] for i in I for j in I for a in A for t in T if (i, j, t) in d),
-            GRB.MINIMIZE
-        )
-
-        # Constraints
-
-        # 1. Flow conservation
-        for a in A:
-            for i in I:
-                for t in T:
-                    if t > 0:
-                        model.addConstr(
-                            quicksum(z[j, i, a, t - d[j, i, t]] for j in I if (j, i, t) in d and t - d[j, i, t] >= 0)
-                            == x[i, a, t]
-                        )
-        # 2. Time-dependent link constraints
-        for a in A:
-            for t in T:
-                model.addConstr(quicksum(x[i, a, t] for i in I) <= 1)
-
-        # 3. Link usage constraints
-        for i in I:
-            for t in T:
-                model.addConstr(quicksum(x[i, a, t] for a in A) <= 1)
-
-        # 4. Capacity constraints
-        for a in A:
-            for t in T:
-                model.addConstr(quicksum(q[i] * x[i, a, t] for i in I) <= Q[a])
-
-        # 5. Start and end points
-
-        # for k, v in veh_od.items():
-        # # a = v['from']
-        # x[k, v['from'], 0].lb = 1
-        # x[k, v['from'], 0].ub = 1
-
-        for a in A:
-            model.addConstr(quicksum(x[start, a, t] for t in T) == 1)
-            model.addConstr(quicksum(x[end, a, t] for t in T) == 1)
-
-        # 6. Binary coupling between x and z
-        for i in I:
-            for j in I:
-                for a in A:
-                    for t in T:
-                        if (i, j, t) in d:
-                            model.addConstr(z[i, j, a, t] <= x[i, a, t])
 
         self.model = model
         return model
@@ -451,14 +273,14 @@ class RouteOptimGurobi:
         z = model.addVars(A, I, I, T, T, vtype=GRB.BINARY, name="z")  # Vehicle moves between links
         omg = model.addVars(A, I, T, vtype=GRB.BINARY, name="omega")  # variable omege
 
-        tau = model.addVars(A, I, vtype=GRB.INTEGER, name="tau")
-        the = model.addVars(I, I, A, vtype=GRB.INTEGER, name="theta")  # theta variable
-        eta = model.addVars(A, I, T, vtype=GRB.BINARY, name="eta")  # binary variable for arrive time constraint
+        # tau = model.addVars(A, I, vtype=GRB.INTEGER, name="tau")
+        # the = model.addVars(I, I, A, vtype=GRB.INTEGER, name="theta")  # theta variable
+        # eta = model.addVars(A, I, T, vtype=GRB.BINARY, name="eta")  # binary variable for arrive time constraint
 
         model.setObjective(
-            # alpha * quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) - (1-alpha)
-            #                             * quicksum(y[i, t] for i in I for t in T)/(self.link * self.time_step),
-            quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
+            alpha * quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) - (1-alpha)
+                                        * quicksum(y[i, t] for i in I for t in T)/(self.link * self.time_step),
+            # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
             GRB.MINIMIZE
         )
 
@@ -610,9 +432,8 @@ class RouteOptimGurobi:
                                     var_tao = self.model.getVarByName(f"tau[{a},{i}]")
                                     var_theta = self.model.getVarByName(f"theta[{i},{j},{a}]")
                                     print(
-                                        "$$$$$$$$$ z({},{},{},{}, {}) = 1 $$$$$$$$ tao({}, {}) = {} $$$$ theta({},{},{})={} $$$ c({},{})={} $$ x({},{},{})={}".format(
-                                            a, i+1, j+1, t, s, a, i+1, var_tao.x, i+1, j+1, a, var_theta.x, i+1, t, self.c[(i, t)], a,
-                                            i+1, t, var_x.x))
+                                        "$$$$$$$$$ z({},{},{},{},{}) = 1 $$$$$$$ c({},{})={} $$ x({},{},{})={}".format(
+                                            a, i+1, j+1, t, s, i+1, t, self.c[(i, t)], a, i+1, t, var_x.x))
 
                         solution_array[a, i, t] = int(round(var_x.x))
 
