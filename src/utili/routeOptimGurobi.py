@@ -360,12 +360,12 @@ class RouteOptimGurobi:
         self.model = model
         return model
 
-    def build_model_smallexample(self, veh_num=100):
+    def build_model_smallexample(self, veh_num=100, alpha=0.5):
         # self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix, self.CTM_numberOutMatrix, self.ctm_fd,
         #                                                   self.CTM_signalMatrix)
 
         # 20250401: update link, veh, time step without hardcoding.
-        self.link, self.veh, self.time_step = 26, 4, 45
+        self.link, self.veh, self.time_step = 15, 2, 45
 
         self.C = np.ones((self.link, self.time_step))
         # self.CTM_connection = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
@@ -380,14 +380,16 @@ class RouteOptimGurobi:
         #                                 [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
         #                                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         #                                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-        # con = {1: [2, 9], 2: [11], 3: [4, 10], 4: [12], 5: [6], 6: [14],
-        #        7: [3, 8], 8: [5, 15], 9: [4, 10], 10: [6], 11: [12], 12: [14],
-        #        13: [7, 1], 14: [], 15: []}
-        con = {1: [2, 9], 2: [11], 3: [4, 10, 21], 4: [12, 23], 5: [6, 22], 6: [24, 26],
-               7: [3, 8], 8: [5], 9: [4, 10, 15], 10: [6, 17], 11: [12, 16], 12: [18, 26],
-               13: [19], 14: [9, 13], 15: [8, 19], 16: [10, 15, 21], 17: [20], 18: [17, 22],
-               19: [1], 20: [15, 19], 21: [2, 13], 22: [4, 15, 21], 23: [14], 24: [16, 23],
-               25: [1, 7], 26: []}
+        con = {1: [2, 9], 2: [11], 3: [4, 10], 4: [12], 5: [6], 6: [14],
+               7: [3, 8], 8: [5, 15], 9: [4, 10], 10: [6], 11: [12], 12: [14],
+               13: [7, 1], 14: [], 15: []}
+
+        # bi-directory 3x3
+        # con = {1: [2, 9], 2: [11], 3: [4, 10, 21], 4: [12, 23], 5: [6, 22], 6: [24, 26],
+        #        7: [3, 8], 8: [5], 9: [4, 10, 15], 10: [6, 17], 11: [12, 16], 12: [18, 26],
+        #        13: [19], 14: [9, 13], 15: [8, 19], 16: [10, 15, 21], 17: [20], 18: [17, 22],
+        #        19: [1], 20: [15, 19], 21: [2, 13], 22: [4, 15, 21], 23: [14], 24: [16, 23],
+        #        25: [1, 7], 26: []}
 
 
         ####################################################################################################
@@ -407,7 +409,7 @@ class RouteOptimGurobi:
         # max_t =   # max time step
         I = [i for i in range(self.CTM_connection.shape[0])]  # Links (nodes)
         A = [i for i in range(self.veh)]  # Vehicles
-        T = range(self.time_step)  # Time horizon
+        T = [i for i in range(self.time_step)]  # Time horizon
 
         # start and end node
         veh_od = {0: {'from': self.CTM_cellIdx_downgrade.index('A1.E101.C0'),
@@ -416,10 +418,10 @@ class RouteOptimGurobi:
                       'to': self.CTM_cellIdx_downgrade.index('A0.E6.C4')}}
         #  notes 20250401:
         # -1. the to node must be a complete last link without downstream link?, use index here
-        veh_odtmp = {0: {'from': 24, 'to': 25, 'time': 0},
-                     1: {'from': 24, 'to': 25, 'time': 1},
-                     2: {'from': 24, 'to': 25, 'time': 2},
-                     3: {'from': 24, 'to': 25, 'time': 3}}
+        veh_odtmp = {0: {'from': 12, 'to': 13, 'time': 0},
+                     1: {'from': 12, 'to': 13, 'time': 0}}
+                     # 2: {'from': 24, 'to': 25, 'time': 2},
+                     # 3: {'from': 24, 'to': 25, 'time': 3}}
         # veh_odtmp = {0: {'from': 12, 'to': 14}}
 
         M = 999999
@@ -435,8 +437,7 @@ class RouteOptimGurobi:
         # Parameters as dictionaries
         c = {(i, t): (self.C[i, t] + i + t + 2)%4 + 1 for i in I for t in T}
         self.c = c
-        # v = {(i, t): self.V[i, t] for i in I for t in T}
-        # eta = {(i, t): self.CTM_signalMatrix[i, t] for i in I for t in T}
+
         Pi = {(i, j): self.CTM_connection[i, j] for i in I for j in I}
         d = {(i, j, t): int(((self.C[i, t] + i + t + 2)%4 + 1) * self.CTM_connection[i, j]) for i in I for j in I if i != j for
              t in T}  # Example: Travel cost increases with time
@@ -446,15 +447,18 @@ class RouteOptimGurobi:
 
         # Decision Variables
         x = model.addVars(A, I, T, vtype=GRB.BINARY, name="x")  # Vehicle on link at time t
+        y = model.addVars(I, T, vtype=GRB.BINARY, name="y")  # occupation variable y
         z = model.addVars(A, I, I, T, T, vtype=GRB.BINARY, name="z")  # Vehicle moves between links
+        omg = model.addVars(A, I, T, vtype=GRB.BINARY, name="omega")  # variable omege
+
         tau = model.addVars(A, I, vtype=GRB.INTEGER, name="tau")
         the = model.addVars(I, I, A, vtype=GRB.INTEGER, name="theta")  # theta variable
         eta = model.addVars(A, I, T, vtype=GRB.BINARY, name="eta")  # binary variable for arrive time constraint
 
         model.setObjective(
-            # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) - quicksum(quicksum(x[a, i, t] for i in I for t in T) for a in A),
+            # alpha * quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) - (1-alpha)
+            #                             * quicksum(y[i, t] for i in I for t in T)/(self.link * self.time_step),
             quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
-
             GRB.MINIMIZE
         )
 
@@ -468,11 +472,11 @@ class RouteOptimGurobi:
                         for s in T:
                             if not (s == t + c[i, t] and Pi[i, j] == 1):
                                 model.addConstr(z[a, i, j, t, s] == 0, name='PresetZCondition_0')
-                            else:
+                            # else:
                                 # model.addConstr(z[a, i, j, t, s] <= 1, name='PresetZCondition_1')
-                                print('preset z[{},{},{},{},{}] with cost c[{},{}]={}, Pi = {}'.format(a, i, j, t, s, i,
-                                                                                                       t, c[i, t],
-                                                                                                       Pi[i, j]))
+                                # print('preset z[{},{},{},{},{}] with cost c[{},{}]={}, Pi = {}'.format(a, i, j, t, s, i,
+                                #                                                                        t, c[i, t],
+                                #                                                                        Pi[i, j]))
 
         # 1. FLow conservation (linearlized)
         # axillary variable z
@@ -483,35 +487,20 @@ class RouteOptimGurobi:
                     if i != veh_odtmp[a]['to']:
                         model.addConstr(x[a, i, t] == quicksum(z[a, i, j, t, s] for j in I for s in T),
                                         name='axillary variable z')
-        # aa = Pi[(0, 1)]
+        # 2. Network Tepology constraint
         model.addConstrs(
             (z[a, i, j, t, s] <= Pi[i, j] * x[a, i, t] for a in A for j in I for i in I for t in T for s in T),
             name='network tepology')  # network tepology constraint
 
-        # arrive time flow conservation law
-        for t in T:
-            model.addConstrs((
-                tau[a, j] >= tau[a, i] + the[i, j, a] - M * (1 - z[a, i, j, t, s]) for a in A for i in I for j in I for s in T), name='arrive time constraint')
-
-        # # 2. add-on x-z condition
-        # for a in A:
-        #     for i in I:
-        #         for j in I:
-        #             # model.addConstr(quicksum(x[a, j, t] for t in T) <= quicksum(x[a, i, t] for t in T), name='x-z conditon1')
-        #             model.addConstrs((quicksum(x[a, j, t] for t in T) <= quicksum(x[a, i, t] for t in T) + (
-        #                     1 - quicksum(z[a, i, j, m, s] for s in T)) for m in T), name='x-z conditon1')
-        #             model.addConstrs((quicksum(x[a, j, t] for t in T) >= quicksum(x[a, i, t] for t in T) - (
-        #                     1 - quicksum(z[a, i, j, m, s] for s in T)) for m in T), name='x-z conditon2')
-
-        # line travel time rules
-        model.addConstrs(
-            the[i, j, a] == (1 - Pi[i, j]) * 10000 + Pi[i, j] * quicksum(c[i, t] * x[a, i, t] for t in T) for a in A for
-            j in I for i in I if (i != veh_odtmp[a]['to']))
-
-        # 3. Time-dependent link constraints
-        for a in A:
-            for t in T:
-                model.addConstr(quicksum(x[a, i, t] for i in I) <= 1)
+        # # arrive time law
+        # for t in T:
+        #     model.addConstrs((
+        #         tau[a, j] >= tau[a, i] + the[i, j, a] - M * (1 - z[a, i, j, t, s]) for a in A for i in I for j in I for s in T), name='arrive time constraint')
+        #
+        # # line travel time rules
+        # model.addConstrs(
+        #     the[i, j, a] == (1 - Pi[i, j]) * 10000 + Pi[i, j] * quicksum(c[i, t] * x[a, i, t] for t in T) for a in A for
+        #     j in I for i in I if (i != veh_odtmp[a]['to']))
 
         # 3* network flow conservation law, od constraint
         for a in A:
@@ -528,6 +517,39 @@ class RouteOptimGurobi:
                         # else:
                         model.addConstr(quicksum(z[a, i, j, t, s] for i in I for t in T) - quicksum(
                             z[a, j, k, s, r] for k in I for r in T) == 0, name='3*netflow_conservation3')
+
+        # 4. Time-dependent link constraints
+        for a in A:
+            for t in T:
+                model.addConstr(quicksum(x[a, i, t] for i in I) <= 1)
+
+        # 5. Time-travel bound for vehicle
+        model.addConstrs(quicksum(x[a, i, t] for t in T) <=1 for a in A for i in I)
+
+
+        # 6. omega-y condition (phase 2)
+        model.addConstrs(y[i, t] <= quicksum(omg[a, i, t] for a in A) for i in I for t in T)
+        model.addConstrs(M*y[i, t] >= quicksum(omg[a, i, t] for a in A) for i in I for t in T)
+
+        # 7. omega-x condition (phase 2)
+        print('at here')
+
+        model.addConstrs(omg[a, i, t] <= quicksum(x[a, i, t] for t in T) for a in A for i in I for t in T)
+        for a in A:
+            for i in I:
+                for t in T:
+                    t_mid = int(t+c[i, t])
+                    t_end = self.time_step -1
+                    model.addConstr(quicksum(omg[a, i, k] for k in range(0, t - 1)) <= M*(1 - x[a, i, t]))
+                    if t_end <= self.time_step - 2:  # here the time index --> max time step minors 1
+                        model.addConstr(quicksum(omg[a, i, k] for k in range(t, t_mid)) >= x[a, i, t] * c[i, t])
+                        model.addConstr(quicksum(omg[a, i, k] for k in range(t, t_mid)) <= x[a, i, t] * c[i, t] + M*(1-x[a, i, t]))
+                        model.addConstr(quicksum(omg[a, i, k] for k in range(t_mid, t_end)) <= M * (1 - x[a, i, t]))
+
+
+
+        # model.addConstrs()
+
 
         self.model = model
         print('model build complete!')
