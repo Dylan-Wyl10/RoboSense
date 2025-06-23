@@ -850,16 +850,17 @@ class CTM():
             if c_curt.cfrom:
                 # cfrom_ls = [c.getCompleteAddress for c in c_curt.cfrom]
                 cfrom_idxls = [cell_id_ls.index(c.getCompleteAddress()) for c in c_curt.cfrom]
-                print('yes')
+                # print('yes')
                 for cf_idx in cfrom_idxls:
                     self.connection_matrix[curt_idx, cf_idx] = 0
             if c_curt.cto:
                 cto_idxls = [cell_id_ls.index(c.getCompleteAddress()) for c in c_curt.cto]
-                print('yes')
+                # print('yes')
                 for ct_idx in cto_idxls:
                     self.connection_matrix[curt_idx, ct_idx] = 1
         self.cell_idx = cell_id_ls
         print('get connection matrix finished')
+        return self.cell_idx
 
     def runCTM(self, time_current, time_range):
         """
@@ -873,8 +874,10 @@ class CTM():
         steps = time_range // self.tick
         time_start = time.time()
         # cells_old = copy.deepcopy(self.cells_dic)
+        # print(f'time{steps}')
         for t in range(steps):
             if t == 1:
+                # print("save old cells")
                 cells_old = copy.deepcopy(self.cells_dic)
 
             # collect cell result
@@ -930,8 +933,8 @@ class CTM():
         normdense_df = pd.DataFrame(dense_norm).T
         number_df = density_df * 0.08
         sigflag_df = pd.DataFrame(signal_flag).T
-        print('yes')
-        return cells_old, density_df, numberout_df, normdense_df, number_df, sigflag_df, self.cell_idx
+        # print('yes')
+        return cells_old, density_df, numberout_df, normdense_df, number_df, sigflag_df
 
     def getDemandByTime(self, time):
         df = self.demand
