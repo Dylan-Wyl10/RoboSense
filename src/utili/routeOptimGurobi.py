@@ -6,21 +6,29 @@ import pandas as pd
 import numpy as np
 from gurobipy import Model, GRB, quicksum
 import json
+from functools import lru_cache
 import time
+from src.utili.config_debug_tmp import CaseStudyConfig
 
 
 class RouteOptimGurobi:
-    def __init__(self, CTM_resultPath, CTM_FDParam):
+    def __init__(self, CTM_FDParam, veh_od, max_time, CTM_resultPath=None, CTM_input=None, Load_mode='file'):
         # Initialize data matrices from file paths
-        self.CTM_numberMatrix_ori = pd.read_csv(CTM_resultPath['number']).iloc[:, 1:].to_numpy()
-        self.CTM_numberOutMatrix_ori = pd.read_csv(CTM_resultPath['outnumber']).iloc[:, 1:].to_numpy()
-        self.CTM_signalMatrix_ori = pd.read_csv(CTM_resultPath['sigflag']).iloc[:, 1:].to_numpy()
-        self.CTM_connection_ori = np.loadtxt(CTM_resultPath['connectionMatrix'])
+        if Load_mode == 'file':
+            self.CTM_numberMatrix_ori = pd.read_csv(CTM_resultPath['number']).iloc[:, 1:].to_numpy()
+            self.CTM_signalMatrix_ori = pd.read_csv(CTM_resultPath['sigflag']).iloc[:, 1:].to_numpy()
+            self.CTM_connection_ori = np.loadtxt(CTM_resultPath['connectionMatrix'])
+            with open(CTM_resultPath['cellIdx'], 'r') as file:
+                self.CTM_cellIdx_ori = [line.strip() for line in file]
+        elif Load_mode == 'direct':
+            self.CTM_numberMatrix_ori = CTM_input['number'].to_numpy()
+            self.CTM_signalMatrix_ori = CTM_input['sigflag'].to_numpy()
+            self.CTM_connection_ori = CTM_input['cell connection']
+            self.CTM_cellIdx_ori = CTM_input['cell idx']
 
-        with open(CTM_resultPath['cellIdx'], 'r') as file:
-            self.CTM_cellIdx_ori = [line.strip() for line in file]
+        self.veh_od = veh_od
 
-        self.max_time = 120
+        self.max_time = max_time
         self.CTM_cellIdx_downgrade = ['A1.E101.C0', 'A1.E101.C4', 'A1.E101.C5', 'A1.E101.C6', 'A1.E101.C7',
                                       'A1.E102.C0', 'A1.E102.C4', 'A1.E102.C5', 'A1.E102.C6', 'A1.E102.C7',
                                       'A1.E103.C0', 'A1.E103.C4', 'A1.E103.C5', 'A1.E103.C6', 'A1.E103.C7',
@@ -54,15 +62,22 @@ class RouteOptimGurobi:
                                       'A0.E26.C1', 'A0.E26.C2', 'A0.E26.C3', 'A0.E26.C4', 'A0.E26.C5',
                                       'A0.-E26.C1', 'A0.-E26.C2', 'A0.-E26.C3', 'A0.-E26.C4', 'A0.-E26.C5',
                                       ]
-        downgrageIdx = [self.CTM_cellIdx_ori.index(ci) for ci in self.CTM_cellIdx_downgrade]
 
-        self.CTM_numberMatrix = self.CTM_numberMatrix_ori[downgrageIdx, 100:100 + self.max_time]
-        self.CTM_numberOutMatrix = self.CTM_numberOutMatrix_ori[downgrageIdx, 100:100 + self.max_time]
-        self.CTM_signalMatrix = self.CTM_signalMatrix_ori[downgrageIdx, 100:100 + self.max_time]
-        self.CTM_connection = self.CTM_connection_ori[np.ix_(downgrageIdx, downgrageIdx)]
+        ####### downgrade CTM network
+        # downgrageIdx = [self.CTM_cellIdx_ori.index(ci) for ci in self.CTM_cellIdx_downgrade]
+        # self.CTM_numberMatrix = self.CTM_numberMatrix_ori[downgrageIdx, 100:100 + self.max_time]
+        # self.CTM_signalMatrix = self.CTM_signalMatrix_ori[downgrageIdx, 100:100 + self.max_time]
+        # self.CTM_connection = self.CTM_connection_ori[np.ix_(downgrageIdx, downgrageIdx)]
+        # self.cellidx = self.CTM_cellIdx_downgrade
+
+        self.CTM_numberMatrix = self.CTM_numberMatrix_ori
+        self.CTM_signalMatrix = self.CTM_signalMatrix_ori
+        self.CTM_connection = self.CTM_connection_ori
+        self.cellidx = self.CTM_cellIdx_ori
+
         self.ctm_fd = CTM_FDParam
 
-    def get_costCTM(self, number_matrix, outnumber, FD_param, signal_matrix):
+    def get_costCTM(self, number_matrix, FD_param, signal_matrix):
         K = number_matrix / FD_param['length']  # density matrix
         Q = copy.deepcopy(K)
         # flow matrix
@@ -71,7 +86,7 @@ class RouteOptimGurobi:
                 Q[i, j] = FD_param['v_f'] * K[i, j] if K[i, j] <= FD_param['q_max'] / FD_param['v_f'] else -FD_param[
                     'w'] * (K[i, j] - FD_param['k_jam'])
         V = np.ones(K.shape) * FD_param['v_f']
-        C = np.zeros(K.shape)
+        C = np.ones(K.shape)
         V = V * signal_matrix
         for i in range(K.shape[0]):
             for j in range(K.shape[1]):
@@ -89,17 +104,17 @@ class RouteOptimGurobi:
         # C = number_matrix - outnumber  # travel delay, also denoted as travel cost for each cell over time
         # V = V * signal_matrix
         return K, Q, V, C
-    
+
     @staticmethod
     def get_small_net_param():
         link, veh, time_step = 15, 2, 45
         C = np.ones((link, time_step))
         for i in range(C.shape[0]):
             for t in range(C.shape[1]):
-                C[i, t] = (C[i, t] + i + t + 2) % 4 + 1 
-        # c = {(i, t): (C[i, t] + i + t + 2) % 4 + 1 for i in range(C.shape[0]) for t in range(C.shape[1])}
+                C[i, t] = (C[i, t] + i + t + 2) % 4 + 1
+                # c = {(i, t): (C[i, t] + i + t + 2) % 4 + 1 for i in range(C.shape[0]) for t in range(C.shape[1])}
         # self.c = c
-        
+
         # 2x2 network
         con = {1: [2, 9], 2: [11], 3: [4, 10], 4: [12], 5: [6], 6: [14],
                7: [3, 8], 8: [5, 15], 9: [4, 10], 10: [6], 11: [12], 12: [14],
@@ -112,32 +127,142 @@ class RouteOptimGurobi:
 
         veh_od = {0: {'from': 12, 'to': 13, 'time': 0},
                   1: {'from': 12, 'to': 13, 'time': 0}}
-        
-        return veh_od, connection, time_step, C
-        
 
-    def build_model(self, veh_num=2, small_net=True, parseZ=True):
+        return veh_od, connection, time_step, C
+
+    def set_optm_input(self, veh_od, time_step):
+        self.veh_od = veh_od
+
+    @staticmethod
+    def find_paths(Pi, start, end, max_length=None):
+        """
+        Find all possible paths from 'start' to 'end' in a graph represented by adjacency matrix Pi,
+        with a maximum path length constraint.
+
+        Args:
+            Pi (np.ndarray): Adjacency matrix where Pi[i, j] == 1 if there's a path from node i to j, else 0.
+            start (int): Starting node index.
+            end (int): Ending node index.
+            max_length (int or None): Maximum allowed path length (number of nodes in a path).
+
+        Returns:
+            List[List[int]]: A list of possible paths from start to end, or partial paths if end is not reached.
+        """
+        N = Pi.shape[0]
+
+        # Check if graph is DAG using Kahn's Algorithm
+        def is_dag(Pi):
+            in_degree = np.sum(Pi, axis=0)
+            queue = [i for i in range(N) if in_degree[i] == 0]
+            visited_count = 0
+
+            while queue:
+                node = queue.pop(0)
+                visited_count += 1
+                for neighbor in np.where(Pi[node] == 1)[0]:
+                    in_degree[neighbor] -= 1
+                    if in_degree[neighbor] == 0:
+                        queue.append(neighbor)
+
+            return visited_count == N
+
+        result_paths = []
+
+        if is_dag(Pi):
+            # DAG: Memoized DFS
+            @lru_cache(maxsize=None)
+            def dfs_dag(current_node, depth):
+                if max_length is not None and depth >= max_length:
+                    return [[current_node]]
+                if current_node == end:
+                    return [[end]]
+                neighbors = np.where(Pi[current_node] == 1)[0]
+                paths = []
+                for neighbor in neighbors:
+                    sub_paths = dfs_dag(neighbor, depth + 1)
+                    for sp in sub_paths:
+                        paths.append([current_node] + sp)
+                if not paths:
+                    paths.append([current_node])
+                return paths
+
+            result_paths = dfs_dag(start, 1)
+
+        else:
+            # Non-DAG: DFS with visited set and depth limit
+            def dfs(current_node, path, visited, depth):
+                if max_length is not None and depth > max_length:
+                    return
+                path.append(current_node)
+                if current_node == end:
+                    result_paths.append(path.copy())
+                else:
+                    neighbors = np.where(Pi[current_node] == 1)[0]
+                    for neighbor in neighbors:
+                        if neighbor not in visited:
+                            visited.add(neighbor)
+                            dfs(neighbor, path, visited, depth + 1)
+                            visited.remove(neighbor)
+                path.pop()
+
+            dfs(start, [], set([start]), 1)
+
+        return result_paths
+
+    @staticmethod
+    def extract_arcs_within_time(paths, C, t0):
+        """
+        args:
+            paths (List[List[int]]): All possible node paths.
+            C (np.ndarray): Travel time matrix, C[i, t] indicates travel time at node i at time t.
+            t0 (int or float): Starting time for traversal.
+        """
+        arc_set = set()
+        arcs_with_time = []
+
+        for p in paths:
+            current_time = t0
+            for i in range(len(p) - 1):
+                from_node = p[i]
+                to_node = p[i + 1]
+
+                t_idx = int(min(current_time, C.shape[1] - 1))  # clip current_time within C validation range
+                arc = (p[i], p[i + 1])
+                travel_time = C[from_node, t_idx]
+
+                earliest = current_time
+                latest = current_time + travel_time
+                # Create a hashable representation for deduplication
+                arc_key = (from_node, to_node, round(earliest, 6), round(latest, 6))  # Round for stability
+
+                if arc_key not in arc_set:
+                    arc_set.add(arc_key)
+                    arcs_with_time.append([from_node, to_node, int(earliest), int(latest)])
+                current_time += travel_time
+        return arcs_with_time
+
+    def build_model(self, param, veh_num=2, small_net=True, parseZ=True):
         print('start build model')
         # self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix, self.CTM_numberOutMatrix, self.ctm_fd,
         #                                                   self.CTM_signalMatrix)
-        
+
+        # Case_config = CaseStudyConfig()
         if small_net:
             self.veh_od, self.CTM_connection, time_step, self.C = self.get_small_net_param()
         else:
-            self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix, self.CTM_numberOutMatrix,
+            self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix,
                                                               self.ctm_fd,
                                                               self.CTM_signalMatrix)
             time_step = self.K.shape[1]
-            self.veh_od = {0: {'from': self.CTM_cellIdx_downgrade.index('A1.E101.C0'),
-                          'to': self.CTM_cellIdx_downgrade.index('A1.-E120.C0'),
-                          'time': 0},
-                          1: {'from': self.CTM_cellIdx_downgrade.index('A1.E101.C0'),
-                          'to': self.CTM_cellIdx_downgrade.index('A1.-E120.C0'),
-                          'time': 0}}
+
+            # small network for case study
+            # self.veh_od = Case_config.small_net_od
+            # self.veh_od = Case_config.full_net_2200_od   # full network in 2200s in simulation
+
             # self.veh_od = CTM.generateODforOPTIm  # a preset api for CTM od
 
         # Parameters
-        alpha1, alpha2, l, deltaT, M, eps = 0.5, 100000, 0.08, 5 / 3600, 999999, 10e-5
+        alpha1, alpha2, M, = param[0], param[1], param[2]
 
         # Sets
         I = [i for i in range(self.CTM_connection.shape[0])]  # Links (nodes)
@@ -149,9 +274,7 @@ class RouteOptimGurobi:
         # load static parameters
         c = {(i, t): self.C[i, t] for i in I for t in T}
         Pi = {(i, j): self.CTM_connection[i, j] for i in I for j in I}
-        # d = {(i, j, t): int(((self.C[i, t] + i + t + 2) % 4 + 1) * self.CTM_connection[i, j]) for i in I for j in I if
-        #      i != j for
-        #      t in T}  # Example: Travel cost increases with time
+
         self.c = c  # for visulization pupers
         ######################################################
 
@@ -159,47 +282,103 @@ class RouteOptimGurobi:
         model = Model("TDVRP-CTM")
 
         # Decision Variables
-        x = model.addVars(A, I, T, vtype=GRB.BINARY, name="x")  # Vehicle on link at time t
+        # x = model.addVars(A, I, T, vtype=GRB.BINARY, name="x")  # Vehicle on link at time t
         y = model.addVars(I, T, vtype=GRB.BINARY, name="y")  # occupation variable y  
         if parseZ:
             z_keys = []
+            x_keys = set()
+            w_keys = set()
 
+            t0 = time.time()
+            route4all = []
             for a in A:
-                for i in I:
-                    for j in I:
-                        if Pi.get((i, j), 0) != 1:
-                            continue
-                        for t in T:
-                            s = int(t + c.get((i, t), 0))
-                            if s < len(T):
-                                z_keys.append((a, i, j, t, s))
+                # a filter indexed by a to indicate the feasible path for z
+                t1 = time.time()
+                routes = self.find_paths(self.CTM_connection, self.veh_od[a]['from'], self.veh_od[a]['to'],
+                                         max_length=self.veh_od[a]['route_length'])
+                print(f'veh {a} find {len(routes)} feasible route with budget {self.veh_od[a]['budget']} need {time.time() - t1} seconds')
+                if len(routes) == 0:
+                    print('ohho')
+
+                t1 = time.time()
+                r_cell = []
+                for r in routes:
+                    r_cell.append([self.CTM_cellIdx_ori[rr] for rr in r])
+                route4all.append(r_cell)
+                arcs = self.extract_arcs_within_time(routes, self.C, self.veh_od[a]['time'])
+                print(f'veh {a} extract {len(arcs)} arcs need {time.time() - t1} seconds')
+                t1 = time.time()
+                for arc in arcs:
+                    i, j, t, s = arc[0], arc[1], arc[2], arc[3]
+                    if s < len(T):
+                        z_keys.append((a, i, j, t, s))
+                        x_keys.add((a, i, t))
+                        for tt in range(t, s):
+                            w_keys.add((a, i, tt))
+                print(f'veh {a} extract x, w, z in {time.time() - t1} seconds')
+                # print('yes')
+            print(f'z_keys has been created within {time.time() - t0} seconds')
+
+            ########################################3
+            # for i in I:
+            #     for j in I:
+            #         if Pi.get((i, j), 0) != 1:
+            #             continue
+            #         for t in T:
+            #             s = int(t + c.get((i, t), 0))
+            #             if s < len(T):
+            #                 z_keys.append((a, i, j, t, s))
+            #########################################################
             self.z_keys = z_keys
+            self.x_keys = list(x_keys)
+            self.w_keys = list(w_keys)
             z = model.addVars(z_keys, vtype=GRB.BINARY, name="z")  # Vehicle moves between links
+            x = model.addVars(self.x_keys, vtype=GRB.BINARY, name="x")
+            omg = model.addVars(self.w_keys, vtype=GRB.BINARY, name="omega")
         else:
-            z = model.addVars(A, I, I, T, T, vtype=GRB.BINARY, name="z")  # Vehicle moves between link    
-        omg = model.addVars(A, I, T, vtype=GRB.BINARY, name="omega")  # variable omege
+            x = model.addVars(A, I, T, vtype=GRB.BINARY, name="x")  # Vehicle on link at time t
+            omg = model.addVars(A, I, T, vtype=GRB.BINARY, name="omega")  # variable omege
+            z = model.addVars(A, I, I, T, T, vtype=GRB.BINARY, name="z")  # Vehicle moves between link
+        # omg = model.addVars(A, I, T, vtype=GRB.BINARY, name="omega")  # variable omege
 
         # tau = model.addVars(A, I, vtype=GRB.INTEGER, name="tau")
         # the = model.addVars(I, I, A, vtype=GRB.INTEGER, name="theta")  # theta variable
         # eta = model.addVars(A, I, T, vtype=GRB.BINARY, name="eta")  # binary variable for arrive time constraint
 
+        # for xvar in model.getVars():
+        #     a = xvar.VarName
+        #     print(a)
+
         model.setObjective(
-            alpha1 * quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) - alpha2 * quicksum(y[i, t] for i in I for t in T) / (self.CTM_connection.shape[0] * time_step),
+            alpha1 * quicksum(
+                c[key[1], key[2]] * x[key] for key in self.x_keys if (key[1], key[2]) in c) - alpha2 * quicksum(
+                y[i, t] for i in I for t in T) / (self.CTM_connection.shape[0] * time_step),
             # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
             GRB.MINIMIZE)
 
         ################################################ Constraints ###################################################
         print("condition 0 is finished")
+        t1 = time.time()
         # 1. FLow conservation (linearlized)
         # axillary variable z
         if parseZ:
-            for a in A:
-                for i in I:
-                    for t in T:
-                        # if (i != veh_odtmp[a]['to'] and i != 11):
-                        if i != self.veh_od[a]['to']:
-                            model.addConstr(x[a, i, t] == quicksum(z[key] for key in z_keys if key[0] == a and key[1] == i and key[3] == t)
-                            , name='axillary variable z')
+            # for a in A:
+            #     model.addConstrs((x[a, i, t] == quicksum(z[key] for key in z_keys if key[0] == a and key[1] == i and key[3] == t)
+            #                       for i in I for t in T if i != self.veh_od[a]['to']), name='axillary variable z')
+
+            for xkey in self.x_keys:
+                a, i, t = xkey[0], xkey[1], xkey[2]
+                if i != self.veh_od[a]['to']:
+                    model.addConstr(
+                        x[xkey] == quicksum(z[key] for key in z_keys if key[0] == a and key[1] == i and key[3] == t)
+                        , name='axillary variable z')
+            # for a in A:
+            #     for i in I:
+            #         for t in T:
+            #             if i != self.veh_od[a]['to']:
+            #                 model.addConstr(x[a, i, t] == quicksum(
+            #                     z[key] for key in z_keys if key[0] == a and key[1] == i and key[3] == t)
+            #                                 , name='axillary variable z')
         else:
             for a in A:
                 for i in I:
@@ -209,65 +388,116 @@ class RouteOptimGurobi:
                             model.addConstr(x[a, i, t] == quicksum(z[a, i, j, t, s] for j in I for s in T),
                                             name='axillary variable z')
 
-
-        print("constraint 1 is completed")
+        print(f"constraint 1 is completed at time {time.time() - t1}")
+        t1 = time.time()
         # 2. Network Tepology constraint
         for key in z_keys:
             a, i, j, t, s = key
-            model.addConstr(z[key] <= x[a, i, t], name=f'z_leq_x_a{a}_i{i}_j{j}_t{t}_s{s}')  # network tepology constraint
-        print("constraint 2 is completed")
+            model.addConstr(z[key] <= x[a, i, t],
+                            name=f'z_leq_x_a{a}_i{i}_j{j}_t{t}_s{s}')  # network tepology constraint
+        print(f"constraint 2 is completed at time {time.time() - t1}")
+        t1 = time.time()
 
         # 3* network flow conservation law, od constraint
-        for a in A:
-            model.addConstr(x[a, self.veh_od[a]['from'], self.veh_od[a]['time']] == 1)
-            model.addConstr(quicksum(x[a, self.veh_od[a]['to'], t] for t in T) == 1)
-            for j in I:
-                for s in T:
+        if parseZ:
+            idx_count_3 = []  #flow conservation index recordings
+            for zkey in z_keys:
+                a, j,  s = zkey[0], zkey[2], zkey[4]
+                if (a, j, s) not in idx_count_3:
+                    idx_count_3.append((a, j, s))
                     incoming = quicksum(z[key] for key in z_keys if key[0] == a and key[2] == j and key[4] == s)
                     outgoing = quicksum(z[key] for key in z_keys if key[0] == a and key[1] == j and key[3] == s)
                     if (j != self.veh_od[a]['from'] and j != self.veh_od[a]['to']):
                         model.addConstr(incoming - outgoing == 0, name='3*netflow_conservation3')
-                    # elif j == veh_od[a]['to']:
-                    #     model.addConstr(incoming - outgoing == 1, name='2*netflow_conservation2')
 
-                        # model.addConstr(quicksum(z[a, i, j, t, s] for i in I for t in T) - quicksum(
-                        #     z[a, j, k, s, r] for k in I for r in T) == 0, name='3*netflow_conservation3')
-        print("constraint 3 is completed")
+
+        print(f"constraint 3 is completed at time {time.time() - t1}")
+        t1 = time.time()
 
         # 4. Time-dependent link constraints
-        for a in A:
-            for t in T:
-                model.addConstr(quicksum(x[a, i, t] for i in I) <= 1)
-        print("constraint 4 is completed")
+        # for a in A:
+        #     for t in T:
+        model.addConstrs(
+            (quicksum(x[xkey] for xkey in self.x_keys if xkey[0] == a and xkey[2] == t) <= 1 for a in A for t in T),
+            name="time dependent link constraints")
+        print(f"constraint 4 is completed at time {time.time() - t1}")
+        t1 = time.time()
 
         # 5. Time-travel bound for vehicle
-        model.addConstrs(quicksum(x[a, i, t] for t in T) <= 1 for a in A for i in I)
-        print("constraint 5 is completed")
-
+        # model.addConstrs(quicksum(x[a, i, t] for t in T) <= 1 for a in A for i in I)
+        model.addConstrs(
+            (quicksum(x[xkey] for xkey in self.x_keys if xkey[0] == a and xkey[1] == i) <= 1 for a in A for i in I),
+            name="time dependent link constraints")
+        print(f"constraint 5 is completed at time {time.time() - t1}")
+        t1 = time.time()
 
         # 6. omega-y condition (phase 2)
-        model.addConstrs(y[i, t] <= quicksum(omg[a, i, t] for a in A) for i in I for t in T)
-        model.addConstrs(M * y[i, t] >= quicksum(omg[a, i, t] for a in A) for i in I for t in T)
-        print('constraint 6 is completed')
+        # model.addConstrs((y[i, t] <= quicksum(omg[okey] for okey in self.w_keys if okey[1] == i and okey[2] == t)
+        #                   for i in I for t in T), name="omega-y condition1")
+        # model.addConstrs((M * y[i, t] >= quicksum(omg[okey] for okey in self.w_keys if okey[1] == i and okey[2] == t)
+        #                   for i in I for t in T), name="omega-y condition2")
+        # print(f'constraint 6 is completed at time {time.time() - t1}')
+        # t1 = time.time()
+
+        idx_count_6 = []
+        for wkey in self.w_keys:
+            i, t = wkey[1], wkey[2]
+            if (i, t) not in idx_count_6:
+                idx_count_6.append((i, t))
+                model.addConstr(y[i, t] <= quicksum(omg[okey] for okey in self.w_keys if okey[1] == i and okey[2] == t)
+                                 , name="omega-y condition1")
+                model.addConstr(
+                    M * y[i, t] >= quicksum(omg[okey] for okey in self.w_keys if okey[1] == i and okey[2] == t)
+                     , name="omega-y condition2")
+        print(f'constraint 6 is completed at time {time.time() - t1}')
+        t1 = time.time()
 
         # 7. omega-x condition (phase 2)
         # print('at here')
         self.time_step = int(len(T))
-        model.addConstrs(omg[a, i, t] <= quicksum(x[a, i, t] for t in T) for a in A for i in I for t in T)
-        for a in A:
-            for i in I:
-                for t in T:
-                    t_mid = int(t + c[i, t])
-                    t_end = self.time_step - 1
-                    model.addConstr(quicksum(omg[a, i, k] for k in range(0, t - 1)) <= M * (1 - x[a, i, t]))
-                    if t_end <= self.time_step - 2:  # here the time index --> max time step minors 1
-                        model.addConstr(quicksum(omg[a, i, k] for k in range(t, t_mid)) >= x[a, i, t] * c[i, t])
-                        model.addConstr(quicksum(omg[a, i, k] for k in range(t, t_mid)) <= x[a, i, t] * c[i, t] + M * (
-                                    1 - x[a, i, t]))
-                        model.addConstr(quicksum(omg[a, i, k] for k in range(t_mid, t_end)) <= M * (1 - x[a, i, t]))
+
+        model.addConstrs(
+            (omg[okey] <= quicksum(x[xkey] for xkey in self.x_keys if xkey[0] == okey[0] and xkey[1] == okey[1]) for
+             okey in self.w_keys), name="omega-x condition eq11")
+        # model.addConstrs(omg[okey] <= quicksum(x[key] for x in key if (key[0] = okey[0] and key[1]=okey[1])) for okey in self.w_keys)
+        # =======================================================================================================
+        # for a in A:
+        #     for i in I:
+        #         for t in T:
+        #             t_mid = int(t + c[i, t])
+        #             t_end = self.time_step
+        #             model.addConstr(quicksum(omg[a, i, k] for k in range(0, t)) <= M * (1 - x[a, i, t]),
+        #                             name="omega-x condition-eq16")
+        #
+        #             # model.addConstr(quicksum(omg[okey] for k in range(0, t)) <= M * (1 - x[a, i, t]),
+        #             #                 name="omega-x condition-eq16")
+        #             if t_mid <= self.time_step - 1:  # here the time index --> max time step minors 1
+        #                 model.addConstr(quicksum(omg[a, i, k] for k in range(t, t_mid)) >= x[a, i, t] * c[i, t],
+        #                                 name="omega-x condition-eq17")
+        #                 model.addConstr(quicksum(omg[a, i, k] for k in range(t, t_mid)) <= x[a, i, t] * c[i, t] + M * (
+        #                         1 - x[a, i, t]), name="omega=x condition-eq18")
+        #                 model.addConstr(quicksum(omg[a, i, k] for k in range(t_mid, t_end)) <= M * (1 - x[a, i, t]),
+        #                                 name="omega-x condition-eq19")
+        # =========================================================================================================
+        for xkey in self.x_keys:
+            a, i, t = xkey[0], xkey[1], xkey[2]
+            t_m, t_e = int(t + c[i, t]), self.time_step
+            model.addConstr(quicksum(
+                omg[wkey] for wkey in self.w_keys if (wkey[0] == a and wkey[1] == i and 0 <= wkey[2] <= t - 1)) <= M * (
+                                        1 - x[xkey]), name="omega-x condition-eq16")
+            if t_m <= self.time_step - 1:
+                model.addConstr(quicksum(
+                    omg[wkey] for wkey in self.w_keys if (wkey[0] == a and wkey[1] == i and t <= wkey[2] <= t_m - 1)) >= x[xkey] * c[i, t],
+                                                                name="omega-x condition-eq17")
+                model.addConstr(quicksum(
+                    omg[wkey] for wkey in self.w_keys if (wkey[0] == a and wkey[1] == i and t <= wkey[2] <= t_m - 1)) <=
+                                x[xkey] * c[i, t] + M * (1 - x[xkey]), name="omega=x condition-eq18")
+                model.addConstr(quicksum(
+                    omg[wkey] for wkey in self.w_keys if (wkey[0] == a and wkey[1] == i and t_m <= wkey[2] <= t_e - 1))<=
+                                M * (1 - x[a, i, t]), name="omega-x condition-eq19")
 
         self.model = model
-        print('model build complete!')
+        print(f'model build complete! at time {time.time() - t1}')
         return model
 
     def build_model_smallexample(self, veh_num=100, alpha=0.5):  # this is temperoarily set as small
@@ -301,7 +531,6 @@ class RouteOptimGurobi:
         #        19: [1], 20: [15, 19], 21: [2, 13], 22: [4, 15, 21], 23: [14], 24: [16, 23],
         #        25: [1, 7], 26: []}
 
-
         ####################################################################################################
         # a 3x3 grid network with multiple entry and exit, the index is real index but no -1
         # con = {1: [2, 16], 2: [3, 19], 3: [22], 4: [5, 17], 5: [6, 20], 6: [23],
@@ -332,8 +561,8 @@ class RouteOptimGurobi:
         # -1. the to node must be a complete last link without downstream link?, use index here
         veh_odtmp = {0: {'from': 12, 'to': 13, 'time': 0},
                      1: {'from': 12, 'to': 13, 'time': 0}}
-                     # 2: {'from': 24, 'to': 25, 'time': 2},
-                     # 3: {'from': 24, 'to': 25, 'time': 3}}
+        # 2: {'from': 24, 'to': 25, 'time': 2},
+        # 3: {'from': 24, 'to': 25, 'time': 3}}
         # veh_odtmp = {0: {'from': 12, 'to': 14}}
 
         M = 999999
@@ -347,11 +576,12 @@ class RouteOptimGurobi:
         # end = 3  # End node
 
         # Parameters as dictionaries
-        c = {(i, t): (self.C[i, t] + i + t + 2)%4 + 1 for i in I for t in T}
+        c = {(i, t): (self.C[i, t] + i + t + 2) % 4 + 1 for i in I for t in T}
         self.c = c
 
         Pi = {(i, j): self.CTM_connection[i, j] for i in I for j in I}
-        d = {(i, j, t): int(((self.C[i, t] + i + t + 2)%4 + 1) * self.CTM_connection[i, j]) for i in I for j in I if i != j for
+        d = {(i, j, t): int(((self.C[i, t] + i + t + 2) % 4 + 1) * self.CTM_connection[i, j]) for i in I for j in I if
+             i != j for
              t in T}  # Example: Travel cost increases with time
 
         # Model Initialization
@@ -368,12 +598,12 @@ class RouteOptimGurobi:
         # eta = model.addVars(A, I, T, vtype=GRB.BINARY, name="eta")  # binary variable for arrive time constraint
 
         model.setObjective(
-            alpha * quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) - (1-alpha)
-                                        * quicksum(y[i, t] for i in I for t in T)/(self.link * self.time_step),
+            alpha * quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) - (
+                    1 - alpha)
+            * quicksum(y[i, t] for i in I for t in T) / (self.link * self.time_step),
             # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
             GRB.MINIMIZE
         )
-
 
         ################################################ Constraints ###################################################
         # 0. preset Z condition
@@ -384,7 +614,7 @@ class RouteOptimGurobi:
                         for s in T:
                             if not (s == t + c[i, t] and Pi[i, j] == 1):
                                 model.addConstr(z[a, i, j, t, s] == 0, name='PresetZCondition_0')
-                            # else:
+                                # else:
                                 # model.addConstr(z[a, i, j, t, s] <= 1, name='PresetZCondition_1')
                                 print('preset z[{},{},{},{},{}] with cost c[{},{}]={}, Pi = {}'.format(a, i, j, t, s, i,
                                                                                                        t, c[i, t],
@@ -437,12 +667,11 @@ class RouteOptimGurobi:
                 model.addConstr(quicksum(x[a, i, t] for i in I) <= 1)
 
         # 5. Time-travel bound for vehicle
-        model.addConstrs(quicksum(x[a, i, t] for t in T) <=1 for a in A for i in I)
-
+        model.addConstrs(quicksum(x[a, i, t] for t in T) <= 1 for a in A for i in I)
 
         # 6. omega-y condition (phase 2)
         model.addConstrs(y[i, t] <= quicksum(omg[a, i, t] for a in A) for i in I for t in T)
-        model.addConstrs(M*y[i, t] >= quicksum(omg[a, i, t] for a in A) for i in I for t in T)
+        model.addConstrs(M * y[i, t] >= quicksum(omg[a, i, t] for a in A) for i in I for t in T)
 
         # 7. omega-x condition (phase 2)
         print('at here')
@@ -451,109 +680,31 @@ class RouteOptimGurobi:
         for a in A:
             for i in I:
                 for t in T:
-                    t_mid = int(t+c[i, t])
-                    t_end = self.time_step -1
-                    model.addConstr(quicksum(omg[a, i, k] for k in range(0, t - 1)) <= M*(1 - x[a, i, t]))
+                    t_mid = int(t + c[i, t])
+                    t_end = self.time_step - 1
+                    model.addConstr(quicksum(omg[a, i, k] for k in range(0, t - 1)) <= M * (1 - x[a, i, t]))
                     if t_end <= self.time_step - 2:  # here the time index --> max time step minors 1
                         model.addConstr(quicksum(omg[a, i, k] for k in range(t, t_mid)) >= x[a, i, t] * c[i, t])
-                        model.addConstr(quicksum(omg[a, i, k] for k in range(t, t_mid)) <= x[a, i, t] * c[i, t] + M*(1-x[a, i, t]))
+                        model.addConstr(quicksum(omg[a, i, k] for k in range(t, t_mid)) <= x[a, i, t] * c[i, t] + M * (
+                                1 - x[a, i, t]))
                         model.addConstr(quicksum(omg[a, i, k] for k in range(t_mid, t_end)) <= M * (1 - x[a, i, t]))
 
-
-
         # model.addConstrs()
-
 
         self.model = model
         print('model build complete!')
         return model
 
-    """ old solve model code, wait to be cleared """
-    # def solve_model(self):
-    #     """Solve the Gurobi model and return the objective value and solution details."""
-    #     # Build the model if it hasn't been built yet
-    #     # if not hasattr(self, 'model'):
-    #     #     self.build_model()
-    #
-    #     self.model.reset(0)
-    #     # debug part
-    #     # self.model.computeIIS()
-    #     # self.model.write("../../result/milpLog/infeasibile.ilp")
-    #
-    #     # Optimize the model
-    #     # self.model.feasRelaxS(0, True, False, True)
-    #     print('begin to optimize')
-    #     self.model.optimize()
-    #     if self.model.status == GRB.INFEASIBLE:
-    #         print('release an infeasible model')
-    #         self.model.computeIIS()
-    #         self.model.write("../../result/milpLog/infeasibile.ilp")
-    #     #     print("lalalala")
-    #     #     self.model.feasRelaxS(0, True, False, True)
-    #     #     self.model.optimize()
-    #     # self.model.optimize()
-    #
-    #     # Check if a feasible solution was found
-    #     if self.model.status == GRB.OPTIMAL:
-    #         print(f"Optimal objective value: {self.model.objVal}")
-    #
-    #         # A, Z, T, TT = self.param
-    #
-    #         # # Retrieve dimensions
-    #         # num_vehicles = len(A)
-    #         # num_cells = len(Z)
-    #         # num_timesteps = len(T)
-    #
-    #         # # Initialize an empty array for the solution
-    #         # solution_array = np.zeros((num_vehicles, num_cells, num_timesteps), dtype=int)
-    #
-    #         solution_array = np.zeros((self.veh, self.link, self.time_step), dtype=int)
-    #
-    #         # Populate the array with solution values
-    #         for a in range(solution_array.shape[0]):
-    #             for i in range(solution_array.shape[1]):
-    #                 for t in range(solution_array.shape[2]):
-    #                     var_x = self.model.getVarByName(f"x[{a},{i},{t}]")
-    #                     # if int(round(var_x.x)) == 1:
-    #                     #     print('#########x({},{},{})={}'.format(a, i, t, var_x.x))
-    #                     for j in range(solution_array.shape[1]):
-    #                         for s in range(solution_array.shape[2]):
-    #                             var_z = self.model.getVarByName(f"z[{a},{i},{j},{t},{s}]")
-    #                             # var_z = self.model.getVarByName(f"z[{i},{j},{a},{t}]")
-    #                             if int(round(var_z.x)) == 1:
-    #                                 var_tao = self.model.getVarByName(f"tau[{a},{i}]")
-    #                                 var_theta = self.model.getVarByName(f"theta[{i},{j},{a}]")
-    #                                 print(
-    #                                     "$$$$$$$$$ z({},{},{},{},{}) = 1 $$$$$$$ c({},{})={} $$ x({},{},{})={}".format(
-    #                                         a, i+1, j+1, t, s, i+1, t, self.c[(i, t)], a, i+1, t, var_x.x))
-    #
-    #                     solution_array[a, i, t] = int(round(var_x.x))
-    #
-    #         return solution_array, self.model.objVal
-    #     else:
-    #         print("No optimal solution found.")
-    #         return None, None
-
-
     # this function is to tmp test for the small ctm network
-    def solve_model(self):
+    def solve_model(self, CtmDowngrade=False):
         self.model.reset(0)
-        # debug part
-        # self.model.computeIIS()
-        # self.model.write("../../result/milpLog/infeasibile.ilp")
 
-        # Optimize the model
-        # self.model.feasRelaxS(0, True, False, True)
         print('begin to optimize')
         self.model.optimize()
         if self.model.status == GRB.INFEASIBLE:
             print('release an infeasible model')
             self.model.computeIIS()
             self.model.write("../../result/milpLog/infeasibile.ilp")
-        #     print("lalalala")
-        #     self.model.feasRelaxS(0, True, False, True)
-        #     self.model.optimize()
-        # self.model.optimize()
 
         # Check if a feasible solution was found
         if self.model.status == GRB.OPTIMAL:
@@ -567,42 +718,95 @@ class RouteOptimGurobi:
             num_timesteps = len(T)
 
             # # Initialize an empty array for the solution
-            solution_array = np.zeros((num_vehicles, num_cells, num_timesteps), dtype=int)
+            solution_x = np.zeros((num_vehicles, num_cells, num_timesteps), dtype=int)
+            solution_y = np.zeros((num_cells, num_timesteps), dtype=int)
+            solution_omg = np.zeros((num_vehicles, num_cells, num_timesteps), dtype=int)
 
             # solution_array = np.zeros((self.veh, self.link, self.time_step), dtype=int)
 
             # Populate the array with solution values
-            for a in range(solution_array.shape[0]):
-                for t in range(solution_array.shape[2]):
-                    for i in range(solution_array.shape[1]):
-                        var_x = self.model.getVarByName(f"x[{a},{i},{t}]")
-                        if int(round(var_x.x)) == 1:
-                            print('#########x({},{},{})={}, at cell {} at time {}, cost is {} '.format(a, i, t, var_x.x, self.CTM_cellIdx_downgrade[i], t, self.c[(i, t)]))
+            if CtmDowngrade:
+                cell_idx = self.CTM_cellIdx_downgrade
+            else:
+                cell_idx = self.CTM_cellIdx_ori
 
-                        solution_array[a, i, t] = int(round(var_x.x))
+            # save x variable,
+            # for a in range(solution_x.shape[0]):
+            #     for t in range(solution_x.shape[2]):
+            #         for i in range(solution_x.shape[1]):
+            #             var_x = self.model.getVarByName(f"x[{a},{i},{t}]")
+            #             if int(round(var_x.x)) == 1:
+            #                 print('#########x({},{},{})={}, at cell {} at time {}, cost is {} '.format(a, i, t, var_x.x,
+            #                                                                                            cell_idx[i], t,
+            #                                                                                            self.c[(i, t)]))
+            #             solution_x[a, i, t] = int(round(var_x.x))
 
-            return solution_array, self.model.objVal
+            for xkey in self.x_keys:
+                a, i, t = xkey[0], xkey[1], xkey[2]
+                var_x = self.model.getVarByName(f"x[{a},{i},{t}]")
+                if int(round(var_x.x)) == 1:
+                    # a, i, t = xkey[0], xkey[1], xkey[2]
+                    print('#########x({},{},{})={}, at cell {} at time {}, cost is {} '.format(a, i, t, var_x.x,
+                                                                                                       cell_idx[i], t,
+                                                                                                       self.c[(i, t)]))
+                    solution_x[a, i, t] = int(round(var_x.x))
+
+            # save y variable
+            for i in range(solution_y.shape[0]):
+                for t in range(solution_y.shape[1]):
+                    var_y = self.model.getVarByName(f"y[{i},{t}]")
+                    solution_y[i, t] = int(var_y.x)
+
+            # save omg variable
+            # for a in range(solution_omg.shape[0]):
+            #     for i in range(solution_omg.shape[1]):
+            #         for t in range(solution_omg.shape[2]):
+            #             var_omg = self.model.getVarByName(f"omega[{a},{i},{t}]")
+            #             solution_omg[a, i, t] = int(var_omg.x)
+
+            for wkey in self.w_keys:
+                a, i, t  = wkey[0], wkey[1], wkey[2]
+                var_omg = self.model.getVarByName(f"omega[{a},{i},{t}]")
+                solution_omg[a, i, t] = int(var_omg.x)
+
+            return solution_x, solution_y, solution_omg, self.model.objVal
         else:
             print("No optimal solution found.")
-            return None, None
+            return None, None, None, None
 
     def getRouteFromX(self, x):
-        cell_idx = self.CTM_cellIdx_downgrade
+        # cell_idx = self.cellidx
         # input x: [veh, link, time]
         veh_rt = {}
         for a in range(x.shape[0]):
             rt = []
             for t in range(x.shape[2]):
                 for i in range(x.shape[1]):
-                    if (x[a, i, t] == 1 and i!= self.veh_od[a]['to']):
-                        rt.append(cell_idx[i])
+                    if (x[a, i, t] == 1 and i != self.veh_od[a]['to']):
+                        rt.append(self.cellidx[i])
             veh_rt[a] = rt
         return veh_rt
+
+    # def getRouteSumo(self, x, cav_info):
+    #     if x is not None:
+    #         # veh_rt = {}
+    #         for a in range(x.shape[0]):
+    #             rt = {}
+    #             for t in range(x.shape[2]):
+    #                 for i in range(x.shape[1]):
+    #                     if (x[a, i, t] == 1 and i != self.veh_od[a]['to']):
+    #                         edge = self.cellidx[i].split('.')
+    #                         rt[edge[1]] = None
+    #                         # rt.add(edge[1])
+    #             cav_info[a]['update_route'] = list(rt.keys())
+    #         return cav_info
+    #     else:
+    #         print('no x is generated for edge')
+    #         return  # should return a flag for
 
 
 if __name__ == '__main__':
     CTM_Path = {'number': '../../result/ctmResult/CTMnumber_3600_1800dis.csv',
-                'outnumber': '../../result/ctmResult/CTMnumber_out_3600_1800dis.csv',
                 'sigflag': '../../result/ctmResult/CTMsigflag_3600_1800dis.csv',
                 'connectionMatrix': '../../result/ctmResult/CTMconnection.txt',
                 'cellIdx': '../../result/ctmResult/CTMcell_index.json'
@@ -619,15 +823,21 @@ if __name__ == '__main__':
     }
 
     time1 = time.time()
-    Ropt = RouteOptimGurobi(CTM_Path, FD_param)
+    caseConfig = CaseStudyConfig()
+    cav_od = caseConfig.full_net_2200_od
+    Ropt = RouteOptimGurobi(FD_param, veh_od=cav_od, max_time=150, CTM_resultPath=CTM_Path, Load_mode='file')
     # Ropt.build_model_smallexample(veh_num=2)
-    Ropt.build_model(veh_num=2, small_net=False)
-    x, objective_value = Ropt.solve_model()
+    Ropt.build_model(veh_num=len(cav_od), small_net=False)
+    x, y, omg, objective_value = Ropt.solve_model(CtmDowngrade=False)
     print('time cost is {}'.format(time.time() - time1))
 
     with open(CTM_Path['cellIdx'], 'r') as file:
         CTM_cellIdx = [line.strip() for line in file]
 
     rout_list = Ropt.getRouteFromX(x)
+
+    np.save('../../result/middle_result0520/x_tmp.npy', x)
+    np.save('../../result/middle_result0520/y_tmp.npy', y)
+    np.save('../../result/middle_result0520/omg_tmp.npy', omg)
 
     print(x[1, :, :])

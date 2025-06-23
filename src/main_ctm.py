@@ -22,56 +22,28 @@ else:
     # sys.exit("please declare environment variable 'SUMO_HOME'")
 
 import traci
+from config import Config
+from utili import Pipline
 
 if __name__ == '__main__':
-    # argparser = argparse.ArgumentParser(description=__doc__)
-    # traci.start(["sumo-gui", "-c", "sumo_cfg/toy_net/toy_test.sumocfg", "--lateral-resolution=0.1", "--step-length=0.1"])
+    cfg = Config()
+    pipe = Pipline()
 
-    # p_set = [100, 300, 500, 1000, 2000]
-    a_set = [0, 1, 2, 5, 10]
-    # pr = 2  # penetration
-    step = 20
+    with open('../result/ctmResult/CTMcell_index.json', 'r') as file:
+        cellidx = [line.strip() for line in file]
 
-    argparser = argparse.ArgumentParser(description=__doc__)
-    argparser.add_argument('--net_dirc',
-                           default='../sumo_cfg/5x5net',
-                           type=str,
-                           help='working dirctory for current simulation(sumo config)')
-    argparser.add_argument('--penetration',
-                           default=5,
-                           type=int,
-                           help='penetration rate in %')
-    argparser.add_argument('--maxtime',
-                           default=4200,
-                           type=int,
-                           help='max simulation length(unit:s)')
+    # pipe.ctmPlot(ctm_value="../result/ctmResult/logs/ctm_test1/occupation_4200noroute.npy",
+    #              cell_list=cellidx,
+    #              cell_coordinates='../sumo_cfg/5x5net/CTMcfg/Cells.csv',
+    #              plot='figure',
+    #              )
 
-    argparser.add_argument('--netname',
-                           default='5x5net',
-                           type=str,
-                           help='network name used for configuration')
-
-    args = argparser.parse_args()
-    pr = args.penetration
-
-    save_info = {'cover_table_benchmark': "../result/{}/PR{} Testing/cover_table_benchmark.npy".format(args.netname,
-                                                                                       pr)}
-    lf_table_path = "../result/{}/link_flow/pr{}_link_flow_3600.json".format(args.netname, pr)
-
-    for alpha in a_set:
-        # save_info['cover_table{}'.format(alpha)] = "../result/{}//pr{}_cover_{}_step{}.npy".format(args.netname, pr, pr, alpha, step)
-
-        save_info['cover_table{}'.format(alpha)] = "../result/{}/CTMTEST/pr{}_cover_{}_step{}.npy".format('tmpnet', pr, pr, alpha, step)
-
-        netpath = "../sumo_cfg/{}/simcfg/case{}ctm.sumocfg".format(args.netname, alpha)
-        flextable = "../result/{}/flextable/pr{}_cover{}Flex.json".format(args.netname, pr, alpha, step)
-        s = Simulation(start_time=600, max_time=args.maxtime, link_num=40, resolution=0.1,
-                       net_file='../sumo_cfg/5x5net/5x5net.net.xml',
-                       time_interval=5, sizeX=5, sizeY=5,
-                       link_dirct_file="../sumo_cfg/5x5net/linkdirction_5x5.csv",
-                       demand_file="../sumo_cfg/5x5net/demand.csv",
-                       turn_rate="../sumo_cfg/5x5net/turnRatios.add.xml")
-        s.load_lf(lf_table_path)
-        s.simCTM(save_info, netpath, flextable=flextable, parameters=(1, 10), flex=4, k=128, GUImode=True)
-        traci.close()
-    # s.sim_benchmark(save_info)
+    sim = Simulation(start_time=600, max_time=cfg.sumo_maxtime, link_num=40, resolution=0.1,
+                     net_file=cfg.net_file, time_interval=5, sizeX=5, sizeY=5,
+                     link_dirct_file=cfg.link_node_dirct_file,
+                     demand_file=cfg.demand_file,
+                     turn_rate=cfg.turn_rate
+                     )
+    sim.simCTM(config=cfg.sumo_cfg, param=cfg.param, ctm_interval=cfg.ctm_interval,
+               ctm_time_opt=cfg.ctm_time_opt, ctm_time_norm=cfg.ctm_time_normal,
+               optim_interval=cfg.opt_interval, saving_path=cfg.saving_path)

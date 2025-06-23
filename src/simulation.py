@@ -7,17 +7,21 @@ Structures:
 """
 
 import copy
+import time
 
-from utili.tools import *
+# from utili import CTM_visulization
 from utili.network import Network
+from utili.routeOptimGurobi import RouteOptimGurobi
 import traci
 import json
 from src.utili.ctm.ctmcomponent import *
 # from utili.routeOptim import RouteOptim
+import os
 
 
 class Simulation:
-    def __init__(self, start_time, max_time, link_num, resolution, net_file, time_interval, sizeX, sizeY, link_dirct_file, demand_file, turn_rate):
+    def __init__(self, start_time, max_time, link_num, resolution, net_file, time_interval, sizeX, sizeY,
+                 link_dirct_file, demand_file, turn_rate):
         self.step = 0
         self.time = 0
         self.start_time = start_time
@@ -25,32 +29,30 @@ class Simulation:
         self.max_time = max_time
         self.MAXSTEP = int(max_time / resolution)
         self.resolution = resolution
-        self.link_num = link_num
-        self.link_flows_table = gen_LF_table(link_num)  # link flow table for all edges
-        self.link_flows_num = {}
-        self.link_flows_observation = {}
-        # self.config = config  # 06/14/2023: temporaryly set sumo config path
-        self.network = Network(5, 5, net_file, link_dirct_file, demand_file, turn_rate)
-        self.cav_list = []
-        self.cover_LinkTimeVeh = np.zeros((2 * link_num, 7000, 1000))  # index = [link, time, veh], value is hardcoded as 0 (binary)
         self.sizeX, self.sizeY = sizeX, sizeY
-        # # build a time-space table for vehicle index
-        # self.cover_idTable = []
-        # for i in range(self.cover_LinkTimeVeh.shape[0]):
-        #     t = []
-        #     for j in range(self.cover_LinkTimeVeh.shape[1]):
-        #         t.append([])
-        #     self.cover_idTable.append(t)
-        # self.cover_idTable = np.array(self.cover_idTable)
+        self.link_num = link_num
+
+        # self.config = config  # 06/14/2023: temporaryly set sumo config path
+        self.network = Network(self.sizeX, self.sizeY, net_file, link_dirct_file, demand_file, turn_rate)
+        self.cav_list = []
+
         self.cav_route = {}
 
-    def sim(self, save_path, config, flextable, parameters, flex=0, k=32, GUImode=False):
+    def sim(self, save_path, config, flextable, parameters, link_num, sizeX, sizeY, flex=0, k=32, GUImode=False):
         if GUImode:
             traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
                          "--step-length={}".format(str(self.resolution))])
         else:
             traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
-                     "--step-length={}".format(str(self.resolution))])
+                         "--step-length={}".format(str(self.resolution))])
+        self.link_num = link_num
+        self.link_flows_table = gen_LF_table(link_num)
+        self.link_flows_num = {}
+        self.link_flows_observation = {}
+        self.cover_LinkTimeVeh = np.zeros(
+            (2 * link_num, 7000, 1000))  # index = [link, time, veh], value is hardcoded as 0 (binary)
+        self.sizeX, self.sizeY = sizeX, sizeY
+
         self.flex = flex  # default flexibility of the vehicle
         self.time = 0  # simulation time index
         self.step = 0
@@ -74,7 +76,7 @@ class Simulation:
                 print("###########################")
                 print('step is:', self.step, parameters[1])
 
-                self.updateCAVinfo()
+                self.updateCAVinfo_StopandForward()
 
                 # step2: enumerate all cav from list, choose proper route and update vehicle information
                 # if self.step % (self.time_interval * 10) == 0:  # plan for the start of every time interval
@@ -92,7 +94,6 @@ class Simulation:
                 # """temp set route for debug 20231130"""
                 # cavtestroute = ["E108", "E38", "E39", "-E16", "-E35", "-E11", "E31", "-E14", "-E27", "-E9", "E23", "-E118"]
                 # traci.vehicle.setRoute('cav1', cavtestroute)
-
 
                 """
                 # stepXXXX: (this will be added on next): adjust signal time plan. 
@@ -121,127 +122,132 @@ class Simulation:
                 print("Sim has ended due to no enough vehicle")
                 break
 
-    def simCTM(self, save_path, config, flextable, parameters, flex, k=32, GUImode=False):
+    def simCTM(self, config, param, ctm_interval, ctm_time_opt, ctm_time_norm, optim_interval, saving_path,
+               GUImode=False):
         if GUImode:
-            traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
+            traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
                          "--step-length={}".format(str(self.resolution))])
         else:
             traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
-                     "--step-length={}".format(str(self.resolution))])
-        self.flex = flex  # default flexibility of the vehicle
+                         "--step-length={}".format(str(self.resolution))])
+        self.ctm_interval = ctm_interval
         self.time = 0  # simulation time index
         self.step = 0
         self.network.netInit(self.sizeX, self.sizeY)
 
-        # initial the cav list
+        # optimization parameter
+        self.param = param
+
+        # self.param = (0.5, 1000, 999999) #alpha-1, alpha-2, M
+
+        # initial the cav infor dic
         self.cav_dic = {}
 
         # initial CTM
         self.CTM = CTM(self.network, tick_interval=5)  # 20111128 defaultly set tick as 5s.
-        self.CTM.init(max_flow=2400)
+        self.cell_idx = self.CTM.init(max_flow=2400)
 
-        # self.CTM.runCTM(3000)
+        self.cell_occupation = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10)), dtype=int)
 
         while True:
 
+            # determin whether to calculate route
+            if (self.step % (optim_interval * 10) == 0 and self.step != 0):
+                is_optim = True
+            else:
+                is_optim = False
+
+            if is_optim:
+                CTM_maxtime = ctm_time_opt  # 200 steps
+            else:
+                CTM_maxtime = ctm_time_norm
+
             # in a given time interval of CTM model, an observation will be updated each step, then the CTM needs to be
             # implemented for a given range.
-            if self.step % (self.time_interval * 10) == 0:
-                # step1: update cav dictionary information, the following inforamtion will be updated:
-                # - 1.1 select and update the flexibility for current cav in the list.
-                # - 1.2 determine the next intended link based on no changing zone constrains.
+            if self.step % (self.ctm_interval * 10) == 0:
+                # step 0: print current step number
                 print("###########################")
-                print('step is:', self.step, parameters[1])
+                print('step is:', self.step)
+                time0 = time.time()
 
-                self.updateCAVinfo()
-
-                # step2: update current observation and CTM model till the longest trip
-                # step2.1: get a list of cav that in the network
+                # step 1: self get the current CAV information
+                # step 1.1: update active cav list
                 self.getCAVList()
-                # step2.2: enumearte cav list, update observations
+                # step 1.2 update CAV o-d info for optimization, update CTM observation
+                if len(self.cav_list) != 0:
+                    print('cav')
+                    update_table = self.getCTMObservation()  # enumerate cav list
+                    for cid, v_num in update_table.items():
+                        self.CTM.cells_dic[cid].k = v_num / 0.08  # update density
+                else:  # if there are no cav at time, dont update anything
+                    self.cav_od = {}
 
-                update_table = self.getCTMObservation()
-                for cid, v_num in update_table.items():
-                    self.CTM.cells_dic[cid].k = v_num/0.08  # update density
-
-
-                # addon temo code
-
-                if self.step == 50:
-                    CTM_time = 3600
-                else:
-                    CTM_time = 10
+                # step 2: prepare for the CTM calculation
+                # - update Observation, cell density matrix
+                # - update cell occupation over time, for evalutation: self.cellOccuptation
 
                 # step 2.3: update CTM including: demand, signal timing, cell density, cell information
-                self.Cells_saved_next, density, number_out, normdense, number, sigflag, cell_idx = self.CTM.runCTM(traci.simulation.getTime(), CTM_time)
+                self.Cells_saved_next, density, number_out, normdense, number, sigflag = self.CTM.runCTM(
+                    traci.simulation.getTime(), CTM_maxtime)
 
-
-                # aaaaaa = Cell.getCell('A0.-E1.C1')
                 self.CTM.cells_dic = self.Cells_saved_next
                 Cell.idcase = self.Cells_saved_next
 
-                # bbb = Cell.idcase
+                # hard coded parameter, need to be put into the config file in the future
+                case_name = 'ctm_test1'
+                log_dir = '../result/ctmResult/logs/' + case_name
+                os.makedirs(log_dir, exist_ok=True)
+                FD_param = {
+                    'v_f': 57.6,  # km/hr
+                    'k_jam': 133,  # veh/km
+                    'q_max': 1744,  # veh/hour
+                    'w': 17.94,
+                    'length': 0.08,  # km
+                    'delta_t': 5 / 3600,  # hr
+                }
+                input = {
+                    'number': number,
+                    'sigflag': sigflag,
+                    'cell connection': self.CTM.connection_matrix,
+                    'cell idx': self.cell_idx
+                }
 
-                # # save results
-                # density.to_csv('../result/CTMnumber.csv')
-                #
-                # # CTM visulization
-                # # time_id_matrix = pd.read_csv('../result/CTMnumber.csv')
-                # # cell_coordinates_df             model.trange = Set(initialize=[i for i in range(t)], doc='a dynamic t range over time')= pd.read_csv('../sumo_cfg/5x5net/CTMcfg/Cells.csv')
-                # # cell_coordinates = cell_coordinates_df.set_index('cell_id').T.to_dict('list')
-                # CTM_visulization('../result/CTMnumber.csv', '../sumo_cfg/5x5net/CTMcfg/Cells.csv')
+                if is_optim:
+                    time_t1 = time.time()
+                    self.getCAVOD()
 
+                    self.Route_Optimizer = RouteOptimGurobi(CTM_FDParam=FD_param, veh_od=self.cav_od,
+                                                            max_time=CTM_maxtime, CTM_input=input, Load_mode='direct')
+                    self.Route_Optimizer.build_model(self.param, veh_num=len(self.cav_od), small_net=False)
+                    x, y, omg, objective_value = self.Route_Optimizer.solve_model(CtmDowngrade=False)
+                    # c_tmp = self.cav_list[0]
+                    # route1 = traci.vehicle.getRoute(c_tmp)
+                    self.getRoutefromX(x)
+                    # route2 = traci.vehicle.getRoute(c_tmp)
+                    print(f'time for optimization is {time.time() - time_t1}')
 
-                print('yes')
-                if self.step == 50:
+                    # update cav route
+                    # self.updateRoute()
+
                     # save results
-                    normdense.to_csv('../result/ctmResult/CTMdensityNorm.csv')
-                    number.to_csv('../result/ctmResult/CTMnumber_3600_1800dis.csv')
-                    density.to_csv('../result/ctmResult/CTMdensity_3600_1800dis.csv')
-                    number_out.to_csv('../result/ctmResult/CTMnumber_out_3600_1800dis.csv')
-                    sigflag.to_csv('../result/ctmResult/CTMsigflag_3600_1800dis.csv')
-                    np.savetxt('../result/ctmResult/CTMconnection.txt', self.CTM.connection_matrix)
-                    with open('../result/ctmResult/CTMcell_index.json', 'w') as file:
-                        for item in cell_idx:
-                            file.write(f"{item}\n")
+                    # normdense.to_csv(log_dir + '/CTMdensityNorm.csv')
+                    # number.to_csv('../result/ctmResult/CTMnumber_3600_1800dis.csv')
+                    # density.to_csv('../result/ctmResult/CTMdensity_3600_1800dis.csv')
+                    # number_out.to_csv('../result/ctmResult/CTMnumber_out_3600_1800dis.csv')
+                    # sigflag.to_csv('../result/ctmResult/CTMsigflag_3600_1800dis.csv')
+                    # np.savetxt('../result/ctmResult/CTMconnection.txt', self.CTM.connection_matrix)
+                    # with open('../result/ctmResult/CTMcell_index.json', 'w') as file:
+                    #     for item in cell_idx:
+                    #         file.write(f"{item}\n")
                     # with open('../result/ctmResult/CTMcell_index.json', 'wb') as file:
                     #     json.dump(cell_idx, file)
 
-
                     # CTM visulization
                     # CTM_visulization('../result/ctmResult/CTMdensityNorm.csv', '../sumo_cfg/5x5net/CTMcfg/Cells.csv')
-                    print('okey')
+                    # print('okey')
 
-
-
-                # step3: enumerate all cav from list, choose proper route and update vehicle information
-
-
-                # step3.1: enumerate all cav. for each cav.
-                #       -1: get k-shortest path considering distance
-                #       -2: calculate travel time and cover rate for each candidate route based on CTM
-                #       -3: choose the best route and apply accordingly
-                
-
-                # self.updateRoute(k, parameters)
-
-                # """temp set route for debug 20231130"""
-                # cavtestroute = ["E108", "E38", "E39", "-E16", "-E35", "-E11", "E31", "-E14", "-E27", "-E9", "E23", "-E118"]
-                # traci.vehicle.setRoute('cav1', cavtestroute)
-
-
-                """
-                # stepXXXX: (this will be added on next): adjust signal time plan. 
-                self.update_tsc()
-                self.update_veh()
-                """
-            # step3: update observation information every 1 second
-            # if self.step % 5 == 0:
-            #     # self.getCAVctrlList()
-            #     # update observation
-            #     self.updateObsv()
-            #     self.checkCoverTable()
-            # step4: push simulation and update information
+                # step4: push simulation and update information
+                print(f'time for entire step is {time.time() - time0}')
             self.step += 1
             self.time = self.step * self.resolution
             traci.simulationStep()
@@ -250,13 +256,12 @@ class Simulation:
             # if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
             if self.step > self.MAXSTEP or (
                     traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
-                path = save_path['cover_table{}'.format(parameters[1])]
-                np.save(path, self.cover_LinkTimeVeh[:, self.start_time:self.max_time, :])
-                with open(flextable, 'w') as flxfile:
-                    json.dump(self.cav_dic, flxfile)
+                path = saving_path['occupation']
+                np.save(path, self.cell_occupation)
+                # with open(flextable, 'w') as flxfile:
+                #     json.dump(self.cav_dic, flxfile)
                 print("Sim has ended due to no enough vehicle")
                 break
-
 
     def sim_getBench(self, save_path, config="../sumo_cfg/5x5net/ctmbench.sumocfg"):
         traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
@@ -315,6 +320,55 @@ class Simulation:
                     # print(edge_id)
                     self.cav_list.append(v_id)  # return the cav list that needs to be controlled
 
+    def getCAVOD(self):
+
+        self.cav_od = {}
+        # v_index = 0 #temp vehicle index for optimization
+        for v_idx in range(len(self.cav_list)):
+            cav_id = self.cav_list[v_idx]
+            curr_cell, _ = self.getCellidxFromVeh(cav_id)
+            current_route = traci.vehicle.getRoute(cav_id)
+            current_edge = traci.vehicle.getRoadID(cav_id)
+            edge_pos = current_route.index(current_edge)  # get current position of edge in total route list
+            des_cell = 'A1.' + traci.vehicle.getRoute(cav_id)[-1] + '.C0'
+
+            # add budget for each cav
+            if len(traci.vehicle.getRoute(cav_id))//4 == 0:
+                budget = 2
+            elif len(traci.vehicle.getRoute(cav_id))//4 >= 1:
+                budget = 0
+            self.cav_od[v_idx] = {
+                'name': cav_id,
+                'from': self.cell_idx.index(curr_cell),
+                'to': self.cell_idx.index(des_cell),
+                'time': 0,
+                'budget': budget,
+                # this is relavite time for optimization. since no prediction assumption, time default to zero
+                'route_length': (len(traci.vehicle.getRoute(cav_id)) - edge_pos + budget) * 5,
+                'current_route': current_route,
+                'current_edge': current_edge
+            }
+
+    def getRoutefromX(self, x):
+        if x is not None:
+            # veh_rt = {}
+            for a in range(x.shape[0]):
+                pre = None
+                rt = []
+                for t in range(x.shape[2]):
+                    for i in range(x.shape[1]):
+                        if (x[a, i, t] == 1 and i != self.cav_od[a]['to']):
+                            edge = self.cell_idx[i].split('.')[1]
+                            if edge != pre:
+                                rt.append(edge)
+                                pre = edge
+                self.cav_od[a]['update_route'] = rt
+                # print(len(rt))
+                if len(rt) > 0:
+                    traci.vehicle.setRoute(self.cav_od[a]['name'], rt)
+
+    # def updateRoute(self):
+
     def updateObsv(self):
         """
         06/22/2023 update: use this function to check observation and cover time-space table
@@ -363,7 +417,10 @@ class Simulation:
             """od_i, n = re.findall(r'[0-9]+|[a-z]+', id)  # od_idx, v_idx"""
             # v.append(ttmp)
 
-    def updateCAVinfo(self):
+    def updateCAVinfo_StopandForward(self):
+        """
+        This is the old TRB version to update the CAV info
+        """
         for v_id in traci.vehicle.getIDList():
             if traci.vehicle.getTypeID(v_id) == 'cav':
                 edge_current = traci.vehicle.getRoadID(v_id)  # check if the vehicle in the network
@@ -381,9 +438,10 @@ class Simulation:
                                           'deltaCover': 1,
                                           'spLength': sp_length,
                                           'currentRoute': [None],
-                                          'isControl': True,  # this is the flag that determines if cav need to be controlled.
+                                          'isControl': True,
+                                          # this is the flag that determines if cav need to be controlled.
                                           'nextEdges': None}
-                elif self.cav_dic[v_id]['isControl']: # if not first time, update flexibility
+                elif self.cav_dic[v_id]['isControl']:  # if not first time, update flexibility
                     if int(re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) <= self.link_num:
 
                         last_edge = self.cav_dic[v_id]['currentRoute'][-1]
@@ -400,7 +458,8 @@ class Simulation:
                         self.cav_dic[v_id]['currentFlex'] = max(tmp_flex, 0)
                         # if tmp_flex == 0:
                         #     print('we have something')
-                print(f'vehicle {v_id} has flex {self.cav_dic[v_id]["currentFlex"]} with {self.cav_dic[v_id]["isControl"]}')
+                print(
+                    f'vehicle {v_id} has flex {self.cav_dic[v_id]["currentFlex"]} with {self.cav_dic[v_id]["isControl"]}')
                 # step2: determine the intended next edge if in no changing zone
                 if not (edge_current[0] == '-' and int(
                         re.findall(r'[0-9]+|[a-z]+', edge_current)[0]) > self.link_num):
@@ -409,11 +468,14 @@ class Simulation:
                     lane_tmp = self.network.sumonet.getLane(lane_current)  # lane object for current vehicle
                     # edges_outid = [e.getID() for e in self.network.node_list[nextNode].link_idx['out']]
                     # aa = self.network.sumonet.getEdge(edge_current).getLength() - traci.vehicle.getLanePosition(v_id)
-                    if self.network.sumonet.getEdge(edge_current).getLength() - traci.vehicle.getLanePosition(v_id) <= 160:
-                        self.cav_dic[v_id]['nextEdges'] = [cnt.getTo().getID() for cnt in lane_tmp.getOutgoing()] #  if vehicle in no changing zone
+                    if self.network.sumonet.getEdge(edge_current).getLength() - traci.vehicle.getLanePosition(
+                            v_id) <= 160:
+                        self.cav_dic[v_id]['nextEdges'] = [cnt.getTo().getID() for cnt in
+                                                           lane_tmp.getOutgoing()]  # if vehicle in no changing zone
                     else:
                         # print(f'next Node is {nextNode}, veh{v_id} in nochanging zone')
-                        self.cav_dic[v_id]['nextEdges'] = [e.getID() for e in self.network.node_list[nextNode].link_idx['out']]  # if not in no-changing zone
+                        self.cav_dic[v_id]['nextEdges'] = [e.getID() for e in self.network.node_list[nextNode].link_idx[
+                            'out']]  # if not in no-changing zone
                 #
 
     def updateRoute(self, k, parameters):
@@ -436,11 +498,10 @@ class Simulation:
                 veh_idx = int(re.findall(r'[0-9]+|[a-z]+', cav_id)[1])
                 cav_edgeID = traci.vehicle.getRoadID(cav_id)
                 my_nextNode = self.network.getNextNode(cav_edgeID)
-                sp_length = (self.cav_dic[cav_id]['spLength']*400)/14
+                sp_length = (self.cav_dic[cav_id]['spLength'] * 400) / 14
 
                 k_shortest_path = self.network.findKShortPath(k, my_nextNode, self.cav_dic[cav_id]['destination'],
                                                               self.cav_dic[cav_id]['currentFlex'])
-
 
                 # filter k_shortest_path with the following rules: (20231203)
                 # 1. remove the routes that not realistic based on the no changing zone regulation
@@ -538,7 +599,8 @@ class Simulation:
 
                     # 4. calculate objective and get best route, update the routing based on best objective
                     #  0710 YW: update objective considering total travel time instead of current steps.
-                    current_route_obj = - (parameters[0]/sp_length) * (node_time[-1] - dep_time) + parameters[1] * cover_delta
+                    current_route_obj = - (parameters[0] / sp_length) * (node_time[-1] - dep_time) + parameters[
+                        1] * cover_delta
                     path_obj_table.append(current_route_obj)
                     if current_route_obj >= 1.10 * last_bestRoute_obj:  # bubble up and get best
                         best_cover = cover_ts_pre
@@ -558,7 +620,8 @@ class Simulation:
                         # print(f'vehicle {cav_id} delta cover is {cover_delta}')
 
                         # stop planning threshold
-                        if (abs(self.cav_dic[cav_id]['deltaCover'] - 1) < 0.01 or self.cav_dic[cav_id]['currentFlex'] == 0):
+                        if (abs(self.cav_dic[cav_id]['deltaCover'] - 1) < 0.01 or self.cav_dic[cav_id][
+                            'currentFlex'] == 0):
                             self.cav_dic[cav_id]['isControl'] = False
 
                             best_route = [cav_edgeID]
@@ -570,7 +633,8 @@ class Simulation:
                             self.cover_LinkTimeVeh[:, route_startTime: best_rou_end, :] = best_cover
                             best_route.append(traci.vehicle.getRoute(cav_id)[-1])
                             traci.vehicle.setRoute(cav_id, best_route)
-                            print(f'vehicle {cav_id} is set to False with route {best_route}, flex is {self.cav_dic[cav_id]["Flex"]} and cover is {self.cav_dic[cav_id]["deltaCover"]}')
+                            print(
+                                f'vehicle {cav_id} is set to False with route {best_route}, flex is {self.cav_dic[cav_id]["Flex"]} and cover is {self.cav_dic[cav_id]["deltaCover"]}')
                             break
                         # self.cav_dic[cav_id]['isControl'] = False if (abs(self.cav_dic[cav_id]['deltaCover'] - 1) < 0.05 or self.cav_dic[cav_id]['Flex'] == 0) else True
                         isctrl = self.cav_dic[cav_id]['isControl']
@@ -621,70 +685,90 @@ class Simulation:
                     if np.sum(tableLinkTime[:, t]) > 1:
                         print(f"Vehicle {cav_idx + 1} is more than one pos at time {t}, current time is {self.time}:")
 
+    def getCellidxFromVeh(self, v_id):
+        """
+        return CTM cell index, cell coordination (upper & lower bound), based on the vehicle given
+        """
+        cell_coord = []  # [upper bound x, lower bound x, lanes]
+        link_long_x = traci.vehicle.getLanePosition(v_id)
+        # cav_linklongitude_coord = traci.vehicle.getLanePosition(v_id)
+        edge_idx, lane_idx = re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(v_id)).group(1), re.search(
+            r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(v_id)).group(2)
+        length = self.network.sumonet.getEdge(edge_idx).getLength()
+        # idx = divmod(cav_linklongitude_coord, 80)[0]
+        idx = link_long_x // 80  # assume cell is 80 meter long
+        if length < 400 and edge_idx[0] != '-':  # hard-coding here as entry link
+            if idx == 0:
+                c_id = 'A1.{}.{}'.format(edge_idx, 'C4')
+                cell_coord = [80, 0, [0, 1]]
+            elif idx == 1:
+                c_id = 'A1.{}.{}'.format(edge_idx, 'C5')
+                cell_coord = [160, 80, [0, 1]]
+            elif idx == 2 and lane_idx == '0':
+                c_id = 'A1.{}.{}'.format(edge_idx, 'C7')
+                cell_coord = [240, 160, [0]]
+            elif idx == 2 and lane_idx == '1':
+                c_id = 'A1.{}.{}'.format(edge_idx, 'C6')
+                cell_coord = [240, 160, [1]]
+        elif length < 400 and edge_idx[0] == '-':  # hard-coding here as exit link
+            if idx == 0 and lane_idx == '0':
+                c_id = 'A1.{}.{}'.format(edge_idx, 'C2')
+                cell_coord = [80, 0, [0]]
+            elif idx == 0 and lane_idx == '1':
+                c_id = 'A1.{}.{}'.format(edge_idx, 'C1')
+                cell_coord = [80, 0, [1]]
+            elif idx == 1:
+                c_id = 'A1.{}.{}'.format(edge_idx, 'C3')
+                cell_coord = [160, 80, [0, 1]]
+            elif idx == 2:
+                c_id = 'A1.{}.{}'.format(edge_idx, 'C4')
+                cell_coord = [240, 160, [0, 1]]
+
+        else:  # normal link
+            if idx == 0 and lane_idx == '0':
+                c_id = 'A0.{}.{}'.format(edge_idx, 'C2')
+                cell_coord = [80, 0, [0]]
+            elif idx == 0 and lane_idx == '1':
+                c_id = 'A0.{}.{}'.format(edge_idx, 'C1')
+                cell_coord = [80, 0, [1]]
+            elif idx == 1:
+                c_id = 'A0.{}.{}'.format(edge_idx, 'C3')
+                cell_coord = [160, 80, [0, 1]]
+            elif idx == 2:
+                c_id = 'A0.{}.{}'.format(edge_idx, 'C4')
+                cell_coord = [240, 160, [0, 1]]
+            elif idx == 3:
+                c_id = 'A0.{}.{}'.format(edge_idx, 'C5')
+                cell_coord = [320, 240, [0, 1]]
+            elif idx == 4 and lane_idx == '0':
+                c_id = 'A0.{}.{}'.format(edge_idx, 'C7')
+                cell_coord = [400, 320, [0]]
+            elif idx == 4 and lane_idx == '1':
+                c_id = 'A0.{}.{}'.format(edge_idx, 'C6')
+                cell_coord = [400, 320, [1]]
+
+        return c_id, cell_coord
 
     def getCTMObservation(self):
+        """
+        task 1: update CAV cell-time observation
+        task 2: update cell coverage table
+        task 3: determine cav no changing zone
+        """
         update_table = {}
+
         for cav_id in self.cav_list:
-            cav_linklongitude_coord = traci.vehicle.getLanePosition(cav_id)
-            edge_idx, lane_idx = re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(cav_id)).group(1), re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(cav_id)).group(2)
-            length = self.network.sumonet.getEdge(edge_idx).getLength()
-            # idx = divmod(cav_linklongitude_coord, 80)[0]
-            idx = cav_linklongitude_coord//80
-            if length < 400 and edge_idx[0] != '-':  # hard-coding here as entry link
-                if idx == 0:
-                    c_id = 'A1.{}.{}'.format(edge_idx, 'C4')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 80, 0, [0, 1])
-                elif idx == 1:
-                    c_id = 'A1.{}.{}'.format(edge_idx, 'C5')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 160, 80, [0, 1])
-                elif idx == 2 and lane_idx == '0':
-                    c_id = 'A1.{}.{}'.format(edge_idx, 'C6')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 240, 160, [0])
-                elif idx == 2 and lane_idx == '1':
-                    c_id = 'A1.{}.{}'.format(edge_idx, 'C7')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 240, 160, [1])
-            elif length < 400 and edge_idx[0] == '-':  # hard-coding here as exit link
-                if idx == 0 and lane_idx == '0':
-                    c_id = 'A1.{}.{}'.format(edge_idx, 'C1')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 80, 0, [0])
-                elif idx == 0 and lane_idx == '1':
-                    c_id = 'A1.{}.{}'.format(edge_idx, 'C2')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 80, 0, [1])
-                elif idx == 1:
-                    c_id = 'A1.{}.{}'.format(edge_idx, 'C3')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 160, 80, [0, 1])
-                elif idx == 2:
-                    c_id = 'A1.{}.{}'.format(edge_idx, 'C4')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 240, 160, [0, 1])
-
-            else:  # normal link
-                if idx == 0 and lane_idx == '0':
-                    c_id = 'A0.{}.{}'.format(edge_idx, 'C1')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 80, 0, [0])
-                elif idx == 0 and lane_idx == '1':
-                    c_id = 'A0.{}.{}'.format(edge_idx, 'C2')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 80, 0, [1])
-                elif idx == 1:
-                    c_id = 'A0.{}.{}'.format(edge_idx, 'C3')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 160, 80, [0, 1])
-                elif idx == 2:
-                    c_id = 'A0.{}.{}'.format(edge_idx, 'C4')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 240, 160, [0, 1])
-                elif idx == 3:
-                    c_id = 'A0.{}.{}'.format(edge_idx, 'C5')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 320, 240, [0, 1])
-                elif idx == 4 and lane_idx == '0':
-                    c_id = 'A0.{}.{}'.format(edge_idx, 'C6')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 400, 320, [0])
-                elif idx == 4 and lane_idx == '1':
-                    c_id = 'A0.{}.{}'.format(edge_idx, 'C7')
-                    update_table[c_id] = self.getVehNumfromEdge(edge_idx, 400, 320, [1])
-
+            cell_id, info = self.getCellidxFromVeh(cav_id)
+            edge_idx, lane_idx = re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(cav_id)).group(1), re.search(
+                r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(cav_id)).group(2)
+            update_table[cell_id] = self.getVehNumfromEdge(edge_idx, info[0], info[1], info[2])
+            """20250601: update cell coverage table"""
+            self.cell_occupation[self.cell_idx.index(cell_id), (self.step // (5 * 10))-1] += 1
+            """20250620: update vehicle no changing zone"""
+            if self.network.sumonet.getEdge(edge_idx).getLength() - traci.vehicle.getLanePosition(
+                    cav_id) <= 80:  # last cell length as 80 meters, this is a hardcoded constrain.
+                traci.vehicle.setLaneChangeMode(cav_id, 512)
         return update_table
-
-        print('yes')
-
-
 
     @staticmethod
     def getVehNumfromEdge(edge_id, upper, lower, lanes):
@@ -700,7 +784,8 @@ class Simulation:
         for v in veh_ls:
             lane_idx = re.search(r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(v)).group(2)
             # aa = traci.vehicle.getDistance(v)
-            if ((traci.vehicle.getLanePosition(v) <= upper and traci.vehicle.getLanePosition(v) >= lower) and (int(lane_idx) in lanes)):
+            if ((traci.vehicle.getLanePosition(v) <= upper and traci.vehicle.getLanePosition(v) >= lower) and (
+                    int(lane_idx) in lanes)):
                 count += 1
 
         return count
