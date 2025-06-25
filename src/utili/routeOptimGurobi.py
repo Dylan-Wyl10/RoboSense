@@ -5,6 +5,7 @@ import copy
 import pandas as pd
 import numpy as np
 from gurobipy import Model, GRB, quicksum
+from collections import deque
 import json
 from functools import lru_cache
 import time
@@ -12,7 +13,7 @@ from src.utili.config_debug_tmp import CaseStudyConfig
 
 
 class RouteOptimGurobi:
-    def __init__(self, CTM_FDParam, veh_od, max_time, CTM_resultPath=None, CTM_input=None, Load_mode='file'):
+    def __init__(self, CTM_FDParam, veh_od, max_time, current_time, CTM_resultPath=None, CTM_input=None, Load_mode='file'):
         # Initialize data matrices from file paths
         if Load_mode == 'file':
             self.CTM_numberMatrix_ori = pd.read_csv(CTM_resultPath['number']).iloc[:, 1:].to_numpy()
@@ -27,6 +28,7 @@ class RouteOptimGurobi:
             self.CTM_cellIdx_ori = CTM_input['cell idx']
 
         self.veh_od = veh_od
+        self.sumo_time = current_time
 
         self.max_time = max_time
         self.CTM_cellIdx_downgrade = ['A1.E101.C0', 'A1.E101.C4', 'A1.E101.C5', 'A1.E101.C6', 'A1.E101.C7',
@@ -134,71 +136,34 @@ class RouteOptimGurobi:
         self.veh_od = veh_od
 
     @staticmethod
-    def find_paths(Pi, start, end, max_length=None):
+    def find_paths(Pi, start, end, max_length=None, mode="length", top_k=None):
         """
-        Find all possible paths from 'start' to 'end' in a graph represented by adjacency matrix Pi,
-        with a maximum path length constraint.
+        Find paths from start to end with either max_length constraint or top-k shortest paths.
 
         Args:
-            Pi (np.ndarray): Adjacency matrix where Pi[i, j] == 1 if there's a path from node i to j, else 0.
-            start (int): Starting node index.
-            end (int): Ending node index.
-            max_length (int or None): Maximum allowed path length (number of nodes in a path).
+            Pi (np.ndarray): Adjacency matrix, Pi[i, j] = 1 means edge from i to j exists.
+            start (int): Index of start node.
+            end (int): Index of end node.
+            max_length (int or None): Maximum path length (only for mode='length').
+            mode (str): 'length' to filter by max_length, or 'topk' to return k shortest paths.
+            top_k (int or None): Number of paths to return in topk mode.
 
         Returns:
-            List[List[int]]: A list of possible paths from start to end, or partial paths if end is not reached.
+            List[List[int]]: List of complete paths from start to end.
         """
-        N = Pi.shape[0]
-
-        # Check if graph is DAG using Kahn's Algorithm
-        def is_dag(Pi):
-            in_degree = np.sum(Pi, axis=0)
-            queue = [i for i in range(N) if in_degree[i] == 0]
-            visited_count = 0
-
-            while queue:
-                node = queue.pop(0)
-                visited_count += 1
-                for neighbor in np.where(Pi[node] == 1)[0]:
-                    in_degree[neighbor] -= 1
-                    if in_degree[neighbor] == 0:
-                        queue.append(neighbor)
-
-            return visited_count == N
+        assert mode in ["length", "topk"], "mode must be 'length' or 'topk'"
 
         result_paths = []
 
-        if is_dag(Pi):
-            # DAG: Memoized DFS
-            @lru_cache(maxsize=None)
-            def dfs_dag(current_node, depth):
-                if max_length is not None and depth >= max_length:
-                    return [[current_node]]
-                if current_node == end:
-                    return [[end]]
-                neighbors = np.where(Pi[current_node] == 1)[0]
-                paths = []
-                for neighbor in neighbors:
-                    sub_paths = dfs_dag(neighbor, depth + 1)
-                    for sp in sub_paths:
-                        paths.append([current_node] + sp)
-                if not paths:
-                    paths.append([current_node])
-                return paths
-
-            result_paths = dfs_dag(start, 1)
-
-        else:
-            # Non-DAG: DFS with visited set and depth limit
-            def dfs(current_node, path, visited, depth):
+        if mode == "length":
+            def dfs(node, path, visited, depth):
                 if max_length is not None and depth > max_length:
                     return
-                path.append(current_node)
-                if current_node == end:
+                path.append(node)
+                if node == end:
                     result_paths.append(path.copy())
                 else:
-                    neighbors = np.where(Pi[current_node] == 1)[0]
-                    for neighbor in neighbors:
+                    for neighbor in np.where(Pi[node] == 1)[0]:
                         if neighbor not in visited:
                             visited.add(neighbor)
                             dfs(neighbor, path, visited, depth + 1)
@@ -206,6 +171,25 @@ class RouteOptimGurobi:
                 path.pop()
 
             dfs(start, [], set([start]), 1)
+
+        elif mode == "topk":
+            queue = deque()
+            queue.append(([start], set([start])))
+
+            while queue and len(result_paths) < top_k:
+                current_path, visited = queue.popleft()
+                last_node = current_path[-1]
+
+                if last_node == end:
+                    result_paths.append(current_path)
+                    continue
+
+                for neighbor in np.where(Pi[last_node] == 1)[0]:
+                    if neighbor not in visited:
+                        new_path = current_path + [neighbor]
+                        new_visited = visited.copy()
+                        new_visited.add(neighbor)
+                        queue.append((new_path, new_visited))
 
         return result_paths
 
@@ -295,10 +279,15 @@ class RouteOptimGurobi:
                 # a filter indexed by a to indicate the feasible path for z
                 t1 = time.time()
                 routes = self.find_paths(self.CTM_connection, self.veh_od[a]['from'], self.veh_od[a]['to'],
-                                         max_length=self.veh_od[a]['route_length'])
+                                         max_length=self.veh_od[a]['route_length'], mode='length', top_k=100)
                 print(f'veh {a} find {len(routes)} feasible route with budget {self.veh_od[a]['budget']} need {time.time() - t1} seconds')
                 if len(routes) == 0:
-                    print('ohho')
+                    with open("log.txt", "a") as f:
+                        f.write(f'veh {a} is in cell{self.cellidx[self.veh_od[a]['from']]} at {self.sumo_time} to cell{self.cellidx[self.veh_od[a]['to']]}. \n')
+                    print(f'veh {a} is in cell{self.cellidx[self.veh_od[a]['from']]} now')
+                    # provide a backup option for vehicle on no changing zone.
+                    routes = self.find_paths(self.CTM_connection, self.veh_od[a]['from'], self.veh_od[a]['to'],
+                                             max_length=self.veh_od[a]['route_length']+10, mode='length', top_k=100)
 
                 t1 = time.time()
                 r_cell = []
@@ -746,9 +735,9 @@ class RouteOptimGurobi:
                 var_x = self.model.getVarByName(f"x[{a},{i},{t}]")
                 if int(round(var_x.x)) == 1:
                     # a, i, t = xkey[0], xkey[1], xkey[2]
-                    print('#########x({},{},{})={}, at cell {} at time {}, cost is {} '.format(a, i, t, var_x.x,
-                                                                                                       cell_idx[i], t,
-                                                                                                       self.c[(i, t)]))
+                    # print('#########x({},{},{})={}, at cell {} at time {}, cost is {} '.format(a, i, t, var_x.x,
+                    #                                                                                    cell_idx[i], t,
+                    #                                                                                    self.c[(i, t)]))
                     solution_x[a, i, t] = int(round(var_x.x))
 
             # save y variable

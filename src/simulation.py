@@ -180,7 +180,7 @@ class Simulation:
                     for cid, v_num in update_table.items():
                         self.CTM.cells_dic[cid].k = v_num / 0.08  # update density
                 else:  # if there are no cav at time, dont update anything
-                    self.cav_od = {}
+                    self.cav_info = {}
 
                 # step 2: prepare for the CTM calculation
                 # - update Observation, cell density matrix
@@ -191,7 +191,7 @@ class Simulation:
                     traci.simulation.getTime(), CTM_maxtime)
 
                 self.CTM.cells_dic = self.Cells_saved_next
-                Cell.idcase = self.Cells_saved_next
+                # Cell.idcase = self.Cells_saved_next
 
                 # hard coded parameter, need to be put into the config file in the future
                 case_name = 'ctm_test1'
@@ -216,13 +216,14 @@ class Simulation:
                     time_t1 = time.time()
                     self.getCAVOD()
 
-                    self.Route_Optimizer = RouteOptimGurobi(CTM_FDParam=FD_param, veh_od=self.cav_od,
-                                                            max_time=CTM_maxtime, CTM_input=input, Load_mode='direct')
-                    self.Route_Optimizer.build_model(self.param, veh_num=len(self.cav_od), small_net=False)
+                    self.Route_Optimizer = RouteOptimGurobi(CTM_FDParam=FD_param, veh_od=self.cav_info,
+                                                            max_time=CTM_maxtime, current_time=self.step//10, CTM_input=input, Load_mode='direct')
+                    self.Route_Optimizer.build_model(self.param, veh_num=len(self.cav_info), small_net=False)
                     x, y, omg, objective_value = self.Route_Optimizer.solve_model(CtmDowngrade=False)
                     # c_tmp = self.cav_list[0]
                     # route1 = traci.vehicle.getRoute(c_tmp)
                     self.getRoutefromX(x)
+                    # self.excuteCAVRoute()
                     # route2 = traci.vehicle.getRoute(c_tmp)
                     print(f'time for optimization is {time.time() - time_t1}')
 
@@ -245,6 +246,8 @@ class Simulation:
                     # CTM visulization
                     # CTM_visulization('../result/ctmResult/CTMdensityNorm.csv', '../sumo_cfg/5x5net/CTMcfg/Cells.csv')
                     # print('okey')
+                if len(self.cav_info) > 0:
+                    self.excuteCAVRoute()
 
                 # step4: push simulation and update information
                 print(f'time for entire step is {time.time() - time0}')
@@ -322,7 +325,7 @@ class Simulation:
 
     def getCAVOD(self):
 
-        self.cav_od = {}
+        self.cav_info = {}
         # v_index = 0 #temp vehicle index for optimization
         for v_idx in range(len(self.cav_list)):
             cav_id = self.cav_list[v_idx]
@@ -333,11 +336,12 @@ class Simulation:
             des_cell = 'A1.' + traci.vehicle.getRoute(cav_id)[-1] + '.C0'
 
             # add budget for each cav
-            if len(traci.vehicle.getRoute(cav_id))//4 == 0:
-                budget = 2
-            elif len(traci.vehicle.getRoute(cav_id))//4 >= 1:
-                budget = 0
-            self.cav_od[v_idx] = {
+            budget = 0
+            # if len(traci.vehicle.getRoute(cav_id))//4 == 0:
+            #     budget = 0
+            # elif len(traci.vehicle.getRoute(cav_id))//4 >= 1:
+            #     budget = 0
+            self.cav_info[v_idx] = {
                 'name': cav_id,
                 'from': self.cell_idx.index(curr_cell),
                 'to': self.cell_idx.index(des_cell),
@@ -353,21 +357,67 @@ class Simulation:
         if x is not None:
             # veh_rt = {}
             for a in range(x.shape[0]):
-                pre = None
-                rt = []
+                rt_edge_lane = {}
+                rt_cell = []
+                # rt = []
                 for t in range(x.shape[2]):
                     for i in range(x.shape[1]):
-                        if (x[a, i, t] == 1 and i != self.cav_od[a]['to']):
-                            edge = self.cell_idx[i].split('.')[1]
-                            if edge != pre:
-                                rt.append(edge)
-                                pre = edge
-                self.cav_od[a]['update_route'] = rt
-                # print(len(rt))
-                if len(rt) > 0:
-                    traci.vehicle.setRoute(self.cav_od[a]['name'], rt)
+                        if (x[a, i, t] == 1 and i != self.cav_info[a]['to']):
+                            rt_cell.append(self.cell_idx[i])
+                            # edge = self.cell_idx[i].split('.')[1]
+                            # if edge != pre:
+                            #     rt.append(edge)
+                            #     pre = edge
+                self.cav_info[a]['route_cell'] = rt_cell
+                for r in rt_cell:
+                    parts = r.split('.')
+                    if len(parts) >= 3:
+                        edge = parts[1]
+                        cell = parts[2].upper()
+                        # add edge to dic if not seen
+                        if edge not in rt_edge_lane:
+                            rt_edge_lane[edge] = -1
+                        # update lane
+                        if cell == "C6":
+                            rt_edge_lane[edge] = 1
+                        elif cell == "C7":
+                            rt_edge_lane[edge] = 0
+                self.cav_info[a]['route_with_lane'] = rt_edge_lane
+                self.cav_info[a]['update_route'] = list(rt_edge_lane.keys())
+                if len(self.cav_info[a]['update_route']) > 0:
+                    traci.vehicle.setRoute(self.cav_info[a]['name'], self.cav_info[a]['update_route'])
 
-    # def updateRoute(self):
+
+
+                # first_match = next((s for s in self.cav_info[a]['route_cell'] if s.endswith('.C6') or s.endswith('.C7')), None)
+                #
+                # if first_match:
+                #     if first_match.endswith('.C6'):
+                #         self.cav_info[a]['lane'] = 1
+                #     elif first_match.endswith('.C7'):
+                #         self.cav_info[a]['lane'] = 0
+                # else:
+                #     self.cav_info[a]['lane'] = -1
+                # print(len(rt))
+
+    def excuteCAVRoute(self):
+        # for v_idx in range(len(self.cav_list)):
+        #     # set cav lane till next planning horizen
+        #     if self.cav_info[v_idx]['lane'] == 1:
+        #         traci.vehicle.changeLane(vehID=self.cav_info[v_idx]['name'], laneIndex=1, duration=25)
+        #     elif self.cav_info[v_idx]['lane'] == 0:
+        #         traci.vehicle.changeLane(vehID=self.cav_info[v_idx]['name'], laneIndex=0, duration=25)
+        #     if len(self.cav_info[v_idx]['update_route']) > 0:
+        #         traci.vehicle.setRoute(self.cav_info[v_idx]['name'], self.cav_info[v_idx]['update_route'])
+        #     print(f'{self.cav_info[v_idx]['name']} heading to {self.cell_idx[self.cav_info[v_idx]['to']]} will be on lane {self.cav_info[v_idx]['lane']} with route {self.cav_info[v_idx]['route_cell']}')
+        for v_idx in range(len(self.cav_info)):
+            cav_id = self.cav_info[v_idx]['name']
+            edge = traci.vehicle.getRoadID(cav_id) #current edge
+            # if len(self.cav_info[v_idx]['update_route']) > 0:
+            #     traci.vehicle.setRoute(self.cav_info[v_idx]['name'], self.cav_info[v_idx]['update_route'])
+            if self.cav_info[v_idx]['route_with_lane'][edge] >= 0:  # if note the last edge
+                traci.vehicle.changeLane(vehID=cav_id, laneIndex=self.cav_info[v_idx]['route_with_lane'][edge], duration=10)
+            print(f'{self.cav_info[v_idx]['name']} heading to {self.cell_idx[self.cav_info[v_idx]['to']]} will be on lane {self.cav_info[v_idx]['route_with_lane'][edge]} with route {self.cav_info[v_idx]['route_cell']}')
 
     def updateObsv(self):
         """
