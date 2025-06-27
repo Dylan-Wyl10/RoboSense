@@ -35,19 +35,8 @@ def CTM_visulization(time_id_df, cell_coordinates, save_path):  # the inputs are
     :param cell_coordinates:network tepology, read as adictionary.
     """
 
-    # time_id_matrix = pd.read_csv(time_id_matrix_path)
-    time_id_matrix = time_id_df
-    cell_coordinates_df = pd.read_csv('../sumo_cfg/5x5net/CTMcfg/Cells.csv')
+    cell_coordinates_df = pd.read_csv(cell_coordinates)
     cell_coordinates = cell_coordinates_df.set_index('cell_id').T.to_dict('list')
-
-    cdict = {'red': ((0.0, 0.0, 0.0),
-                     (1.0, 1.0, 1.0)),
-             'green': ((0.0, 1.0, 1.0),
-                       (1.0, 0.0, 0.0)),
-             'blue': ((0.0, 0.0, 0.0),
-                      (1.0, 0.0, 0.0))}
-
-    green_to_red = LinearSegmentedColormap('GreenToRed', cdict)
 
     x_values = [coord[0] for coord in cell_coordinates.values()]
     y_values = [coord[1] for coord in cell_coordinates.values()]
@@ -55,64 +44,56 @@ def CTM_visulization(time_id_df, cell_coordinates, save_path):  # the inputs are
     x_min, x_max = min(x_values) - 0.5, max(x_values) + 0.5
     y_min, y_max = min(y_values) - 0.5, max(y_values) + 0.5
 
-    # Normalize vehicle numbers for color mapping
-    vehicle_numbers = time_id_matrix.iloc[:, 1:].to_numpy().flatten()
-    norm = plt.Normalize(vmin=0, vmax=max(vehicle_numbers))
-    # cmap = plt.cm.viridis
-
     fig, ax = plt.subplots(figsize=(12, 8), dpi=150)
 
-    # Plot non-contiguous rectangles for each cell
-    rect_size = 0.45  # Fixed size for all rectangles
+    # Fixed rectangle size
+    rect_size = 0.45
     rectangles = []
     annotations = []
+
     for cell_id, (x, y) in cell_coordinates.items():
-        rect = plt.Rectangle((x - rect_size / 2, y - rect_size / 2), rect_size, rect_size, fill=True, edgecolor='white')
+        rect = plt.Rectangle((x - rect_size / 2, y - rect_size / 2),
+                             rect_size, rect_size, fill=True, edgecolor='black')
         rectangles.append(rect)
         ax.add_patch(rect)
-
-        # Add cell ID annotation
         annotation = ax.text(x, y, cell_id.split('.')[-1][1:], ha='center', va='center', fontsize=6, color='black')
         annotations.append(annotation)
 
     time_text = ax.text(0.5, 1.05, '', transform=ax.transAxes, ha='center')
 
+    def get_color(val):
+        if val == 0:
+            return 'white'
+        elif val == 1:
+            return '#90ee90'  # light green
+        elif val == 2:
+            return 'yellow'
+        else:
+            return 'red'
+
     def update(frame):
         for rect, cell_id in zip(rectangles, cell_coordinates.keys()):
-            if cell_id not in time_id_matrix.index:
+            if cell_id not in time_id_df.index:
                 continue
-            vehicle_number = time_id_matrix.loc[cell_id].iloc[frame]
-            color = green_to_red(norm(vehicle_number))
-            rect.set_facecolor(color)
-        time_text.set_text(f'Time Step: {frame+1}')
+            vehicle_number = time_id_df.loc[cell_id].iloc[frame]
+            rect.set_facecolor(get_color(vehicle_number))
+        time_text.set_text(f'Time Step: {frame + 1}')
         return rectangles + [time_text]
 
-
-    ani = animation.FuncAnimation(fig, update, frames=range(len(time_id_matrix.columns) - 1), interval=500, blit=True)
+    ani = animation.FuncAnimation(fig, update, frames=range(len(time_id_df.columns)), interval=500, blit=True)
 
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
     ax.set_aspect('equal')
+    ax.axis('off')
 
-    # Add color bar
-    sm = plt.cm.ScalarMappable(cmap=green_to_red, norm=norm)
-    sm.set_array([])
-    plt.colorbar(sm, ax=ax, orientation='vertical', label='Number of Vehicles')
-
-    Writer = animation.writers['ffmpeg']
-    writer = Writer(fps=2, metadata=dict(artist='Me'), bitrate=1800)
-
-    # Save the animation as a video file
     if save_path is None:
-
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-        file_name = f'../result/ctmResult/logs/ctm_test1/urban_network_traffic_with_timestep1_{current_time}.mp4'
-    else:
-        file_name = save_path
-    ani.save(file_name, writer=writer)
+        save_path = f'../result/ctmResult/logs/ctm_test1/urban_network_traffic_with_timestep1_{current_time}.mp4'
 
-    plt.close(fig)  # Close the plot to prevent it from displaying in the notebook
-
+    writer = animation.writers['ffmpeg'](fps=2, metadata=dict(artist='CTM'), bitrate=1800)
+    ani.save(save_path, writer=writer)
+    plt.close(fig)
     # print('urban_network_traffic_with_timestep_new1.mp4')
 
     # return '/mnt/data/urban_network_traffic_with_timestep.mp4'

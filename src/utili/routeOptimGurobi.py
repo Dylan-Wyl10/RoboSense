@@ -391,7 +391,7 @@ class RouteOptimGurobi:
         if parseZ:
             idx_count_3 = []  #flow conservation index recordings
             for zkey in z_keys:
-                a, j,  s = zkey[0], zkey[2], zkey[4]
+                a, j, s = zkey[0], zkey[2], zkey[4]
                 if (a, j, s) not in idx_count_3:
                     idx_count_3.append((a, j, s))
                     incoming = quicksum(z[key] for key in z_keys if key[0] == a and key[2] == j and key[4] == s)
@@ -399,6 +399,9 @@ class RouteOptimGurobi:
                     if (j != self.veh_od[a]['from'] and j != self.veh_od[a]['to']):
                         model.addConstr(incoming - outgoing == 0, name='3*netflow_conservation3')
 
+        # 3**  od constraing
+        for a in self.veh_od.keys():
+            model.addConstr(x[(a, self.veh_od[a]['from'], 0)] == 1, name='od_law')
 
         print(f"constraint 3 is completed at time {time.time() - t1}")
         t1 = time.time()

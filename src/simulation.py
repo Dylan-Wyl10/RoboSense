@@ -216,6 +216,9 @@ class Simulation:
                     time_t1 = time.time()
                     self.getCAVOD()
 
+                    if self.step == 7200:
+                        print('yes')
+
                     self.Route_Optimizer = RouteOptimGurobi(CTM_FDParam=FD_param, veh_od=self.cav_info,
                                                             max_time=CTM_maxtime, current_time=self.step//10, CTM_input=input, Load_mode='direct')
                     self.Route_Optimizer.build_model(self.param, veh_num=len(self.cav_info), small_net=False)
@@ -246,9 +249,11 @@ class Simulation:
                     # CTM visulization
                     # CTM_visulization('../result/ctmResult/CTMdensityNorm.csv', '../sumo_cfg/5x5net/CTMcfg/Cells.csv')
                     # print('okey')
+
                 if len(self.cav_info) > 0:
                     self.excuteCAVRoute()
-
+                if self.step == 200:
+                    print('yes')
                 # step4: push simulation and update information
                 print(f'time for entire step is {time.time() - time0}')
             self.step += 1
@@ -413,11 +418,12 @@ class Simulation:
         for v_idx in range(len(self.cav_info)):
             cav_id = self.cav_info[v_idx]['name']
             edge = traci.vehicle.getRoadID(cav_id) #current edge
-            # if len(self.cav_info[v_idx]['update_route']) > 0:
-            #     traci.vehicle.setRoute(self.cav_info[v_idx]['name'], self.cav_info[v_idx]['update_route'])
+            print(
+                f'{self.cav_info[v_idx]['name']} heading to {self.cell_idx[self.cav_info[v_idx]['to']]} will be on lane {self.cav_info[v_idx]['route_with_lane'][edge]} with route {self.cav_info[v_idx]['route_cell']}')
+            print(f'{self.cav_info[v_idx]['name']} route and lane {self.cav_info[v_idx]['route_with_lane']}')
             if self.cav_info[v_idx]['route_with_lane'][edge] >= 0:  # if note the last edge
                 traci.vehicle.changeLane(vehID=cav_id, laneIndex=self.cav_info[v_idx]['route_with_lane'][edge], duration=10)
-            print(f'{self.cav_info[v_idx]['name']} heading to {self.cell_idx[self.cav_info[v_idx]['to']]} will be on lane {self.cav_info[v_idx]['route_with_lane'][edge]} with route {self.cav_info[v_idx]['route_cell']}')
+            # print(f'{self.cav_info[v_idx]['name']} heading to {self.cell_idx[self.cav_info[v_idx]['to']]} will be on lane {self.cav_info[v_idx]['route_with_lane'][edge]} with route {self.cav_info[v_idx]['route_cell']}')
 
     def updateObsv(self):
         """
