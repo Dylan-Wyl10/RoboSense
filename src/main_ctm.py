@@ -32,18 +32,21 @@ if __name__ == '__main__':
     with open('../result/ctmResult/CTMcell_index.json', 'r') as file:
         cellidx = [line.strip() for line in file]
 
-    # pipe.ctmPlot(ctm_value="../result/ctmResult/logs/ctm_test1/occupation_4200noroute.npy",
-    #              cell_list=cellidx,
-    #              cell_coordinates='../sumo_cfg/5x5net/CTMcfg/Cells.csv',
-    #              plot='figure',
-    #              )
+    if cfg.is_vislz:
+        pipe.ctmPlot(ctm_value="../result/ctmResult/logs/ctm_test1/occupation_4200_maxcover_fixed.npy",
+                 cell_list=cellidx,
+                 cell_coordinates='../sumo_cfg/5x5net/CTMcfg/Cells.csv',
+                 plot=cfg.plot_mode,  # [video, figure]
+                 )
 
-    sim = Simulation(start_time=600, max_time=cfg.sumo_maxtime, link_num=40, resolution=0.1,
+
+    if cfg.is_sim:
+        sim = Simulation(start_time=600, max_time=cfg.sumo_maxtime, link_num=40, resolution=0.1,
                      net_file=cfg.net_file, time_interval=5, sizeX=5, sizeY=5,
                      link_dirct_file=cfg.link_node_dirct_file,
                      demand_file=cfg.demand_file,
                      turn_rate=cfg.turn_rate
                      )
-    sim.simCTM(config=cfg.sumo_cfg, param=cfg.param, ctm_interval=cfg.ctm_interval,
+        sim.simCTM(config=cfg.sumo_cfg, param=cfg.param, ctm_interval=cfg.ctm_interval,
                ctm_time_opt=cfg.ctm_time_opt, ctm_time_norm=cfg.ctm_time_normal,
                optim_interval=cfg.opt_interval, saving_path=cfg.saving_path)

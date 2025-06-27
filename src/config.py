@@ -5,7 +5,7 @@ class Config:
         # input files
         self.net_file = '../sumo_cfg/5x5net/5x5net.net.xml'  # path for sumo netfile
         self.link_node_dirct_file = "../sumo_cfg/5x5net/linkdirction_5x5.csv"  # this file discribe the link index and direction for each intersection
-        self.demand_file = "../sumo_cfg/5x5net/demand.csv"
+        self.demand_file = "../sumo_cfg/5x5net/CTMcfg/demand.csv"  # ctm demand
         self.turn_rate = "../sumo_cfg/5x5net/turnRatios.add.xml"
 
         # SUMO-sim related
@@ -28,4 +28,7 @@ class Config:
         self.occupation_matrix = '../result/ctmResult/logs'
         self.saving_path = {'occupation': '../result/ctmResult/logs/ctm_test1/occupation.npy',}
 
-
+        # visuilizaion mode
+        self.is_vislz = True
+        self.plot_mode = 'video'  # [figure, video]
+        self.is_sim = False

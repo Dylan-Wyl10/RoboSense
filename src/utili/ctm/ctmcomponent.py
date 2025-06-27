@@ -378,67 +378,6 @@ class Cell(object):
                     cto2.connection_counts_his[0]
 
 
-#
-# class Node(object):
-#     idcase = {}
-#
-#     def __init__(self, nid, x, y):
-#         self.id = nid
-#         self.x = x
-#         self.y = y
-#         self.link_in = []
-#         self.link_out = []
-#         Node.idcase[nid] = self
-#
-#     def getNodeFromID(nid):
-#         return Node.idcase[nid]
-
-#
-# class Link(object):
-#     idcase = {}
-#
-#     def __init__(self, lid, fnode, tnode, speed, num_of_lanes, length):
-#         self.id = str(lid)
-#         self.source = str(fnode)
-#         self.sink = str(tnode)
-#         self.length = length
-#         self.speed = speed
-#         self.num_of_lanes = num_of_lanes
-#         Link.idcase[str(lid)] = self
-#
-#     def getLinkFromID(lid):
-#         return Link.idcase[lid]
-
-#
-# class Corridor(object):
-#     idcase = {}
-#
-#     def __init__(self, corr_name, cells, corr_demand, corr_link, corr_supply,
-#                  total_tick, supply_period, main_roads, ramps, df, flowdf,
-#                  ramp_df, ramp_demand_df, dfindex):
-#         self.name = corr_name
-#         self.cells = cells
-#         self.demand = corr_demand
-#         self.link = corr_link
-#         self.supply = corr_supply
-#         self.total_tick = total_tick
-#         self.supply_period = supply_period
-#         self.main_roads = main_roads
-#         self.ramps = ramps
-#         self.df = df
-#         self.flowdf = flowdf
-#         self.ramp_df = ramp_df
-#         self.ramp_demand_df = ramp_demand_df
-#         self.current_step = 0
-#         self.dfindex = dfindex
-#         Corridor.idcase[corr_name] = self
-#
-#     def printResults(self):
-#         self.df.to_csv("Density_profile_{0}.csv".format(self.name))
-#         self.flowdf.to_csv("Flow_profile_{0}.csv".format(self.name))
-#
-#     def update(self):
-#         pass
 
 
 def getCrossProduct(va, vb):
