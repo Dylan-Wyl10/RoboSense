@@ -33,7 +33,7 @@ if __name__ == '__main__':
         cellidx = [line.strip() for line in file]
 
     if cfg.is_vislz:
-        pipe.ctmPlot(ctm_value="../result/ctmResult/logs/ctm_test1/occupation_4200_maxcover_fixed.npy",
+        pipe.ctmPlot(ctm_value="../result/ctmResult/logs/ctm_test1/test4200s_5percent/occupation_4200s_400flow_5percent_bench.npy",
                  cell_list=cellidx,
                  cell_coordinates='../sumo_cfg/5x5net/CTMcfg/Cells.csv',
                  plot=cfg.plot_mode,  # [video, figure]
@@ -45,8 +45,14 @@ if __name__ == '__main__':
                      net_file=cfg.net_file, time_interval=5, sizeX=5, sizeY=5,
                      link_dirct_file=cfg.link_node_dirct_file,
                      demand_file=cfg.demand_file,
-                     turn_rate=cfg.turn_rate
-                     )
-        sim.simCTM(config=cfg.sumo_cfg, param=cfg.param, ctm_interval=cfg.ctm_interval,
-               ctm_time_opt=cfg.ctm_time_opt, ctm_time_norm=cfg.ctm_time_normal,
-               optim_interval=cfg.opt_interval, saving_path=cfg.saving_path)
+                     turn_rate=cfg.turn_rate)
+
+        sim.simCTM(config=cfg.sumo_cfg, param=cfg.param, ctm_fd=cfg.ctm_fd, ctm_interval=cfg.ctm_interval,
+                   ctm_time_opt=cfg.ctm_time_opt, ctm_time_norm=cfg.ctm_time_normal,
+                   optim_interval=cfg.opt_interval, saving_path=cfg.saving_path, GUImode=cfg.sumo_gui, route=cfg.is_route,
+                   bench_mode=cfg.is_bench)
+
+        score = pipe.evalCTM(file_gt='../src/ctm_gt.npy',
+                             file_rec='../src/ctm_rec.npy',
+                             cell_json='../result/ctmResult/CTMcell_index.json',
+                             eval_start=cfg.eval_start, eval_duration=cfg.eval_dur, method='mape')

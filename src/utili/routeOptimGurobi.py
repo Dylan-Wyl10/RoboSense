@@ -136,7 +136,7 @@ class RouteOptimGurobi:
         self.veh_od = veh_od
 
     @staticmethod
-    def find_paths(Pi, start, end, max_length=None, mode="length", top_k=None):
+    def find_paths(Pi, start, end, max_length=None, mode="length", top_k=None, max_route=None):
         """
         Find paths from start to end with either max_length constraint or top-k shortest paths.
 
@@ -147,6 +147,7 @@ class RouteOptimGurobi:
             max_length (int or None): Maximum path length (only for mode='length').
             mode (str): 'length' to filter by max_length, or 'topk' to return k shortest paths.
             top_k (int or None): Number of paths to return in topk mode.
+            max_route (int or None): Max number of routes to return in length mode.
 
         Returns:
             List[List[int]]: List of complete paths from start to end.
@@ -158,6 +159,8 @@ class RouteOptimGurobi:
         if mode == "length":
             def dfs(node, path, visited, depth):
                 if max_length is not None and depth > max_length:
+                    return
+                if max_route is not None and len(result_paths) >= max_route:
                     return
                 path.append(node)
                 if node == end:
@@ -267,27 +270,43 @@ class RouteOptimGurobi:
 
         # Decision Variables
         # x = model.addVars(A, I, T, vtype=GRB.BINARY, name="x")  # Vehicle on link at time t
-        y = model.addVars(I, T, vtype=GRB.BINARY, name="y")  # occupation variable y  
+        # y = model.addVars(I, T, vtype=GRB.BINARY, name="y",)  # occupation variable y
+
+
         if parseZ:
             z_keys = []
             x_keys = set()
             w_keys = set()
+            y_keys = set()
 
             t0 = time.time()
             route4all = []
             for a in A:
                 # a filter indexed by a to indicate the feasible path for z
                 t1 = time.time()
+                max_route = min(2 ** (len(self.veh_od[a]['current_route'])), 512)
                 routes = self.find_paths(self.CTM_connection, self.veh_od[a]['from'], self.veh_od[a]['to'],
-                                         max_length=self.veh_od[a]['route_length'], mode='length', top_k=100)
-                print(f'veh {a} find {len(routes)} feasible route with budget {self.veh_od[a]['budget']} need {time.time() - t1} seconds')
+                                         max_length=self.veh_od[a]['route_length'], mode='length', top_k=100, max_route=max_route)
+                print(f'veh {a} find {len(routes)} feasible route in {max_route} to cell {self.veh_od[a]['to']} with budget {self.veh_od[a]['budget']} need {time.time() - t1} seconds')
                 if len(routes) == 0:
-                    with open("log.txt", "a") as f:
-                        f.write(f'veh {a} is in cell{self.cellidx[self.veh_od[a]['from']]} at {self.sumo_time} to cell{self.cellidx[self.veh_od[a]['to']]}. \n')
-                    print(f'veh {a} is in cell{self.cellidx[self.veh_od[a]['from']]} now')
+                    from_now = self.cellidx[self.veh_od[a]['from']]
+                    if from_now.endswith('.C6'):
+                        from_new = from_now[:-3] + '.C7'
+                    elif from_now.endswith('.C7'):
+                        from_new = from_now[:-3] + '.C6'
+                    else:
+                        from_new = from_now
+                    self.veh_od[a]['from'] = self.cellidx.index(from_new)
                     # provide a backup option for vehicle on no changing zone.
-                    routes = self.find_paths(self.CTM_connection, self.veh_od[a]['from'], self.veh_od[a]['to'],
-                                             max_length=self.veh_od[a]['route_length']+10, mode='length', top_k=100)
+                    with open("log.txt", "a") as f:
+                        f.write(f'veh {self.veh_od[a]['name']} is in cell {from_now} at {self.sumo_time} to cell{self.cellidx[self.veh_od[a]['to']]}, '
+                                f'will be in new start cell {from_new}. the route length is {self.veh_od[a]['route_length']} \n')
+                    # print(f'veh {a} is in new cell{self.cellidx[self.veh_od[a]['from']]} now')
+                    routes = self.find_paths(self.CTM_connection, self.cellidx.index(from_new), self.veh_od[a]['to'],
+                                             max_length=self.veh_od[a]['route_length'], mode='topk', top_k=100, max_route=max_route)
+                    print(
+                        f'veh {a} find {len(routes)} new feasible route from cell {from_new} in {max_route} with budget {self.veh_od[a]['budget']}'
+                        f' and remine route {self.veh_od[a]["route_length"]},  need {time.time() - t1} seconds')
 
                 t1 = time.time()
                 r_cell = []
@@ -308,27 +327,32 @@ class RouteOptimGurobi:
                 # print('yes')
             print(f'z_keys has been created within {time.time() - t0} seconds')
 
-            ########################################3
-            # for i in I:
-            #     for j in I:
-            #         if Pi.get((i, j), 0) != 1:
-            #             continue
-            #         for t in T:
-            #             s = int(t + c.get((i, t), 0))
-            #             if s < len(T):
-            #                 z_keys.append((a, i, j, t, s))
-            #########################################################
+
+
             self.z_keys = z_keys
             self.x_keys = list(x_keys)
             self.w_keys = list(w_keys)
+
+            # set y based on w
+            self.idx_count_y = []
+            # self.rec_6 = {}
+            for wkey in self.w_keys:
+                yi, yt = wkey[1], wkey[2]
+                if (yi, yt) not in self.idx_count_y:
+                    self.idx_count_y.append((yi, yt))
+                    y_keys.add((yi, yt))
+            self.y_keys = list(y_keys)
+
             z = model.addVars(z_keys, vtype=GRB.BINARY, name="z")  # Vehicle moves between links
             x = model.addVars(self.x_keys, vtype=GRB.BINARY, name="x")
+            y = model.addVars(self.y_keys, vtype=GRB.BINARY, name="y")
             omg = model.addVars(self.w_keys, vtype=GRB.BINARY, name="omega")
         else:
+            "Note: this part is not implemented in constraint"
             x = model.addVars(A, I, T, vtype=GRB.BINARY, name="x")  # Vehicle on link at time t
             omg = model.addVars(A, I, T, vtype=GRB.BINARY, name="omega")  # variable omege
+            y = model.addVars(I, T, vtype=GRB.BINARY, name="y") # variable y
             z = model.addVars(A, I, I, T, T, vtype=GRB.BINARY, name="z")  # Vehicle moves between link
-        # omg = model.addVars(A, I, T, vtype=GRB.BINARY, name="omega")  # variable omege
 
         # tau = model.addVars(A, I, vtype=GRB.INTEGER, name="tau")
         # the = model.addVars(I, I, A, vtype=GRB.INTEGER, name="theta")  # theta variable
@@ -341,9 +365,9 @@ class RouteOptimGurobi:
         model.setObjective(
             alpha1 * quicksum(
                 c[key[1], key[2]] * x[key] for key in self.x_keys if (key[1], key[2]) in c) - alpha2 * quicksum(
-                y[i, t] for i in I for t in T) / (self.CTM_connection.shape[0] * time_step),
+                y[ykey] for ykey in self.y_keys) / (self.CTM_connection.shape[0] * time_step),GRB.MINIMIZE)
             # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
-            GRB.MINIMIZE)
+
 
         ################################################ Constraints ###################################################
         print("condition 0 is finished")
@@ -360,7 +384,7 @@ class RouteOptimGurobi:
                 if i != self.veh_od[a]['to']:
                     model.addConstr(
                         x[xkey] == quicksum(z[key] for key in z_keys if key[0] == a and key[1] == i and key[3] == t)
-                        , name='axillary variable z')
+                        , name='axillary_variable z')
             # for a in A:
             #     for i in I:
             #         for t in T:
@@ -375,7 +399,7 @@ class RouteOptimGurobi:
                         # if (i != veh_odtmp[a]['to'] and i != 11):
                         if i != self.veh_od[a]['to']:
                             model.addConstr(x[a, i, t] == quicksum(z[a, i, j, t, s] for j in I for s in T),
-                                            name='axillary variable z')
+                                            name='axillary_variable z')
 
         print(f"constraint 1 is completed at time {time.time() - t1}")
         t1 = time.time()
@@ -397,7 +421,10 @@ class RouteOptimGurobi:
                     incoming = quicksum(z[key] for key in z_keys if key[0] == a and key[2] == j and key[4] == s)
                     outgoing = quicksum(z[key] for key in z_keys if key[0] == a and key[1] == j and key[3] == s)
                     if (j != self.veh_od[a]['from'] and j != self.veh_od[a]['to']):
-                        model.addConstr(incoming - outgoing == 0, name='3*netflow_conservation3')
+                    # if j != self.veh_od[a]['from']:
+                        model.addConstr(incoming - outgoing == 0, name=f'netflow_conservation[{a},{j},{s}]')
+                    elif j == self.veh_od[a]['to']:
+                        model.addConstr(quicksum(z[key] for key in z_keys if key[0] == a and key[2] == j) == 1, name=f'netflow_conservation_end{j}')
 
         # 3**  od constraing
         for a in self.veh_od.keys():
@@ -431,16 +458,25 @@ class RouteOptimGurobi:
         # print(f'constraint 6 is completed at time {time.time() - t1}')
         # t1 = time.time()
 
-        idx_count_6 = []
-        for wkey in self.w_keys:
-            i, t = wkey[1], wkey[2]
-            if (i, t) not in idx_count_6:
-                idx_count_6.append((i, t))
-                model.addConstr(y[i, t] <= quicksum(omg[okey] for okey in self.w_keys if okey[1] == i and okey[2] == t)
-                                 , name="omega-y condition1")
-                model.addConstr(
-                    M * y[i, t] >= quicksum(omg[okey] for okey in self.w_keys if okey[1] == i and okey[2] == t)
-                     , name="omega-y condition2")
+        # self.idx_count_6 = []
+        self.rec_6 = {}
+        for ykey in self.y_keys:
+            i, t = ykey[0], ykey[1]
+            self.rec_6[(i, t)] = [okey for okey in self.w_keys if okey[1] == i and okey[2] == t]
+            model.addConstr(y[ykey] <= quicksum(omg[okey] for okey in self.w_keys if okey[1] == i and okey[2] == t)
+                            , name="omega-y condition1")
+            model.addConstr(
+                M * y[ykey] >= quicksum(omg[okey] for okey in self.w_keys if okey[1] == i and okey[2] == t)
+                , name="omega-y condition2")
+
+            # if (i, t) not in self.idx_count_6:
+            #     self.idx_count_6.append((i, t))
+            #     self.rec_6[(i, t)] = [okey for okey in self.w_keys if okey[1] == i and okey[2] == t]
+            #     model.addConstr(y[i, t] <= quicksum(omg[okey] for okey in self.w_keys if okey[1] == i and okey[2] == t)
+            #                      , name="omega-y condition1")
+            #     model.addConstr(
+            #         M * y[i, t] >= quicksum(omg[okey] for okey in self.w_keys if okey[1] == i and okey[2] == t)
+            #          , name="omega-y condition2")
         print(f'constraint 6 is completed at time {time.time() - t1}')
         t1 = time.time()
 
@@ -488,6 +524,7 @@ class RouteOptimGurobi:
                     omg[wkey] for wkey in self.w_keys if (wkey[0] == a and wkey[1] == i and t_m <= wkey[2] <= t_e - 1))<=
                                 M * (1 - x[a, i, t]), name="omega-x condition-eq19")
 
+        # model.setParam("IntFeasTol", 1e-9)
         self.model = model
         print(f'model build complete! at time {time.time() - t1}')
         return model
@@ -690,16 +727,20 @@ class RouteOptimGurobi:
     # this function is to tmp test for the small ctm network
     def solve_model(self, CtmDowngrade=False):
         self.model.reset(0)
+        self.model.setParam('MIPGap', 0.0005)  # set mini gap
 
         print('begin to optimize')
         self.model.optimize()
         if self.model.status == GRB.INFEASIBLE:
             print('release an infeasible model')
             self.model.computeIIS()
-            self.model.write("../../result/milpLog/infeasibile.ilp")
+            self.model.write("infeasibile.ilp")
+
 
         # Check if a feasible solution was found
         if self.model.status == GRB.OPTIMAL:
+            # self.model.write("model.lp")
+            # self.model.write("model.sol")
             print(f"Optimal objective value: {self.model.objVal}")
 
             A, I, T = self.para_set
@@ -744,10 +785,10 @@ class RouteOptimGurobi:
                     solution_x[a, i, t] = int(round(var_x.x))
 
             # save y variable
-            for i in range(solution_y.shape[0]):
-                for t in range(solution_y.shape[1]):
-                    var_y = self.model.getVarByName(f"y[{i},{t}]")
-                    solution_y[i, t] = int(var_y.x)
+            for ykey in self.y_keys:
+                i, t = ykey[0], ykey[1]
+                var_y = self.model.getVarByName(f"y[{i},{t}]")
+                solution_y[i, t] = int(var_y.x)
 
             # save omg variable
             # for a in range(solution_omg.shape[0]):
