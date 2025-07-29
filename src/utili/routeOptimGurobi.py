@@ -284,29 +284,29 @@ class RouteOptimGurobi:
             for a in A:
                 # a filter indexed by a to indicate the feasible path for z
                 t1 = time.time()
-                max_route = min(2 ** (len(self.veh_od[a]['current_route'])), 512)
-                routes = self.find_paths(self.CTM_connection, self.veh_od[a]['from'], self.veh_od[a]['to'],
-                                         max_length=5*self.veh_od[a]['route_length'], mode='length', top_k=100, max_route=max_route)
-                print(f'veh {a} find {len(routes)} feasible route in {max_route} to cell {self.veh_od[a]['to']} with budget {self.veh_od[a]['budget']} '
+                max_route = min(2 ** (len(self.veh_od[a]["current_route"])), 512)
+                routes = self.find_paths(self.CTM_connection, self.veh_od[a]["from"], self.veh_od[a]["to"],
+                                         max_length=5*self.veh_od[a]["route_length"], mode='length', top_k=100, max_route=max_route)
+                print(f'veh {a} find {len(routes)} feasible route in {max_route} to cell {self.veh_od[a]["to"]} with budget {self.veh_od[a]["budget"]} '
                       f'and remine route {self.veh_od[a]["route_length"]} need {time.time() - t1} seconds')
                 if len(routes) == 0:
-                    from_now = self.cellidx[self.veh_od[a]['from']]
+                    from_now = self.cellidx[self.veh_od[a]["from"]]
                     if from_now.endswith('.C6'):
                         from_new = from_now[:-3] + '.C7'
                     elif from_now.endswith('.C7'):
                         from_new = from_now[:-3] + '.C6'
                     else:
                         from_new = from_now
-                    self.veh_od[a]['from'] = self.cellidx.index(from_new)
+                    self.veh_od[a]["from"] = self.cellidx.index(from_new)
                     # provide a backup option for vehicle on no changing zone.
                     with open("log.txt", "a") as f:
-                        f.write(f'veh {self.veh_od[a]['name']} is in cell {from_now} at {self.sumo_time} to cell{self.cellidx[self.veh_od[a]['to']]}, '
-                                f'will be in new start cell {from_new}. the route length is {self.veh_od[a]['route_length']} \n')
+                        f.write(f'veh {self.veh_od[a]["name"]} is in cell {from_now} at {self.sumo_time} to cell{self.cellidx[self.veh_od[a]["to"]]}, '
+                                f'will be in new start cell {from_new}. the route length is {self.veh_od[a]["route_length"]} \n')
                     # print(f'veh {a} is in new cell{self.cellidx[self.veh_od[a]['from']]} now')
-                    routes = self.find_paths(self.CTM_connection, self.cellidx.index(from_new), self.veh_od[a]['to'],
-                                             max_length=self.veh_od[a]['route_length'], mode='topk', top_k=100, max_route=max_route)
+                    routes = self.find_paths(self.CTM_connection, self.cellidx.index(from_new), self.veh_od[a]["to"],
+                                             max_length=self.veh_od[a]["route_length"], mode='topk', top_k=100, max_route=max_route)
                     print(
-                        f'veh {a} find {len(routes)} new feasible route from cell {from_new} in {max_route} with budget {self.veh_od[a]['budget']}'
+                        f'veh {a} find {len(routes)} new feasible route from cell {from_new} in {max_route} with budget {self.veh_od[a]["budget"]}'
                         f' and remine route {self.veh_od[a]["route_length"]},  need {time.time() - t1} seconds')
 
                 t1 = time.time()
@@ -314,7 +314,7 @@ class RouteOptimGurobi:
                 for r in routes:
                     r_cell.append([self.CTM_cellIdx_ori[rr] for rr in r])
                 route4all.append(r_cell)
-                arcs = self.extract_arcs_within_time(routes, self.C, self.veh_od[a]['time'])
+                arcs = self.extract_arcs_within_time(routes, self.C, self.veh_od[a]["time"])
                 print(f'veh {a} extract {len(arcs)} arcs need {time.time() - t1} seconds')
                 t1 = time.time()
                 for arc in arcs:
