@@ -122,15 +122,19 @@ class Simulation:
                 print("Sim has ended due to no enough vehicle")
                 break
 
-    def simCTM(self, config, param, ctm_interval, ctm_time_opt, ctm_time_norm, optim_interval, saving_path,
-               GUImode=False):
+    def simCTM(self, config, param, ctm_fd, ctm_interval, ctm_time_opt, ctm_time_norm, optim_interval, saving_path,
+               GUImode=False, route=False, bench_mode=False):
         if GUImode:
             traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
                          "--step-length={}".format(str(self.resolution))])
         else:
             traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
                          "--step-length={}".format(str(self.resolution))])
-        self.ctm_interval = ctm_interval
+
+        if route:
+            self.ctm_interval = ctm_interval
+        else:
+            self.ctm_interval = 999999
         self.time = 0  # simulation time index
         self.step = 0
         self.network.netInit(self.sizeX, self.sizeY)
@@ -144,10 +148,12 @@ class Simulation:
         self.cav_dic = {}
 
         # initial CTM
-        self.CTM = CTM(self.network, tick_interval=5)  # 20111128 defaultly set tick as 5s.
+        self.CTM = CTM(ctm_fd, self.network, tick_interval=5)  # 20111128 defaultly set tick as 5s.
         self.cell_idx = self.CTM.init(max_flow=2400)
 
-        self.cell_occupation = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10)), dtype=int)
+        self.cell_occupation = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10) + 1), dtype=int)
+        self.ctm_groundtruth = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10) + 1), dtype=int)
+        self.ctm_recordings = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10) + 1), dtype=int)
 
         while True:
 
@@ -157,17 +163,26 @@ class Simulation:
             else:
                 is_optim = False
 
+            if bench_mode:
+                is_optim = False
+            # is_optim = False
+
             if is_optim:
                 CTM_maxtime = ctm_time_opt  # 200 steps
             else:
                 CTM_maxtime = ctm_time_norm
 
-            # in a given time interval of CTM model, an observation will be updated each step, then the CTM needs to be
-            # implemented for a given range.
+            """
+            CTM update for every 5 second in simulation, details are:
+            
+            """
+            # CTM observation for each step, d an observation will be updated each step, then the CTM needs to be
+            # if 1==2:
             if self.step % (self.ctm_interval * 10) == 0:
-                # step 0: print current step number
+                # step 0: print current step number and get ground truth from CTM observation
                 print("###########################")
                 print('step is:', self.step)
+                self.getCTMgroundTruth()
                 time0 = time.time()
 
                 # step 1: self get the current CAV information
@@ -175,36 +190,47 @@ class Simulation:
                 self.getCAVList()
                 # step 1.2 update CAV o-d info for optimization, update CTM observation
                 if len(self.cav_list) != 0:
-                    print('cav')
+                    # print('cav')
                     update_table = self.getCTMObservation()  # enumerate cav list
                     for cid, v_num in update_table.items():
                         self.CTM.cells_dic[cid].k = v_num / 0.08  # update density
                 else:  # if there are no cav at time, dont update anything
                     self.cav_info = {}
 
-                # step 2: prepare for the CTM calculation
-                # - update Observation, cell density matrix
-                # - update cell occupation over time, for evalutation: self.cellOccuptation
+                # step 1.3: get CTM result for recording to evaluate the observation error
+                self.getCTMrecord()
 
-                # step 2.3: update CTM including: demand, signal timing, cell density, cell information
-                self.Cells_saved_next, density, number_out, normdense, number, sigflag = self.CTM.runCTM(
+                # step 2.1: push CTM to next run, if no optimization if excuted, only caclulate one step further
+                # Cells_saved_next means the snap shot for the next step , it is saved to reload
+                self.snapshot_4_next, number_out, number_in, number, sigflag = self.CTM.runCTM(
                     traci.simulation.getTime(), CTM_maxtime)
 
-                self.CTM.cells_dic = self.Cells_saved_next
-                # Cell.idcase = self.Cells_saved_next
+                #################  debug
+                # dd = density * 0.08
+                # np.save('ctm_tmp.npy', number)
 
+                ########################
+
+                # step 2.2: reload CTM status for next step calculation
+                for cid, cell in self.CTM.cells_dic.items():
+                    cell.load_state(self.snapshot_4_next[cid])
+
+                # self.evaluationCTM()
+
+
+                # step 2.3: save and load result for optimal
                 # hard coded parameter, need to be put into the config file in the future
                 case_name = 'ctm_test1'
                 log_dir = '../result/ctmResult/logs/' + case_name
                 os.makedirs(log_dir, exist_ok=True)
-                FD_param = {
-                    'v_f': 57.6,  # km/hr
-                    'k_jam': 133,  # veh/km
-                    'q_max': 1744,  # veh/hour
-                    'w': 17.94,
-                    'length': 0.08,  # km
-                    'delta_t': 5 / 3600,  # hr
-                }
+                # ctm_fd = {
+                #     'v_f': 57.6,  # km/hr
+                #     'k_jam': 133,  # veh/km
+                #     'q_max': 1744,  # veh/hour
+                #     'w': 17.94,
+                #     'length': 0.08,  # km
+                #     'delta_t': 5 / 3600,  # hr
+                # }
                 input = {
                     'number': number,
                     'sigflag': sigflag,
@@ -216,19 +242,34 @@ class Simulation:
                     time_t1 = time.time()
                     self.getCAVOD()
 
-                    if self.step == 7200:
-                        print('yes')
-
-                    self.Route_Optimizer = RouteOptimGurobi(CTM_FDParam=FD_param, veh_od=self.cav_info,
+                    self.Route_Optimizer = RouteOptimGurobi(CTM_FDParam=ctm_fd, veh_od=self.cav_info,
                                                             max_time=CTM_maxtime, current_time=self.step//10, CTM_input=input, Load_mode='direct')
                     self.Route_Optimizer.build_model(self.param, veh_num=len(self.cav_info), small_net=False)
                     x, y, omg, objective_value = self.Route_Optimizer.solve_model(CtmDowngrade=False)
                     # c_tmp = self.cav_list[0]
                     # route1 = traci.vehicle.getRoute(c_tmp)
-                    self.getRoutefromX(x)
-                    # self.excuteCAVRoute()
-                    # route2 = traci.vehicle.getRoute(c_tmp)
+                    # x = None
+                    if x is not None:
+                        self.getRoutefromX(x)
+
+                        # if len(self.cav_info) > 0:
+                        #     self.excuteCAVRoute()
+                    else:
+                        self.cav_info = {}
+                        with open('log.txt', 'a') as f:
+                            f.write(f'$$$$$$$$$$no solution at step {self.step}find\n')
+
+                    # if len(self.cav_info) > 0:
+                    #     self.excuteCAVRoute()
+
+                    # omm = np.sum(omg, axis=0)
+                    # yy = (omm > 0).astype(int)
+
+
+
+                    # print(f'y coverage summation is {np.mean(y)}')
                     print(f'time for optimization is {time.time() - time_t1}')
+
 
                     # update cav route
                     # self.updateRoute()
@@ -250,10 +291,8 @@ class Simulation:
                     # CTM_visulization('../result/ctmResult/CTMdensityNorm.csv', '../sumo_cfg/5x5net/CTMcfg/Cells.csv')
                     # print('okey')
 
-                if len(self.cav_info) > 0:
+                if len(self.cav_info) > 0 :
                     self.excuteCAVRoute()
-                if self.step == 200:
-                    print('yes')
                 # step4: push simulation and update information
                 print(f'time for entire step is {time.time() - time0}')
             self.step += 1
@@ -266,6 +305,7 @@ class Simulation:
                     traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
                 path = saving_path['occupation']
                 np.save(path, self.cell_occupation)
+                self.evaluationCTM()
                 # with open(flextable, 'w') as flxfile:
                 #     json.dump(self.cav_dic, flxfile)
                 print("Sim has ended due to no enough vehicle")
@@ -341,19 +381,27 @@ class Simulation:
             des_cell = 'A1.' + traci.vehicle.getRoute(cav_id)[-1] + '.C0'
 
             # add budget for each cav
-            budget = 0
-            # if len(traci.vehicle.getRoute(cav_id))//4 == 0:
-            #     budget = 0
-            # elif len(traci.vehicle.getRoute(cav_id))//4 >= 1:
-            #     budget = 0
+            edge_num_rem = len(traci.vehicle.getRoute(cav_id)) - edge_pos  # remaining number of edge
+            """
+            budge logic 20250729
+            1. if remaining route  length is greater than 4, than give budget
+            2. if already travel route is greater than 10, no budget 
+            """
+            # budget = 0
+            if edge_num_rem > 4:
+                budget = 0
+            elif edge_pos >= 10:
+                budget = 0
+            else:
+                budget = 2
             self.cav_info[v_idx] = {
                 'name': cav_id,
                 'from': self.cell_idx.index(curr_cell),
                 'to': self.cell_idx.index(des_cell),
                 'time': 0,
-                'budget': budget,
-                # this is relavite time for optimization. since no prediction assumption, time default to zero
-                'route_length': (len(traci.vehicle.getRoute(cav_id)) - edge_pos + budget) * 5,
+                'budget': budget, # this is relavite time for optimization. since no prediction assumption, time default to zero
+                # 'route_length': (len(traci.vehicle.getRoute(cav_id)) - edge_pos + budget) * 5,
+                'route_length': edge_num_rem,
                 'current_route': current_route,
                 'current_edge': current_edge
             }
@@ -394,36 +442,30 @@ class Simulation:
 
 
 
-                # first_match = next((s for s in self.cav_info[a]['route_cell'] if s.endswith('.C6') or s.endswith('.C7')), None)
-                #
-                # if first_match:
-                #     if first_match.endswith('.C6'):
-                #         self.cav_info[a]['lane'] = 1
-                #     elif first_match.endswith('.C7'):
-                #         self.cav_info[a]['lane'] = 0
-                # else:
-                #     self.cav_info[a]['lane'] = -1
-                # print(len(rt))
 
     def excuteCAVRoute(self):
-        # for v_idx in range(len(self.cav_list)):
-        #     # set cav lane till next planning horizen
-        #     if self.cav_info[v_idx]['lane'] == 1:
-        #         traci.vehicle.changeLane(vehID=self.cav_info[v_idx]['name'], laneIndex=1, duration=25)
-        #     elif self.cav_info[v_idx]['lane'] == 0:
-        #         traci.vehicle.changeLane(vehID=self.cav_info[v_idx]['name'], laneIndex=0, duration=25)
-        #     if len(self.cav_info[v_idx]['update_route']) > 0:
-        #         traci.vehicle.setRoute(self.cav_info[v_idx]['name'], self.cav_info[v_idx]['update_route'])
-        #     print(f'{self.cav_info[v_idx]['name']} heading to {self.cell_idx[self.cav_info[v_idx]['to']]} will be on lane {self.cav_info[v_idx]['lane']} with route {self.cav_info[v_idx]['route_cell']}')
         for v_idx in range(len(self.cav_info)):
-            cav_id = self.cav_info[v_idx]['name']
-            edge = traci.vehicle.getRoadID(cav_id) #current edge
-            print(
-                f'{self.cav_info[v_idx]['name']} heading to {self.cell_idx[self.cav_info[v_idx]['to']]} will be on lane {self.cav_info[v_idx]['route_with_lane'][edge]} with route {self.cav_info[v_idx]['route_cell']}')
-            print(f'{self.cav_info[v_idx]['name']} route and lane {self.cav_info[v_idx]['route_with_lane']}')
-            if self.cav_info[v_idx]['route_with_lane'][edge] >= 0:  # if note the last edge
-                traci.vehicle.changeLane(vehID=cav_id, laneIndex=self.cav_info[v_idx]['route_with_lane'][edge], duration=10)
-            # print(f'{self.cav_info[v_idx]['name']} heading to {self.cell_idx[self.cav_info[v_idx]['to']]} will be on lane {self.cav_info[v_idx]['route_with_lane'][edge]} with route {self.cav_info[v_idx]['route_cell']}')
+            try:
+                cav_id = self.cav_info[v_idx]['name']
+                edge = traci.vehicle.getRoadID(cav_id)  # current edge
+
+                # print(
+                #     f"{cav_id} heading to {self.cell_idx[self.cav_info[v_idx]['to']]} "
+                #     f"will be on lane {self.cav_info[v_idx]['route_with_lane'][edge]} "
+                #     f"with route {self.cav_info[v_idx]['route_cell']}"
+                # )
+                # print(f"{cav_id} route and lane {self.cav_info[v_idx]['route_with_lane']}")
+
+                if self.cav_info[v_idx]['route_with_lane'][edge] >= 0:
+                    traci.vehicle.changeLane(
+                        vehID=cav_id,
+                        laneIndex=self.cav_info[v_idx]['route_with_lane'][edge],
+                        duration=10
+                    )
+            except Exception as e:
+                print(f"Skipping v_idx={v_idx} due to error: {e}")
+                continue
+
 
     def updateObsv(self):
         """
@@ -753,6 +795,7 @@ class Simulation:
         length = self.network.sumonet.getEdge(edge_idx).getLength()
         # idx = divmod(cav_linklongitude_coord, 80)[0]
         idx = link_long_x // 80  # assume cell is 80 meter long
+        c_id = None
         if length < 400 and edge_idx[0] != '-':  # hard-coding here as entry link
             if idx == 0:
                 c_id = 'A1.{}.{}'.format(edge_idx, 'C4')
@@ -760,10 +803,10 @@ class Simulation:
             elif idx == 1:
                 c_id = 'A1.{}.{}'.format(edge_idx, 'C5')
                 cell_coord = [160, 80, [0, 1]]
-            elif idx == 2 and lane_idx == '0':
+            elif idx >= 2 and lane_idx == '0':
                 c_id = 'A1.{}.{}'.format(edge_idx, 'C7')
                 cell_coord = [240, 160, [0]]
-            elif idx == 2 and lane_idx == '1':
+            elif idx >= 2 and lane_idx == '1':
                 c_id = 'A1.{}.{}'.format(edge_idx, 'C6')
                 cell_coord = [240, 160, [1]]
         elif length < 400 and edge_idx[0] == '-':  # hard-coding here as exit link
@@ -776,7 +819,7 @@ class Simulation:
             elif idx == 1:
                 c_id = 'A1.{}.{}'.format(edge_idx, 'C3')
                 cell_coord = [160, 80, [0, 1]]
-            elif idx == 2:
+            elif idx >= 2:
                 c_id = 'A1.{}.{}'.format(edge_idx, 'C4')
                 cell_coord = [240, 160, [0, 1]]
 
@@ -796,12 +839,16 @@ class Simulation:
             elif idx == 3:
                 c_id = 'A0.{}.{}'.format(edge_idx, 'C5')
                 cell_coord = [320, 240, [0, 1]]
-            elif idx == 4 and lane_idx == '0':
+            elif idx >= 4 and lane_idx == '0':
                 c_id = 'A0.{}.{}'.format(edge_idx, 'C7')
                 cell_coord = [400, 320, [0]]
-            elif idx == 4 and lane_idx == '1':
+            elif idx >= 4 and lane_idx == '1':
                 c_id = 'A0.{}.{}'.format(edge_idx, 'C6')
                 cell_coord = [400, 320, [1]]
+        if c_id == None:
+            with open('log.txt', 'a') as f:
+                f.write(f'cav {v_id} cannot find its cell at step {self.step}, location edge at {edge_idx} lane {lane_idx}'
+                        f'link long position {link_long_x}, idx {idx} \n')
 
         return c_id, cell_coord
 
@@ -819,12 +866,33 @@ class Simulation:
                 r'([-\w]+)_(\d+)', traci.vehicle.getLaneID(cav_id)).group(2)
             update_table[cell_id] = self.getVehNumfromEdge(edge_idx, info[0], info[1], info[2])
             """20250601: update cell coverage table"""
-            self.cell_occupation[self.cell_idx.index(cell_id), (self.step // (5 * 10))-1] += 1
+            self.cell_occupation[self.cell_idx.index(cell_id), (self.step // (5 * 10))] += 1
             """20250620: update vehicle no changing zone"""
-            if self.network.sumonet.getEdge(edge_idx).getLength() - traci.vehicle.getLanePosition(
-                    cav_id) <= 80:  # last cell length as 80 meters, this is a hardcoded constrain.
-                traci.vehicle.setLaneChangeMode(cav_id, 512)
+            """20250715: bug fixing: this could affect benchmark planning if not routing. is this still necessary???"""
+            # if self.network.sumonet.getEdge(edge_idx).getLength() - traci.vehicle.getLanePosition(
+            #         cav_id) <= 80:  # last cell length as 80 meters, this is a hardcoded constrain.
+            #     traci.vehicle.setLaneChangeMode(cav_id, 512)
         return update_table
+
+    def getCTMgroundTruth(self):
+        veh_list = traci.vehicle.getIDList()
+        for veh in veh_list:
+            cell_id, info = self.getCellidxFromVeh(veh)
+            if cell_id is None:
+                print(f'veh {veh} is in')
+                continue
+            else:
+                self.ctm_groundtruth[self.cell_idx.index(cell_id), (self.step // (5 * 10))] += 1
+        return
+
+    def getCTMrecord(self):
+        for cid, cell in self.CTM.cells_dic.items():
+            self.ctm_recordings[self.cell_idx.index(cid), self.step // (5 * 10)] = cell.get_state_num()
+
+    def evaluationCTM(self):
+        np.save('../result/tmpnet/CTMTEST/ctm_gt.npy', self.ctm_groundtruth)
+        np.save('../result/tmpnet/CTMTEST/ctm_rec.npy', self.ctm_recordings)
+
 
     @staticmethod
     def getVehNumfromEdge(edge_id, upper, lower, lanes):
