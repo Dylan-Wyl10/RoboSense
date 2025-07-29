@@ -18,12 +18,14 @@ import copy
 class Cell(object):
     idcase = {}
 
-    def __init__(self, cellid, linkid, zoneid, time_interval=6, k=0, qmax=1800, kjam=220, vf=16, w=3.2,
+    def __init__(self, cellid, linkid, zoneid, time_interval=6, n=0, qmax=1800, kjam=220, vf=16, w=3.2,
                  length=0.1, updated=False, arr_rate=0, dis_rate=2160):
-        self.kjam = kjam
+        # self.kjam = kjam
+        self.njam = kjam * length
         self.cellid = cellid  # local address
         self.linkid = linkid  # link layer address
         self.zoneid = zoneid  # zone layer address
+        self.cell_fullid = self.getCompleteAddress()
         self.vf = vf  # Time interval = length / vf
         self.w = w
         self.cfrom = []
@@ -34,20 +36,22 @@ class Cell(object):
         #     self.type = 'div'  # diverge
         # elif len(self.cto) == 1 and len(self.cfrom) == 2:
         #     self.type = 'merg'  # merge
-        self.k = k  # density at time interval t
-        self.oldk = k  # density at time interval t-1
+        self.n = n  # number of vehicle at time interval t
+        self.oldn = n # number of vehicle at time interval t-1
         self.qmax = qmax
         self.length = length
         self.updated = updated
-        self.updated_tmp = {'inflow': False,
-                            'outflow': False,
-                            'density': False}
+        # self.updated_tmp = {'inflow': False,
+        #                     'outflow': False,
+        #                     'density': False}
         self.arr_rate = arr_rate  # arrival rate
         self.dis_rate = dis_rate  # departure rate
         self.time_sec = time_interval
         self.time_hour = time_interval / 3600
         self.inflow = 0
         self.outflow = 0
+        self.y_in = 0
+        self.y_out = 0
         self.connection_counts_his = []
         self.connection_counts_now = []
         self.pk = 0.5  # probability from first cells, default 0.5
@@ -157,8 +161,8 @@ class Cell(object):
             leftN = c6_left.connection_counts_his[0]  # total number of turning left
             rightN = c7_right.connection_counts_his[1]  # total number of turning right
             thr = c6_left.connection_counts_his[1] + c7_right.connection_counts_his[0]
-            num_c6, num_c7 = c6_left.oldk * c6_left.length, c7_right.oldk * c7_right.length
-            cap_c6, cap_c7 = c6_left.kjam * c6_left.length, c7_right.kjam * c7_right.length
+            num_c6, num_c7 = c6_left.oldn, c7_right.oldn
+            cap_c6, cap_c7 = c6_left.njam, c7_right.njam
             a1 = thr * (cap_c6 - num_c6) / (cap_c6 + cap_c7 - num_c6 - num_c7)
             a2 = thr * (cap_c7 - num_c7) / (cap_c6 + cap_c7 - num_c6 - num_c7)
             # if a1 != a2:
@@ -177,174 +181,192 @@ class Cell(object):
         elif len(self.cto) == 1 and len(self.cfrom) == 1:
             self.type = 'norm'
 
-    def updateDensity(self):  # This method can only be used by normal cell instance.
-        # 20240908 Note:
-        # need to update
-        # 1. update flow rather than density, if the bound has been updated, then us the updated bound value
-        # 2. only update self density at last.
-        # 3. the diverge cell has the highest prority
-        if self.updated:
-            return
-        elif self.type == 'div':  # Diverge at here
-            # self.pk = self.connection_counts[0] / sum(self.connection_counts)
-            self.oldk = self.k
+    def updateInOutFlow(self):
+        # 20250727 update:
+        # 1. this funciton only calculate the inflow and outflow from its own condition
+
+        if sum(self.connection_counts_now) == 0:
+            self.pk = 0.5
+        else:
+            self.pk = self.connection_counts_now[0] / sum(self.connection_counts_now)
+        # if self.updated:
+        #     print(f'cell {self.cell_fullid} is called but has been updated')
+        #     return
+        if self.type == 'div':  # Diverge at here
+            # self.oldn = self.n
             ptnc = self.pk  # Propotion towards to next normal cell
             ptdc = 1 - self.pk  # Propotion towards to diverge cell
 
-            div_c1 = self.cto[0]
-            div_c2 = self.cto[1]
+            div_c1, div_c2 = self.cto
+            self.div_num = {}
 
-            d_rk1 = np.min([div_c1.qmax, div_c1.w * (
-                        div_c1.kjam - div_c1.oldk)]) * div_c1.time_hour / div_c1.length  # Receive ability of next normal cell
-            d_rk2 = np.min([div_c2.qmax, div_c2.w * (div_c2.kjam - div_c2.oldk)]) * div_c2.time_hour / div_c2.length
-            sbk = np.min([self.qmax, self.vf * self.oldk]) * self.time_hour / self.length
+            d_rn1 = np.min([div_c1.qmax * div_c1.time_hour, div_c1.w * (div_c1.njam - div_c1.n)/div_c1.vf])  # Receive ability of next normal cell
+            d_rn2 = np.min([div_c2.qmax * div_c2.time_hour, div_c2.w * (div_c2.njam - div_c2.n)/div_c2.vf])
+            sbk = np.min([self.qmax * self.time_hour, self.n])
 
             if ptnc == 0:
-                self.div_num[0] = 0
-                self.div_num[1] = np.min([sbk, d_rk2]) * self.sig_flag
+                self.div_num[div_c1.cell_fullid] = 0
+                self.div_num[div_c2.cell_fullid] = np.min([sbk, d_rn2]) * self.sig_flag
             elif ptdc == 0:
-                self.div_num[0] = np.min([sbk, d_rk1]) * self.sig_flag
-                self.div_num[1] = 0
+                self.div_num[div_c1.cell_fullid] = np.min([sbk, d_rn1]) * self.sig_flag
+                self.div_num[div_c2.cell_fullid] = 0
             else:
-                self.div_num[0] = ptnc * np.min([sbk, d_rk1 / ptnc, d_rk2 / ptdc]) * self.sig_flag
-                self.div_num[1] = ptdc * np.min([sbk, d_rk1 / ptnc, d_rk2 / ptdc]) * self.sig_flag
+                self.div_num[div_c1.cell_fullid] = ptnc * np.min([sbk, d_rn1 / ptnc, d_rn2 / ptdc]) * self.sig_flag
+                self.div_num[div_c2.cell_fullid] = ptdc * np.min([sbk, d_rn1 / ptnc, d_rn2 / ptdc]) * self.sig_flag
             # div_c1.updated['inflow'] = True
             # div_c2.updated['inflow'] = True
             # the following cell cannot be last empty cell
 
-            if len(self.cfrom):
-                if self.cfrom[0].type == 'div':
-                    if not self.cfrom[0].updated:
-                        self.cfrom[0].updateDensity()
-                    if self.cellid == self.cfrom[0].cto[0].cellid:
-                        self.inflow = self.cfrom[0].div_num[0]
-                    elif self.cellid == self.cfrom[0].cto[1].cellid:
-                        self.inflow = self.cfrom[0].div_num[1]
-                else:
-                    self.inflow = np.min([self.qmax, self.cfrom[0].oldk * self.vf,
-                                          self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
-            else:
-                self.inflow = np.min(
-                    [self.qmax, self.arr_rate, self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
-            self.outflow = sum(self.div_num)
-            self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
-            # self.updated['inflow'], self.updated['outflow'], self.updated['density'] = True, True, True
-            self.updated = True
+            self.inflow = np.min([self.qmax * self.time_hour, (self.w/self.vf) * (self.njam - self.n)])
+            self.outflow = self.div_num[div_c1.cell_fullid] + self.div_num[div_c2.cell_fullid]
+            # ==============================================20250727 update ===========================================
+            # if len(self.cfrom):
+            #     if not self.cfrom[0].updated:
+            #         self.cfrom[0].updateDensity()
+            #
+            #     if self.cfrom[0].type == 'div':
+            #         if self.cellid == self.cfrom[0].cto[0].cellid:
+            #             self.inflow = self.cfrom[0].div_num[0]
+            #         elif self.cellid == self.cfrom[0].cto[1].cellid:
+            #             self.inflow = self.cfrom[0].div_num[1]
+            #     else:
+            #         # self.inflow = np.min([self.qmax, self.cfrom[0].oldk * self.vf,
+            #         #                       self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
+            #         self.inflow = self.cfrom[0].outflow
+            # else:
+            #     self.inflow = np.min(
+            #         [self.qmax, self.arr_rate, self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
+            # self.outflow = sum(self.div_num)
+            # self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
+            # ========================================================================================================
+
 
         elif self.type == 'merge':  # Merge at here, we need to update density among this cell and two other upstream cells.
-            self.oldk = self.k
+            # self.oldn = self.n
             pk = self.pk  # probability from upstream left cell
             pck = 1 - self.pk  # probability from upstream right cell
 
-            rek = np.min([self.qmax, self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
+            self.rek = np.min([self.qmax * self.time_hour, (self.w/self.vf) * (self.njam - self.n)])
             meg_c1, meg_c2 = self.cfrom  # first cell left, second cell right
 
-            if meg_c1.type == 'div':  # if prov cell is diverge cell.
-                if meg_c1.updated:
-                    sbk = meg_c1.div_num[0]
-                else:
-                    meg_c1.updateDensity()
-                    sbk = meg_c1.div_num[0]
-            else:
-                sbk = np.min([meg_c1.qmax, meg_c1.vf * meg_c1.oldk]) * meg_c1.time_hour / meg_c1.length
+            self.sbk = np.min([meg_c1.qmax * meg_c1.time_hour, meg_c1.n*meg_c1.sig_flag])
+            self.sck = np.min([meg_c2.qmax * meg_c2.time_hour, meg_c2.n*meg_c2.sig_flag])
+            self.scktmpnum = [meg_c2.qmax, meg_c2.time_hour, meg_c2.n, meg_c2.sig_flag]
 
-            if meg_c2.type == 'div':  # if prov cell is diverge cell.
-                if meg_c2.updated:
-                    sck = meg_c2.div_num[1]
-                else:
-                    meg_c2.updateDensity()
-                    sck = meg_c2.div_num[1]
-            else:
-                sck = np.min([meg_c2.qmax, meg_c2.vf * meg_c2.oldk]) * meg_c2.time_hour / meg_c2.length
-
-            #########################################################################################
-            # try:  # In order to cope with situation that provious cell is the first cell (cfrom is empty)
-            #     # prov.inflow = np.min([prov.qmax, prov.vf * prov.cfrom[0].oldk, prov.w * (prov.kjam - prov.oldk)]) * prov.time_hour / prov.length
-            #     prov.inflow = prov.cfrom[0].outflow
-            #     prov.outflow = np.min(
-            #         [np.median([pk * rek, sbk, rek - sck]), prov.vf * prov.oldk * prov.time_second / prov.length])
-            #
-            # except:
-            #     prov.inflow = np.min(
-            #         [prov.qmax, prov.arr_rate, prov.w * (prov.kjam - prov.oldk)]) * prov.time_second / prov.length
-            #     prov.outflow = np.min(
-            #         [np.median([pk * rek, sbk, rek - sck]), prov.vf * prov.oldk * prov.time_second / prov.length])
-            #
-            # if len(merge.cfrom):
-            #     # merge.inflow = np.min([merge.qmax, merge.vf * merge.cfrom[0].oldk, merge.w * (merge.kjam - merge.oldk)]) * merge.time_hour / merge.length
-            #     merge.inflow = merge.cfrom[0].outflow
-            #     merge.outflow = np.min(
-            #         [np.median([pck * rek, sck, rek - sbk]), merge.vf * merge.oldk * merge.time_second / merge.length])
+            # =========================================20250727 update===============================================
+            # if not meg_c1.updated:
+            #     meg_c1.updateDensity()
+            # if len(meg_c1.cto) == 2:  # multiple downstream cells
+            #     sbk = meg_c1.div_num[0] if self.cell_fullid == meg_c1.cto[0].cell_fullid else meg_c1.div_num[1]
             # else:
-            #     merge.inflow = np.min(
-            #         [merge.qmax, merge.arr_rate, merge.w * (merge.kjam - merge.oldk)]) * merge.time_second / merge.length
-            #     merge.outflow = np.min(
-            #         [np.median([pck * rek, sck, rek - sbk]), merge.vf * merge.oldk * merge.time_second / merge.length])
+            #     sbk = np.min([meg_c1.qmax, meg_c1.vf * meg_c1.oldk]) * meg_c1.time_hour / meg_c1.length
+            #
+            # if meg_c2.type == 'div':  # if prov cell is diverge cell.
+            #     if meg_c2.updated:
+            #         sck = meg_c2.div_num[1]
+            #     else:
+            #         meg_c2.updateDensity()
+            #         sck = meg_c2.div_num[1]
+            # else:
+            #     sck = np.min([meg_c2.qmax, meg_c2.vf * meg_c2.oldk]) * meg_c2.time_hour / meg_c2.length
+            # ===============================================================================================
 
-            #########################################################################################
+            self.merge_num = {}
 
-            if sbk + sck >= rek:
-                self.merge_num[0] = np.median([pk * rek, sbk, rek - sck])
-                self.merge_num[1] = np.median([pck * rek, sck, rek - sbk])
-
+            if self.sbk + self.sck >= self.rek:
+                self.merge_num[meg_c1.cell_fullid] = np.median([pk * self.rek, self.sbk, self.rek - self.sck])
+                self.merge_num[meg_c2.cell_fullid] = np.median([pck * self.rek, self.sck, self.rek - self.sbk])
             else:
-                self.merge_num = [sbk, sck]
+                self.merge_num[meg_c1.cell_fullid] = self.sbk
+                self.merge_num[meg_c2.cell_fullid] = self.sck
 
-            if len(self.cto):
-                if self.cto[0].type == 'merge':
-                    if not self.cto[0].updated:
-                        self.cto[0].updateDensity()
-                    if self.cellid == self.cto[0].cfrom[0].cellid:
-                        self.outflow = self.cto[0].merge_num[0]
-                    elif self.cellid == self.cto[0].cfrom[1].cellid:
-                        self.outflow = self.cto[0].merge_num[1]
-                else:
-                    self.outflow = np.min([self.cto[0].qmax, self.oldk * self.vf, self.cto[0].w * (
-                            self.cto[0].kjam - self.cto[0].oldk)]) * self.time_hour / self.length
-            else:
-                self.outflow = np.min([self.oldk * self.vf, self.dis_rate]) * self.time_hour / self.length
+            # if len(self.cto):
+            #     if self.cto[0].type == 'merge':
+            #         if not self.cto[0].updated:
+            #             self.cto[0].updateDensity()
+            #         if self.cellid == self.cto[0].cfrom[0].cellid:
+            #             self.outflow = self.cto[0].merge_num[0]
+            #         elif self.cellid == self.cto[0].cfrom[1].cellid:
+            #             self.outflow = self.cto[0].merge_num[1]
+            #     else:
+            #         self.outflow = np.min([self.cto[0].qmax, self.oldk * self.vf, self.cto[0].w * (
+            #                 self.cto[0].kjam - self.cto[0].oldk)]) * self.time_hour / self.length
+            # else:
+            #     self.outflow = np.min([self.oldk * self.vf, self.dis_rate]) * self.time_hour / self.length
 
-            self.inflow = sum(self.merge_num)
-            self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
-            self.updated = True
+            self.inflow = self.merge_num[meg_c1.cell_fullid] + self.merge_num[meg_c2.cell_fullid]
+            self.outflow = np.min([self.n, self.qmax * self.time_hour])
+            # self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
+            # self.updated = True
 
         elif self.type == 'norm':  # Normal cell
 
-            self.oldk = self.k
+            # self.oldn = self.n
             if len(self.cfrom) == 0:  # source cell
-                self.inflow = np.min(
-                    [self.qmax, self.arr_rate, self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
-
-                if self.cto[0].updated:
-                    self.outflow = self.cto[0].inflow
-                else:
-                    self.outflow = np.min([self.cto[0].qmax, self.oldk * self.vf, self.cto[0].w * (
-                            self.cto[0].kjam - self.cto[0].oldk)]) * self.time_hour / self.length
+                self.inflow = np.min([self.qmax * self.time_hour, self.arr_rate * self.time_hour,
+                                      (self.w/self.vf)*(self.njam - self.oldn)])
+                self.outflow = np.min([self.cto[0].qmax * self.time_hour, self.n, (self.cto[0].w/self.cto[0].vf) * (
+                        self.cto[0].njam - self.cto[0].n)])
 
             elif len(self.cto) == 0:  # sink cell
-                if self.cfrom[0].updated:
-                    self.inflow = self.cfrom[0].outflow
-                else:
-                    self.inflow = np.min([self.qmax, self.cfrom[0].oldk * self.vf,
-                                          self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
 
-                self.outflow = np.min([self.oldk * self.vf, self.dis_rate]) * self.time_hour / self.length
+                self.inflow = np.min([self.qmax * self.time_hour, self.cfrom[0].n,
+                                      (self.w/self.vf) * (self.njam - self.n)])
+                self.outflow = np.min([self.n, self.dis_rate*self.time_hour])
 
             else:
-                if self.cfrom[0].updated:
-                    self.inflow = self.cfrom[0].outflow
-                else:
-                    self.inflow = np.min([self.qmax, self.cfrom[0].oldk * self.vf,
-                                          self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
+                self.inflow = np.min([self.qmax * self.time_hour, self.cfrom[0].n,
+                                      (self.w / self.vf) * (self.njam - self.n)])
 
-                if self.cto[0].updated:
-                    self.outflow = self.cto[0].inflow
-                else:
-                    self.outflow = np.min([self.cto[0].qmax, self.oldk * self.vf, self.cto[0].w * (
-                            self.cto[0].kjam - self.cto[0].oldk)]) * self.time_hour / self.length
+                self.outflow = np.min(
+                    [self.cto[0].qmax * self.time_hour, self.n, (self.cto[0].w / self.cto[0].vf) * (
+                            self.cto[0].njam - self.cto[0].n)])
 
-            self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
-            self.updated = True
+            # self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
+            # self.updated = True
+            # print(f'cell {self.cell_fullid} is updated')
+
+    def updateDensity(self):
+        #allocate the inbound and outbound flow\
+        self.oldn = self.n
+        if len(self.cfrom) > 1:  # merge cell
+            mc1, mc2 = self.cfrom  # cell object for merging
+            if self.cellid =='C3':  # merge + merge - >norm
+                merge1 = np.min([self.merge_num[mc1.cell_fullid], mc1.outflow])
+                merge2 = np.min([self.merge_num[mc2.cell_fullid], mc2.outflow])
+                self.y_out = np.min([self.outflow, self.cto[0].inflow])
+            elif self.cellid =='C1' or self.cellid == 'C2':  #div+div -> merge
+                # print(type(self.merge_num[mc1.cell_fullid]), type(mc1.div_num[self.cell_fullid]))
+                # print(mc1.cell_fullid, self.cell_fullid)
+                merge1 = np.min([self.merge_num[mc1.cell_fullid], mc1.div_num[self.cell_fullid]])
+                merge2 = np.min([self.merge_num[mc2.cell_fullid], mc2.div_num[self.cell_fullid]])
+                self.y_out = np.min([self.outflow, self.cto[0].merge_num[self.cell_fullid]])
+            self.y_in = merge1 + merge2
+
+        elif len(self.cto) > 1:  # div cell
+            div1, div2 = self.cto
+            if self.cellid == "C5":
+                dive1 = np.min([self.div_num[div1.cell_fullid], div1.inflow])
+                dive2 = np.min([self.div_num[div2.cell_fullid], div2.inflow])
+                self.y_in = np.min([self.inflow, self.cfrom[0].outflow])
+            elif self.cellid == "C6" or self.cellid == "C7":
+                dive1 = np.min([self.div_num[div1.cell_fullid], div1.merge_num[self.cell_fullid]])
+                dive2 = np.min([self.div_num[div2.cell_fullid], div2.merge_num[self.cell_fullid]])
+                self.y_in = np.min([self.inflow, self.cfrom[0].div_num[self.cell_fullid]])
+            self.y_out = dive1 + dive2
+
+        else:
+            if self.cellid == "C4":
+                self.y_in = np.min([self.inflow, self.cfrom[0].outflow])
+                self.y_out = np.min([self.outflow, self.cto[0].inflow])
+            elif len(self.cfrom) == 0: # source cell
+                self.y_in = self.inflow
+                self.y_out = np.min([self.outflow, self.cto[0].inflow])
+            elif len(self.cto) == 0:
+                self.y_in = np.min([self.inflow, self.cfrom[0].outflow])
+                self.y_out = self.outflow
+
+        self.n = np.max([self.oldn + np.max([0, self.y_in]) - np.max([0, self.y_out]), 0])
 
     def switchConnection(self):  # this is a function for initialization
         if len(self.cto) == 2 and len(self.cfrom) == 2:
@@ -352,11 +374,11 @@ class Cell(object):
         if len(self.cto) == 2:
             self.cto[0], self.cto[1] = self.cto[1], self.cto[0]
             self.connection_counts_his[0], self.connection_counts_his[1] = self.connection_counts_his[1], \
-            self.connection_counts_his[0]
+                self.connection_counts_his[0]
         if len(self.cfrom) == 2:
             self.cfrom[0], self.cfrom[1] = self.cfrom[1], self.cfrom[0]
             self.connection_counts_his[0], self.connection_counts_his[1] = self.connection_counts_his[1], \
-            self.connection_counts_his[0]
+                self.connection_counts_his[0]
 
     def checkConnection(self):  # this is to check if the deverge cell connect to correct merge cell
         if len(self.cto) == 2 and len(self.cfrom) == 2:
@@ -368,7 +390,7 @@ class Cell(object):
                 # print('correct connection for first cell{}'.format(self.cellid))
                 cto1.cfrom[0], cto1.cfrom[1] = cto1.cfrom[1], cto1.cfrom[0]
                 cto1.connection_counts_his[0], cto1.connection_counts_his[1] = cto1.connection_counts_his[1], \
-                cto1.connection_counts_his[0]
+                    cto1.connection_counts_his[0]
 
             if (self.connection_counts_his[1] != cto2.connection_counts_his[1] and self.connection_counts_his[1] ==
                     cto2.connection_counts_his[0]):
@@ -377,7 +399,31 @@ class Cell(object):
                 cto2.connection_counts_his[0], cto2.connection_counts_his[1] = cto2.connection_counts_his[1], \
                     cto2.connection_counts_his[0]
 
+    def get_state(self):
+        return {
+            'n': self.n,
+            'oldk': self.oldn,
+            'inflow': self.y_in,
+            'outflow': self.y_out,
+            'updated': self.updated,
+            'pk': self.pk,
+            'connection_counts_now': list(self.connection_counts_now),
+            'sig_flag': self.sig_flag,
+        }
 
+    # get current
+    def get_state_num(self, cell_len=0.08):
+        return self.n
+
+    def load_state(self, state):
+        self.n = state['n']
+        self.oldn = state['oldk']
+        self.inflow = state['inflow']
+        self.outflow = state['outflow']
+        self.updated = state['updated']
+        self.pk = state['pk']
+        self.connection_counts_now = list(state['connection_counts_now'])
+        self.sig_flag = state['sig_flag']
 
 
 def getCrossProduct(va, vb):
@@ -425,18 +471,18 @@ def quicklyCreateCells(number, linkid, vf=60, kjam=220):
 
 
 # creat cells for a given link
-def linkCreateCells(linkid, link_type='normal', max_laneFlow=1800):
+def linkCreateCells(CTM_param, linkid, link_type='normal', max_laneFlow=1800):
     """
     number: total number of cells in one link
     Note that for 202402version, the tepology for the cells in link is fixed
     """
-
-    CTM_param = {
-        'v_f': 55.18,
-        'k_jam': 133,
-        'q_max': 1977,
-        'w': 20.35
-    }
+    #
+    # CTM_param = {
+    #     'v_f': 55.18,
+    #     'k_jam': 133,
+    #     'q_max': 1977,
+    #     'w': 20.35
+    # }
 
     v_f = CTM_param['v_f']
     k_jam = CTM_param['k_jam']
@@ -569,12 +615,13 @@ def simulation_run_step(sim):
 
 
 class CTM():
-    def __init__(self, network, tick_interval):
+    def __init__(self, ctm_fd, network, tick_interval):
         super().__init__()
         self.current_step = 0
         self.tick = tick_interval  # time interval for CTM calculation
         self.net = network  # current network input is based on SUMO, the input format is net.xml
         self.link_ls = {}
+        self.ctm_fd = ctm_fd
 
     def init(self, max_flow):
         print(f'Initializing CTM for network{self.net.net_config}...')
@@ -624,14 +671,14 @@ class CTM():
             # if the links is the entry link, creat two big cell for each lane
             if linkdf.iloc[i]['from_link_id'] == '0' and linkdf.iloc[i]['to_link_id'] != '0':
                 print('creating cells for entry link {}'.format(linkdf.iloc[i]['link_id']))
-                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='entry', max_laneFlow=max_flow)
+                linkCreateCells(self.ctm_fd, linkdf.iloc[i]['link_id'], link_type='entry', max_laneFlow=max_flow)
             # normal link, need connections from both side with 8 cells for one link
             elif linkdf.iloc[i]['from_link_id'] != '0' and linkdf.iloc[i]['to_link_id'] != '0':
                 print('creating cells for normal link {}'.format(linkdf.iloc[i]['link_id']))
-                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='normal', max_laneFlow=max_flow)
+                linkCreateCells(self.ctm_fd, linkdf.iloc[i]['link_id'], link_type='normal', max_laneFlow=max_flow)
             elif linkdf.iloc[i]['from_link_id'] != '0' and linkdf.iloc[i]['to_link_id'] == '0':
                 print('creating cells for exit link {}'.format(linkdf.iloc[i]['link_id']))
-                linkCreateCells(linkdf.iloc[i]['link_id'], link_type='exit', max_laneFlow=max_flow)
+                linkCreateCells(self.ctm_fd, linkdf.iloc[i]['link_id'], link_type='exit', max_laneFlow=max_flow)
             # tmpp = linkdf.iloc[i]['link_id']
             print('cells has been created')
         # aa = Cell.idcase
@@ -805,9 +852,9 @@ class CTM():
         """
         run CTM cell status from current status and stop at target time
         """
-        density = {}
+        number = {}
         outflow = {}
-        dense_norm = {}
+        inflow = {}
         signal_flag = {}
 
         steps = time_range // self.tick
@@ -817,34 +864,32 @@ class CTM():
         for t in range(steps):
             if t == 1:
                 # print("save old cells")
-                cells_old = copy.deepcopy(self.cells_dic)
-
+                # cells_old = copy.deepcopy(self.cells_dic)
+                snapshot = {cid: cell.get_state() for cid, cell in self.cells_dic.items()}
             # collect cell result
             for cell in self.cells_dic.values():
                 cell_id = cell.getCompleteAddress()
                 # 1. record density
-                if cell_id not in density.keys():
-                    density[cell_id] = [cell.k]
+                if cell_id not in number.keys():
+                    number[cell_id] = [cell.n]
                 else:
-                    density[cell_id].append(cell.k)
+                    number[cell_id].append(cell.n)
                 # 2. record outflow number
                 if cell_id not in outflow.keys():
-                    outflow[cell_id] = [cell.outflow]
+                    outflow[cell_id] = [cell.y_out]
                 else:
-                    outflow[cell_id].append(cell.outflow)
+                    outflow[cell_id].append(cell.y_out)
                 # 3. record norm density
-                if cell_id not in dense_norm.keys():
-                    dense_norm[cell_id] = [cell.k / cell.kjam]
+                if cell_id not in inflow.keys():
+                    inflow[cell_id] = [cell.y_in]
                 else:
-                    dense_norm[cell_id].append(cell.k / cell.kjam)
+                    inflow[cell_id].append(cell.y_in)
                 cell.updated = False
                 # 4. record signal flag
                 if cell_id not in signal_flag.keys():
                     signal_flag[cell_id] = [cell.sig_flag]
                 else:
                     signal_flag[cell_id].append(cell.sig_flag)
-
-
 
             demand_current = self.getDemandByTime(time_current + t * self.tick)
             for i in range(len(demand_current)):
@@ -862,18 +907,21 @@ class CTM():
             # update cell density
             for cell in self.cells_dic.values():
                 # if cell.getCompleteAddress() == 'A1.E101.C0':
+                cell.updateInOutFlow()  #in a mode of density unit
+            for cell in self.cells_dic.values():
                 cell.updateDensity()
+            # print('yeyyyy')
 
         time_end = time.time()
         # numbers = density*0.08
         print('time spend for {} steps: {}'.format(steps, time_end - time_start))
-        density_df = pd.DataFrame(density).T
-        numberout_df = pd.DataFrame(outflow).T * 0.08
-        normdense_df = pd.DataFrame(dense_norm).T
-        number_df = density_df * 0.08
+        # density_df = pd.DataFrame(density).T
+        numberout_df = pd.DataFrame(outflow).T
+        numberin_df = pd.DataFrame(inflow).T
+        number_df = pd.DataFrame(number).T
         sigflag_df = pd.DataFrame(signal_flag).T
         # print('yes')
-        return cells_old, density_df, numberout_df, normdense_df, number_df, sigflag_df
+        return snapshot, numberout_df, numberin_df, number_df, sigflag_df
 
     def getDemandByTime(self, time):
         df = self.demand
