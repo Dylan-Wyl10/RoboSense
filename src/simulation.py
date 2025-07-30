@@ -371,41 +371,47 @@ class Simulation:
     def getCAVOD(self):
 
         self.cav_info = {}
-        # v_index = 0 #temp vehicle index for optimization
+        max_route = 12  # set the max route length threshold, if bigger than this number, cav will not optim.
+        v_index = 0 #temp vehicle index for optimization
         for v_idx in range(len(self.cav_list)):
-            cav_id = self.cav_list[v_idx]
+            cav_id = self.cav_list[v_index]
+            # print(cav_id)
             curr_cell, _ = self.getCellidxFromVeh(cav_id)
             current_route = traci.vehicle.getRoute(cav_id)
             current_edge = traci.vehicle.getRoadID(cav_id)
             edge_pos = current_route.index(current_edge)  # get current position of edge in total route list
             des_cell = 'A1.' + traci.vehicle.getRoute(cav_id)[-1] + '.C0'
-
-            # add budget for each cav
-            edge_num_rem = len(traci.vehicle.getRoute(cav_id)) - edge_pos  # remaining number of edge
-            """
-            budge logic 20250729
-            1. if remaining route  length is greater than 4, than give budget
-            2. if already travel route is greater than 10, no budget 
-            """
-            # budget = 0
-            if edge_num_rem > 6:
-                budget = 0
-            elif edge_pos >= 12:
-                budget = 0
+            if edge_pos > max_route:
+                continue
             else:
-                budget = 2
-            self.cav_info[v_idx] = {
-                'name': cav_id,
-                'from': self.cell_idx.index(curr_cell),
-                'to': self.cell_idx.index(des_cell),
-                'time': 0,
-                'budget': budget, # this is relavite time for optimization. since no prediction assumption, time default to zero
-                # 'route_length': (len(traci.vehicle.getRoute(cav_id)) - edge_pos + budget) * 5,
-                'remine_edge': edge_num_rem,
-                'route_length': edge_num_rem + budget,
-                'current_route': current_route,
-                'current_edge': current_edge
-            }
+
+                # add budget for each cav
+                edge_num_rem = len(traci.vehicle.getRoute(cav_id)) - edge_pos  # remaining number of edge
+                """
+                budge logic 20250729
+                1. if remaining route  length is greater than 4, than give budget
+                2. if already travel route is greater than 10, no budget 
+                """
+                if edge_num_rem >= 6:
+                    budget = 0
+                elif edge_pos >= 12:
+                    budget = 0
+                else:
+                    budget = 2
+                self.cav_info[v_index] = {
+                    'name': cav_id,
+                    'from': self.cell_idx.index(curr_cell),
+                    'to': self.cell_idx.index(des_cell),
+                    'time': 0,
+                    'budget': budget, # this is relavite time for optimization. since no prediction assumption, time default to zero
+                    # 'route_length': (len(traci.vehicle.getRoute(cav_id)) - edge_pos + budget) * 5,
+                    'remine_edge': edge_num_rem,
+                    'edge_pos': edge_pos,
+                    'route_length': min(edge_num_rem + budget, 18 - edge_pos),  # set a fixed number of on max route
+                    'current_route': current_route,
+                    'current_edge': current_edge
+                }
+                v_index += 1
 
     def getRoutefromX(self, x):
         if x is not None:
