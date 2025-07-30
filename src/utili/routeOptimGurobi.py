@@ -288,7 +288,10 @@ class RouteOptimGurobi:
                 routes = self.find_paths(self.CTM_connection, self.veh_od[a]["from"], self.veh_od[a]["to"],
                                          max_length=5*self.veh_od[a]["route_length"], mode='length', top_k=100, max_route=max_route)
                 print(f'veh {a} find {len(routes)} feasible route in {max_route} to cell {self.veh_od[a]["to"]} with budget {self.veh_od[a]["budget"]} '
-                      f'and remine route {self.veh_od[a]["route_length"]} need {time.time() - t1} seconds')
+                      f'and route length {self.veh_od[a]["route_length"]} need {time.time() - t1} seconds')
+                print(f'veh {a} edge pos: {self.veh_od[a]["edge_pos"]}, remin_edge: {self.veh_od[a]["remine_edge"]}, '
+                      f'budget:{self.veh_od[a]["budget"]}, current route:{self.veh_od[a]["current_route"]}')
+                print(f'veh {a} edge: {self.veh_od[a]['current_edge']}')
                 if len(routes) == 0:
                     from_now = self.cellidx[self.veh_od[a]["from"]]
                     if from_now.endswith('.C6'):
