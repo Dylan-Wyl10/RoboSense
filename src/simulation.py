@@ -388,9 +388,9 @@ class Simulation:
             2. if already travel route is greater than 10, no budget 
             """
             # budget = 0
-            if edge_num_rem > 4:
+            if edge_num_rem > 6:
                 budget = 0
-            elif edge_pos >= 10:
+            elif edge_pos >= 12:
                 budget = 0
             else:
                 budget = 2
@@ -401,7 +401,8 @@ class Simulation:
                 'time': 0,
                 'budget': budget, # this is relavite time for optimization. since no prediction assumption, time default to zero
                 # 'route_length': (len(traci.vehicle.getRoute(cav_id)) - edge_pos + budget) * 5,
-                'route_length': edge_num_rem,
+                'remine_edge': edge_num_rem,
+                'route_length': edge_num_rem + budget,
                 'current_route': current_route,
                 'current_edge': current_edge
             }
