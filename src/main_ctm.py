@@ -32,12 +32,13 @@ if __name__ == '__main__':
     with open('../result/ctmResult/CTMcell_index.json', 'r') as file:
         cellidx = [line.strip() for line in file]
 
-    if cfg.is_vislz:
-        pipe.ctmPlot(ctm_value="../result/ctmResult/logs/ctm_test1/test4200s_5percent/occupation_4200s_400flow_5percent_bench.npy",
-                 cell_list=cellidx,
-                 cell_coordinates='../sumo_cfg/5x5net/CTMcfg/Cells.csv',
-                 plot=cfg.plot_mode,  # [video, figure]
-                 )
+    # if cfg.is_vislz:
+    #     pipe.ctmPlot(ctm_value="../result/ctmResult/logs/ctm_test1/test4200s_5percent/occupation_4200s_400flow_5percent_bench.npy",
+    #              cell_list=cellidx,
+    #              cell_coordinates='../sumo_cfg/5x5net/CTMcfg/Cells.csv',
+    #              title_str="11111",
+    #              plot=cfg.plot_mode,  # [video, figure]
+    #              )
 
 
     if cfg.is_sim:

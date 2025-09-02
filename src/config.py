@@ -16,17 +16,9 @@ class Config:
         self.sumo_gui = False
 
         # CTM settings
-        self.ctm_time_opt = 1500  # max time for ctm calculation for optimial
+        self.ctm_time_opt = 1000  # max time for ctm calculation for optimial
         self.ctm_time_normal = 10
         self.ctm_interval = 5
-        # self.ctm_fd={
-        #             'v_f': 57.6,  # km/hr
-        #             'k_jam': 133,  # veh/km
-        #             'q_max': 1744,  # veh/hour
-        #             'w': 17.94,
-        #             'length': 0.08,  # km
-        #             'delta_t': 5 / 3600,  # hr
-        #             }
 
         self.ctm_fd={
                     'v_f': 57.6,  # km/hr
@@ -37,22 +29,35 @@ class Config:
                     'delta_t': 5 / 3600,  # hr
                     }
 
+        # CAV routing parameter
+        # this part is to determine the cav routing policies, includes: budget, max travel threshold, etc
+        self.max_route = 12  # if cav has traveled more than this number of edges, dont plan this cav
+
 
         # Optim settings config
-        self.param = (1, 10000000, 999999)  # alpha-1, alpha-2, M
+        self.param = (1, 1e6, 999999)  # alpha-1, alpha-2, M
         self.opt_interval = 100  # unite in second  999999if no optimal
-        self.is_route = True
+        self.is_route = True  # whether route control is applied
 
         # saving info
-        self.saving_dir = '../result/ctmResult/logs'
-        self.occupation_matrix = '../result/ctmResult/logs'
-        self.saving_path = {'occupation': '../result/tmpnet/CTMTEST/occupation.npy',}
+        self.test_str = 'ctm_test1'  # test case string
+        self.case_str = '350_5400s_2percent'
+        self.senario_str = '1000000cover'
+        self.saving_dir = f'../result/ctmResult/logs/{self.test_str}/{self.case_str}/{self.senario_str}'
+        # self.occupation_matrix = '../result/ctmResult/logs'
+
+        ## path for ctm groundtruth matrix, this should be generated from the bench testing
+        self.ctm_gt_demand = f"../result/ctmResult/logs/ctm_test1/{self.case_str}/bench/ctm_gt.npy"
+        self.saving_path = {'occupation': f'{self.saving_dir}/occupation.npy',
+                            'od_route': f'{self.saving_dir}/od_route.json',
+                            'ctm': f'{self.saving_dir}'}
 
         # pipeline mode
         self.is_bench = False  #[True, False]
         self.is_vislz = False  # [True, False]
-        self.plot_mode = 'figure'  # [figure, video]
+        self.plot_mode = 'historgram'  # [figure, video, historgram]
         self.is_sim = True  # [True, False]
-        self.is_eval = True  # [True, False]
-        self.eval_start = 0 # evaluation start time
+        self.is_eval = False  # [True, False]
+        self.is_odeval = True  # [True, False]
+        self.eval_start = 1800  # evaluation start time
         self.eval_dur = 5400

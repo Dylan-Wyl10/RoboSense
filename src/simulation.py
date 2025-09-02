@@ -142,10 +142,12 @@ class Simulation:
         # optimization parameter
         self.param = param
 
-        # self.param = (0.5, 1000, 999999) #alpha-1, alpha-2, M
+        # saving path
+        self.saving_path = saving_path
 
         # initial the cav infor dic
         self.cav_dic = {}
+        self.cav_tripInfo = {}
 
         # initial CTM
         self.CTM = CTM(ctm_fd, self.network, tick_interval=5)  # 20111128 defaultly set tick as 5s.
@@ -190,10 +192,14 @@ class Simulation:
                 self.getCAVList()
                 # step 1.2 update CAV o-d info for optimization, update CTM observation
                 if len(self.cav_list) != 0:
-                    # print('cav')
+                    print('cav')
                     update_table = self.getCTMObservation()  # enumerate cav list
                     for cid, v_num in update_table.items():
-                        self.CTM.cells_dic[cid].k = v_num / 0.08  # update density
+                        self.CTM.cells_dic[cid].n = v_num  # update number of vehicle
+                    # update cav route-od info:
+                    self.getCAVTrip()
+
+
                 else:  # if there are no cav at time, dont update anything
                     self.cav_info = {}
 
@@ -291,7 +297,7 @@ class Simulation:
                     # CTM_visulization('../result/ctmResult/CTMdensityNorm.csv', '../sumo_cfg/5x5net/CTMcfg/Cells.csv')
                     # print('okey')
 
-                if len(self.cav_info) > 0 :
+                if len(self.cav_info) > 0:
                     self.excuteCAVRoute()
                 # step4: push simulation and update information
                 print(f'time for entire step is {time.time() - time0}')
@@ -303,11 +309,9 @@ class Simulation:
             # if self.step > self.MAXSTEP and traci.simulation.getMinExpectedNumber() <= 10:
             if self.step > self.MAXSTEP or (
                     traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
-                path = saving_path['occupation']
-                np.save(path, self.cell_occupation)
-                self.evaluationCTM()
-                # with open(flextable, 'w') as flxfile:
-                #     json.dump(self.cav_dic, flxfile)
+                # path = saving_path['occupation']
+                # np.save(path, self.cell_occupation)
+                self.printEvaluation()
                 print("Sim has ended due to no enough vehicle")
                 break
 
@@ -371,7 +375,7 @@ class Simulation:
     def getCAVOD(self):
 
         self.cav_info = {}
-        max_route = 12  # set the max route length threshold, if bigger than this number, cav will not optim.
+        max_route = 12 # set the max route length threshold, if bigger than this number, cav will not optim.
         v_index = 0 #temp vehicle index for optimization
         for v_idx in range(len(self.cav_list)):
             cav_id = self.cav_list[v_index]
@@ -386,7 +390,7 @@ class Simulation:
             else:
 
                 # add budget for each cav
-                edge_num_rem = len(traci.vehicle.getRoute(cav_id)) - edge_pos  # remaining number of edge
+                edge_num_rem = len(current_route) - edge_pos  # remaining number of edge
                 """
                 budge logic 20250729
                 1. if remaining route  length is greater than 4, than give budget
@@ -398,6 +402,11 @@ class Simulation:
                     budget = 0
                 else:
                     budget = 2
+
+                """
+                0827 Add od-route trace function
+                """
+                # budget = 0
                 self.cav_info[v_index] = {
                     'name': cav_id,
                     'from': self.cell_idx.index(curr_cell),
@@ -408,10 +417,34 @@ class Simulation:
                     'remine_edge': edge_num_rem,
                     'edge_pos': edge_pos,
                     'route_length': min(edge_num_rem + budget, 18 - edge_pos),  # set a fixed number of on max route
+                    # 'route_length': edge_num_rem + budget,
                     'current_route': current_route,
                     'current_edge': current_edge
                 }
                 v_index += 1
+
+    def getCAVTrip(self):
+        """
+        This function is used to get the trip info for cavs, save dirctory self.cav_tripInfo (type: dict)
+        """
+        for cav_id in traci.vehicle.getIDList():
+            if re.findall(r'[0-9]+|[a-z]+', cav_id)[0] == "cav":
+                if cav_id not in self.cav_tripInfo.keys():
+                    route = traci.vehicle.getRoute(cav_id)
+                    edge = traci.vehicle.getRoadID(cav_id)
+                    # convert route list to node list
+                    route_node = [self.network.getNextNode(r) for r in route]
+                    # if current edge is the end of the route
+                    if edge == route[-1]:
+                        trip_info = {}
+                        trip_info['v_id'] = cav_id
+                        trip_info['origin'] = self.network.getNextNode(route[0])
+                        trip_info['destination'] = self.network.getFromNode(route[-1])
+                        trip_info['route'] = route
+                        trip_info['route_node'] = route_node
+                        self.cav_tripInfo[cav_id] = trip_info
+                        print(f'cav {cav_id} ')
+
 
     def getRoutefromX(self, x):
         if x is not None:
@@ -896,9 +929,13 @@ class Simulation:
         for cid, cell in self.CTM.cells_dic.items():
             self.ctm_recordings[self.cell_idx.index(cid), self.step // (5 * 10)] = cell.get_state_num()
 
-    def evaluationCTM(self):
-        np.save('../result/tmpnet/CTMTEST/ctm_gt.npy', self.ctm_groundtruth)
-        np.save('../result/tmpnet/CTMTEST/ctm_rec.npy', self.ctm_recordings)
+    def printEvaluation(self):
+        np.save(f'{self.saving_path['ctm']}/ctm_gt.npy', self.ctm_groundtruth)
+        np.save(f'{self.saving_path['ctm']}/ctm_rec.npy', self.ctm_recordings)
+        np.save(self.saving_path['occupation'], self.cell_occupation)
+        # save trip info
+        with open(self.saving_path['od_route'], "w") as j_file:
+            json.dump(self.cav_tripInfo, j_file, indent=4)
 
 
     @staticmethod
