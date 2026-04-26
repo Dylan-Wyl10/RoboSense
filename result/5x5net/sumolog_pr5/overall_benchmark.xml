@@ -10,9 +10,9 @@
     </input>
 
     <output>
-        <summary-output value="../sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog_tmp/summary_benchmark.xml"/>
-        <tripinfo-output value="../sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog_tmp/tripinfo_benchmark.xml"/>
-        <statistic-output value="../sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog_tmp/overall_benchmark.xml"/>
+        <summary-output value="../sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog/summary_benchmark.xml"/>
+        <tripinfo-output value="../sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog/tripinfo_benchmark.xml"/>
+        <statistic-output value="../sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog/overall_benchmark.xml"/>
     </output>
 
     <time>

@@ -1,19 +1,19 @@
 $O;D2
-0.00 1.5
+0.00 2.0
 1.00
-AA_in EE_out 36
-AB_in ED_out 18
-AC_in EC_out 18
-AD_in EB_out 18
-AE_in EA_out 18
-BA_in DE_out 18
-BE_in DA_out 36
-CA_in CE_out 18
-CE_in CA_out 18
-DA_in BE_out 18
-DE_in BA_out 18
-EA_in AE_out 18
-EB_in AD_out 36
-EC_in AC_out 18
-ED_in AB_out 18
-EE_in AA_out 36
+AA_in EE_out 0
+AB_in ED_out 0
+AC_in EC_out 0
+AD_in EB_out 0
+AE_in EA_out 0
+BA_in DE_out 0
+BE_in DA_out 0
+CA_in CE_out 0
+CE_in CA_out 0
+DA_in BE_out 0
+DE_in BA_out 0
+EA_in AE_out 0
+EB_in AD_out 0
+EC_in AC_out 0
+ED_in AB_out 0
+EE_in AA_out 0

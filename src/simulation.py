@@ -7,7 +7,9 @@ Structures:
 """
 
 import copy
+import pickle
 import time
+import matplotlib.pyplot as plt
 
 # from utili import CTM_visulization
 from utili.network import Network
@@ -17,6 +19,8 @@ import json
 from src.utili.ctm.ctmcomponent import *
 # from utili.routeOptim import RouteOptim
 import os
+from utili.tools import evalCTM, linkCTMvislz, checkCTM
+from config import Config
 
 
 class Simulation:
@@ -122,7 +126,7 @@ class Simulation:
                 print("Sim has ended due to no enough vehicle")
                 break
 
-    def simCTM(self, config, param, ctm_fd, ctm_interval, ctm_time_opt, ctm_time_norm, optim_interval, saving_path,
+    def simCTM(self, config, param, ctm_fd, ctm_interval, ctm_time_opt, ctm_time_norm, ctm_demand_mode, optim_interval, saving_path,
                GUImode=False, route=False, bench_mode=False):
         if GUImode:
             traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
@@ -150,12 +154,19 @@ class Simulation:
         self.cav_tripInfo = {}
 
         # initial CTM
-        self.CTM = CTM(ctm_fd, self.network, tick_interval=5)  # 20111128 defaultly set tick as 5s.
+        self.CTM = CTM(ctm_fd, self.network, demand_mode=ctm_demand_mode, tick_interval=5, demand_gt=self.saving_path['ctm_demand_gt'])  # 20111128 defaultly set tick as 5s.
         self.cell_idx = self.CTM.init(max_flow=2400)
+        if ctm_demand_mode == "dynamic":
+            self.demand_cell_list = []
+            for key in self.cell_idx:
+                if key.split(".")[-1] == "C40":
+                    self.demand_cell_list.append(key)
 
         self.cell_occupation = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10) + 1), dtype=int)
         self.ctm_groundtruth = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10) + 1), dtype=int)
-        self.ctm_recordings = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10) + 1), dtype=int)
+        self.ctm_recordings = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10) + 1), dtype=float)
+
+        self.optim_time, self.num_of_cav = [], []
 
         while True:
 
@@ -190,6 +201,10 @@ class Simulation:
                 # step 1: self get the current CAV information
                 # step 1.1: update active cav list
                 self.getCAVList()
+                if (self.step % (optim_interval * 10) == 0 and self.step != 0):
+                    self.num_of_cav.append(len(self.cav_list))
+                    print(f'$$$$$$$$$$$$$number of cav is {len(self.cav_list)}')
+
                 # step 1.2 update CAV o-d info for optimization, update CTM observation
                 if len(self.cav_list) != 0:
                     print('cav')
@@ -202,6 +217,10 @@ class Simulation:
 
                 else:  # if there are no cav at time, dont update anything
                     self.cav_info = {}
+                # step 1.3 update inbound ctm information based on ctm demand mode
+                # if ctm_demand_mode == "dynamic":
+                #     for cid in self.demand_cell_list:
+                #         self.CTM.cells_dic[cid].n = self.ctm_groundtruth[self.cell_idx.index(cid), (self.step // (5 * 10))]
 
                 # step 1.3: get CTM result for recording to evaluate the observation error
                 self.getCTMrecord()
@@ -211,11 +230,6 @@ class Simulation:
                 self.snapshot_4_next, number_out, number_in, number, sigflag = self.CTM.runCTM(
                     traci.simulation.getTime(), CTM_maxtime)
 
-                #################  debug
-                # dd = density * 0.08
-                # np.save('ctm_tmp.npy', number)
-
-                ########################
 
                 # step 2.2: reload CTM status for next step calculation
                 for cid, cell in self.CTM.cells_dic.items():
@@ -248,10 +262,14 @@ class Simulation:
                     time_t1 = time.time()
                     self.getCAVOD()
 
-                    self.Route_Optimizer = RouteOptimGurobi(CTM_FDParam=ctm_fd, veh_od=self.cav_info,
-                                                            max_time=CTM_maxtime, current_time=self.step//10, CTM_input=input, Load_mode='direct')
-                    self.Route_Optimizer.build_model(self.param, veh_num=len(self.cav_info), small_net=False)
-                    x, y, omg, objective_value = self.Route_Optimizer.solve_model(CtmDowngrade=False)
+                    if len(self.cav_info) == 0:
+                        x = None
+                    else:
+                        print(f'number of cav being optimized is {len(self.cav_info)}')
+                        self.Route_Optimizer = RouteOptimGurobi(CTM_FDParam=ctm_fd, veh_od=self.cav_info,
+                                                                max_time=CTM_maxtime, current_time=self.step//10, CTM_input=input, Load_mode='direct')
+                        self.Route_Optimizer.build_model(self.param, veh_num=len(self.cav_info), small_net=False)
+                        x, y, omg, objective_value = self.Route_Optimizer.solve_model(CtmDowngrade=False)
                     # c_tmp = self.cav_list[0]
                     # route1 = traci.vehicle.getRoute(c_tmp)
                     # x = None
@@ -273,8 +291,9 @@ class Simulation:
 
 
 
-                    # print(f'y coverage summation is {np.mean(y)}')
-                    print(f'time for optimization is {time.time() - time_t1}')
+                    optimTime = time.time()-time_t1
+                    print(f'time for optimization is {optimTime}')
+                    self.optim_time.append(optimTime)
 
 
                     # update cav route
@@ -301,6 +320,7 @@ class Simulation:
                     self.excuteCAVRoute()
                 # step4: push simulation and update information
                 print(f'time for entire step is {time.time() - time0}')
+
             self.step += 1
             self.time = self.step * self.resolution
             traci.simulationStep()
@@ -311,9 +331,219 @@ class Simulation:
                     traci.simulation.getMinExpectedNumber() <= 10 and self.step > self.start_time):
                 # path = saving_path['occupation']
                 # np.save(path, self.cell_occupation)
-                self.printEvaluation()
+                self.saveEvaluation()
                 print("Sim has ended due to no enough vehicle")
                 break
+
+    def calibrateCTM(self, ctm_fd, ctm_interval, cell_json, sumo_config, saving_path, ctm_demand_mode):
+        """
+        this function is used for optimal ctm result calibration, the bench parameter is set below
+        self.ctm_fd = {
+            'v_f': 57.6,  # km/hr
+            'k_jam': 133,  # veh/km
+            'q_max': 1800,  # veh/hour
+            'w': 22.84,
+            'length': 0.08,  # km
+            'delta_t': 5 / 3600,  # hr
+        }
+        assuming: v_f, k_jam, length, delta_t is fixed, q_max&w is moving with values
+        """
+
+        traci.start(["sumo", "-c", sumo_config, "--lateral-resolution=0.1",
+                     "--step-length={}".format(str(0.1))])
+        # q_maxls = [1600, 1650, 1700, 1750, 1800, 1850, 1900, 1950, 2000, 2050]
+        q_maxls = [1875 + 5*i for i in range(10)]  # center 1900
+        delta_kcls = [0 + 2*i for i in range(20)]  # center 10
+        # q_maxls = 1700 + ls
+        # wls = [19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+        # wls = [25, 25.5, 26, 26.5, 27, 27.5, 28, 28.5, 29, 29.5, 30]
+
+        ctm_gt = np.load(saving_path['ctm_demand_gt'])
+
+        self.network.netInit(self.sizeX, self.sizeY)
+        start_time = 1800  # time of starting evaluation
+        data = {"best_mape": {"mape": 999999,
+                              "mae": 999999,
+                              "qm": 1800,
+                              "w": 20,
+                              "delt_kc": 0},
+                "best_mae": {"mape": 999999,
+                             "mae": 999999,
+                             "qm": 1800,
+                             "w": 20,
+                             "delt_kc": 0},
+                }
+        case_idx = 0
+        # best_comb = {"score": 999999,
+        #              "qm": 1800,
+        #              "w": 20}
+
+
+        CTM_tmp = CTM(ctm_fd, self.network, demand_mode='dynamic', tick_interval=ctm_interval,
+                      demand_gt=saving_path['ctm_demand_gt'])
+        cell_idx = CTM_tmp.init(max_flow=1800)
+        # with open('../result/plot_ctm/CTMcell_index.json', 'w') as file:
+        #     for item in cell_idx:
+        #         file.write(f"{item}\n")
+
+        # ctm_gtev = ctm_gt[:, start_time // 5:]
+
+        # the calibration cretiran should only consider 20 loading links
+        link_load_cell = ['A1.E101.C40', 'A1.E101.C5', 'A1.E101.C6', 'A1.E101.C7',
+                          'A1.E102.C40', 'A1.E102.C5', 'A1.E102.C6', 'A1.E102.C7',
+                          'A1.E103.C40', 'A1.E103.C5', 'A1.E103.C6', 'A1.E103.C7',
+                          'A1.E104.C40', 'A1.E104.C5', 'A1.E104.C6', 'A1.E104.C7',
+                          'A1.E105.C40', 'A1.E105.C5', 'A1.E105.C6', 'A1.E105.C7',
+                          'A1.E106.C40', 'A1.E106.C5', 'A1.E106.C6', 'A1.E106.C7',
+                          'A1.E107.C40', 'A1.E107.C5', 'A1.E107.C6', 'A1.E107.C7',
+                          'A1.E108.C40', 'A1.E108.C5', 'A1.E108.C6', 'A1.E108.C7',
+                          'A1.E109.C40', 'A1.E109.C5', 'A1.E109.C6', 'A1.E109.C7',
+                          'A1.E110.C40', 'A1.E110.C5', 'A1.E110.C6', 'A1.E110.C7',
+                          'A1.E111.C40', 'A1.E111.C5', 'A1.E111.C6', 'A1.E111.C7',
+                          'A1.E112.C40', 'A1.E112.C5', 'A1.E112.C6', 'A1.E112.C7',
+                          'A1.E113.C40', 'A1.E113.C5', 'A1.E113.C6', 'A1.E113.C7',
+                          'A1.E114.C40', 'A1.E114.C5', 'A1.E114.C6', 'A1.E114.C7',
+                          'A1.E115.C40', 'A1.E115.C5', 'A1.E115.C6', 'A1.E115.C7',
+                          'A1.E116.C40', 'A1.E116.C5', 'A1.E116.C6', 'A1.E116.C7',
+                          'A1.E117.C40', 'A1.E117.C5', 'A1.E117.C6', 'A1.E117.C7',
+                          'A1.E118.C40', 'A1.E118.C5', 'A1.E118.C6', 'A1.E118.C7',
+                          'A1.E119.C40', 'A1.E119.C5', 'A1.E119.C6', 'A1.E119.C7',
+                          'A1.E120.C40', 'A1.E120.C5', 'A1.E120.C6', 'A1.E120.C7']
+                          # 'A0.E2.C6',
+                          # 'A0.E3.C1', 'A0.E3.C2', 'A0.E3.C3', 'A0.E3.C4',
+                          # 'A0.E3.C5', 'A0.E3.C6', 'A0.E3.C7']
+
+        ctm_gtev = ctm_gt[[cell_idx.index(c) for c in link_load_cell], start_time//5:]
+
+
+        for qm in q_maxls:
+            for delta_kc in delta_kcls:
+                # qm = 1895
+                # qm = 1920
+
+                if delta_kc < ctm_fd['k_jam'] - qm/ctm_fd['v_f']:  # bound the minimium w slop
+                    w = qm/(ctm_fd['k_jam'] - qm/ctm_fd['v_f'] - delta_kc)
+                    # w = 19.71890016981609
+                    # w = 19.2
+                    # reset all cells
+
+                    # qm, w = 2050, 74.791
+                    CTM_tmp.resetValue(qmax=qm, w=w)
+                    time0 = time.time()
+
+                    # assign a snapshot at the start_time, the start time idx = start_time//self.tick + 1
+                    for cid in cell_idx:
+                        CTM_tmp.cells_dic[cid].n = ctm_gt[cell_idx.index(cid), start_time//5]
+                        c = cid.split(".")[-1]
+                    # get CTM result
+                    _, y_out, y_in, number, signal = CTM_tmp.runCTM(time_current=1800, time_range=3600)
+                    number_np = number.to_numpy()
+                    yout_np = y_out.to_numpy()
+                    yin_np = y_in.to_numpy()
+
+                    number_npev = number_np[[cell_idx.index(c) for c in link_load_cell]]
+                    # yout_npev = yout_np[[cell_idx.index(c) for c in link_load_cell]]
+                    # yin_npev = yin_np[[cell_idx.index(c) for c in link_load_cell]]
+                    # sum1, sum2 = np.sum(ctm_gtev), np.sum(number_npev)
+
+                    # checkCTM(number_npev, yin_npev, yout_npev)
+
+                    # This is the plot for error analysis for ctm
+                    # =================================================================================
+                    # errors = np.mean(ctm_gtev - number_np, axis=1)
+                    # cells = np.array([s.split('.')[0] for s in cell_idx])
+                    #
+                    # # === 按C编号排序（C1, C2, ..., C40） ===
+                    # unique_cells = np.array(
+                    #     sorted(np.unique(cells), key=lambda x: int(x[1:]) if x[1:].isdigit() else 1e9))
+                    #
+                    # # === 聚合每个cell的误差 ===
+                    # grouped_errors = [errors[cells == cid] for cid in unique_cells]
+                    #
+                    # # === 绘制箱线图 ===
+                    # plt.figure(figsize=(10, 5))
+                    # plt.boxplot(grouped_errors, labels=unique_cells, patch_artist=True)
+                    # plt.xlabel('Cell ID', fontsize=11)
+                    # plt.ylabel('Error Value', fontsize=11)
+                    # plt.title('Error Distribution by Cell ID', fontsize=13)
+                    # plt.grid(True, linestyle='--', alpha=0.6)
+                    #
+                    # # 可选：为每个箱体设置颜色渐变
+                    # colors = plt.cm.viridis(np.linspace(0, 1, len(unique_cells)))
+                    # for patch, color in zip(plt.gca().artists, colors):
+                    #     patch.set_facecolor(color)
+                    #
+                    # plt.tight_layout()
+                    # plt.show()
+                    # ======================================================================= end of tmp plot
+
+
+
+                    # linkCTMvislz(cell_idx, number_np, ctm_gt[:, start_time // 5:], mode="link")
+                    # score_mape, _, _ = evalCTM(ctm_gtev, number_np, cell_json, eval_start=0, eval_duration=3600, method="mape")
+                    score_mae, _, _ = evalCTM(ctm_gtev, number_npev, link_load_cell, eval_start=0, eval_duration=3600, method="mae")
+                    # print(f'combination of qmam={qm} and w={w} has mape {score_mape} and mae {score_mae}')
+                    data[case_idx] = {"qm": qm, "w": w, "mae": score_mae, "qmkc": qm/ctm_fd["v_f"],
+                                      "del_kc": delta_kc, "km_kc": qm/ctm_fd["v_f"] + delta_kc}
+                    case_idx += 1
+
+                    if score_mae < data['best_mae']['mae']:
+                        data['best_mae']['mae'] = score_mae
+                        data['best_mae']['qm'] = qm
+                        data['best_mae']['w'] = w
+                        data['best_mae']['del_kc'] = delta_kc
+                        data['best_mae']["km_kc"] = qm / ctm_fd["v_f"] + delta_kc
+                        print(f'#######best mae {score_mae} has been updated, qm={qm} and w={w}, dkc={delta_kc}')
+                else:
+                    print(f'WARNING: qm={qm} and kc={delta_kc} is not a valid combination')
+
+        # plot the best result from calibration
+        # CTM_tmp.resetValue(qmax=data['best_mape']['qm'], w=data['best_mape']['w'])
+        # for cid in cell_idx:
+        #     CTM_tmp.cells_dic[cid].n = ctm_gt[cell_idx.index(cid), start_time // 5]
+        #     c = cid.split(".")[-1]
+        # # get CTM result
+        # _, _, _, number, _ = CTM_tmp.runCTM(time_current=1800, time_range=3600)
+        # number_np = number.to_numpy()
+        # # print(f'time cost: {time.time() - time0}s')
+        # linkCTMvislz(cell_idx, number_np, ctm_gtev)
+
+        CTM_tmp.resetValue(qmax=data['best_mae']['qm'], w=data['best_mae']['w'])
+        for cid in cell_idx:
+            CTM_tmp.cells_dic[cid].n = ctm_gt[cell_idx.index(cid), start_time // 5]  # update ground truth from the snapshot time
+            c = cid.split(".")[-1]
+        # get CTM result
+        _, _, _, number, _ = CTM_tmp.runCTM(time_current=1800, time_range=3600)
+        number_np = number.to_numpy()
+        # print(f'time cost: {time.time() - time0}s')
+        # linkCTMvislz(cell_idx, number_np, ctm_gt[:, start_time//5:], mode="link")
+
+
+        with open("../result/ctmResult/CTMcali.json", 'w') as f:
+            json.dump(data, f, indent=4)
+
+
+    # def linkCTMvislz(cell_idx, ctm, ctm_gt):
+    #     # link_cellls = ['A1.E101.C40', 'A1.E101.C5', 'A1.E101.C6', 'A1.E101.C7']
+    #     # link_cellls = ['A0.E11.C1', 'A0.E11.C2', 'A0.E11.C3', 'A0.E11.C4', 'A0.E11.C5', 'A0.E11.C6', 'A0.E11.C7']   # internal link
+    #
+    #     # choose one intersection
+    #     link_cellls = ['A0.E5.C3', 'A0.E5.C4', 'A0.E5.C5', 'A0.E5.C6', 'A0.E5.C7',
+    #                    'A0.-E5.C1', 'A0.-E5.C2', 'A0.-E5.C3', 'A0.-E5.C4', 'A0.-E5.C5',
+    #                    'A0.E6.C1', 'A0.E6.C2', 'A0.E6.C3', 'A0.E6.C4', 'A0.E6.C5',
+    #                    'A0.-E6.C3', 'A0.-E6.C4', 'A0.-E6.C5', 'A0.-E6.C6', 'A0.-E6.C7',
+    #                    'A0.E25.C3', 'A0.E25.C4', 'A0.E25.C5', 'A0.E25.C6', 'A0.E25.C7',
+    #                    'A0.-E25.C1', 'A0.-E25.C2', 'A0.-E25.C3', 'A0.-E25.C4', 'A0.-E25.C5',
+    #                    'A0.E26.C1', 'A0.E26.C2', 'A0.E26.C3', 'A0.E26.C4', 'A0.E26.C5',
+    #                    'A0.-E26.C3', 'A0.-E26.C4', 'A0.-E26.C5', 'A0.-E26.C6', 'A0.-E26.C7']
+    #
+    #     cell_ids = [cell_idx.index(c) for c in link_cellls]
+    #     link_gt = ctm_gt[cell_ids]
+    #     link_ctm = ctm[cell_ids]
+    #
+    #     mae = plot_gt_ctm_and_mae(link_gt, link_ctm, cell_idx, cell_ids)
+    #
+    #     print('yese')
 
     def sim_getBench(self, save_path, config="../sumo_cfg/5x5net/ctmbench.sumocfg"):
         traci.start(["sumo", "-c", config, "--lateral-resolution=0.1",
@@ -376,38 +606,38 @@ class Simulation:
 
         self.cav_info = {}
         max_route = 12 # set the max route length threshold, if bigger than this number, cav will not optim.
-        v_index = 0 #temp vehicle index for optimization
+        cav_index = 0  # sequential key for cav_info (only increments when a vehicle is added)
         for v_idx in range(len(self.cav_list)):
-            cav_id = self.cav_list[v_index]
+            cav_id = self.cav_list[v_idx]
             # print(cav_id)
             curr_cell, _ = self.getCellidxFromVeh(cav_id)
             current_route = traci.vehicle.getRoute(cav_id)
             current_edge = traci.vehicle.getRoadID(cav_id)
             edge_pos = current_route.index(current_edge)  # get current position of edge in total route list
             des_cell = 'A1.' + traci.vehicle.getRoute(cav_id)[-1] + '.C0'
-            if edge_pos > max_route:
+            if len(current_route) >= max_route:  # max length bound
                 continue
             else:
 
                 # add budget for each cav
-                edge_num_rem = len(current_route) - edge_pos  # remaining number of edge
+                edge_num_rem = len(current_route) - edge_pos - 1  # remaining number of edge
                 """
                 budge logic 20250729
                 1. if remaining route  length is greater than 4, than give budget
-                2. if already travel route is greater than 10, no budget 
+                2. if already travel route is greater than 10, no budget
                 """
                 if edge_num_rem >= 6:
                     budget = 0
                 elif edge_pos >= 12:
                     budget = 0
                 else:
-                    budget = 2
+                    budget = Config().budget  # no budget:0, or budget:2
 
                 """
                 0827 Add od-route trace function
                 """
                 # budget = 0
-                self.cav_info[v_index] = {
+                self.cav_info[cav_index] = {
                     'name': cav_id,
                     'from': self.cell_idx.index(curr_cell),
                     'to': self.cell_idx.index(des_cell),
@@ -416,12 +646,12 @@ class Simulation:
                     # 'route_length': (len(traci.vehicle.getRoute(cav_id)) - edge_pos + budget) * 5,
                     'remine_edge': edge_num_rem,
                     'edge_pos': edge_pos,
-                    'route_length': min(edge_num_rem + budget, 18 - edge_pos),  # set a fixed number of on max route
+                    'route_length': min(edge_num_rem + budget, 18 - edge_pos-1),  # set a fixed number of on max route
                     # 'route_length': edge_num_rem + budget,
                     'current_route': current_route,
                     'current_edge': current_edge
                 }
-                v_index += 1
+                cav_index += 1
 
     def getCAVTrip(self):
         """
@@ -838,7 +1068,7 @@ class Simulation:
         c_id = None
         if length < 400 and edge_idx[0] != '-':  # hard-coding here as entry link
             if idx == 0:
-                c_id = 'A1.{}.{}'.format(edge_idx, 'C4')
+                c_id = 'A1.{}.{}'.format(edge_idx, 'C40')
                 cell_coord = [80, 0, [0, 1]]
             elif idx == 1:
                 c_id = 'A1.{}.{}'.format(edge_idx, 'C5')
@@ -929,10 +1159,14 @@ class Simulation:
         for cid, cell in self.CTM.cells_dic.items():
             self.ctm_recordings[self.cell_idx.index(cid), self.step // (5 * 10)] = cell.get_state_num()
 
-    def printEvaluation(self):
+    def saveEvaluation(self):
         np.save(f'{self.saving_path['ctm']}/ctm_gt.npy', self.ctm_groundtruth)
         np.save(f'{self.saving_path['ctm']}/ctm_rec.npy', self.ctm_recordings)
         np.save(self.saving_path['occupation'], self.cell_occupation)
+        with open(self.saving_path['time_optim'], 'wb') as file:
+            pickle.dump(self.optim_time, file)
+        with open(self.saving_path['num_cav'], 'wb') as file:
+            pickle.dump(self.num_of_cav, file)
         # save trip info
         with open(self.saving_path['od_route'], "w") as j_file:
             json.dump(self.cav_tripInfo, j_file, indent=4)
@@ -957,3 +1191,5 @@ class Simulation:
                 count += 1
 
         return count
+
+

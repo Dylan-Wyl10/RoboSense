@@ -2,8 +2,8 @@
 
     <input>
         <net-file value="../5x5net.net.xml"/>
-        <route-files value="../od.rou.xml"/>
-        <additional-files value="../v_type.add.xml"/>
+        <route-files value="../od_mixed.rou.xml"/>
+        <additional-files value="../v_type.add.xml, ../edge_output.add.xml"/>
     </input>
 
     <processing>
@@ -18,13 +18,14 @@
     <output>
         <summary-output value="../../../result/tmpnet/CTMTEST/sumolog_tmp/summary0.xml"/>
         <tripinfo-output value="../../../result/tmpnet/CTMTEST/sumolog_tmp/tripinfo0.xml"/>
-        <statistic-output value="../../../result/tmpnet//CTMTEST/sumolog_tmp/overall0.xml"/>
+        <statistic-output value="../../../result/tmpnet/CTMTEST/sumolog_tmp/overall0.xml"/>
+        <lanedata-output value="../../../result/tmpnet/CTMTEST/sumolog_tmp/lane_data.xml"/>
     </output>
 
     <time>
         <begin value="0"/>
-        <end value="3600"/>
-	    <step-length value="0.1"/>
+        <end value="5400"/>
+	<step-length value="0.1"/>
     </time>
 
     <routing>
