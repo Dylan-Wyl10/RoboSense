@@ -49,11 +49,21 @@ if __name__ == '__main__':
                      turn_rate=cfg.turn_rate)
 
         sim.simCTM(config=cfg.sumo_cfg, param=cfg.param, ctm_fd=cfg.ctm_fd, ctm_interval=cfg.ctm_interval,
-                   ctm_time_opt=cfg.ctm_time_opt, ctm_time_norm=cfg.ctm_time_normal,
+                   ctm_time_opt=cfg.ctm_time_opt, ctm_time_norm=cfg.ctm_time_normal, ctm_demand_mode=cfg.is_real_demand,
                    optim_interval=cfg.opt_interval, saving_path=cfg.saving_path, GUImode=cfg.sumo_gui, route=cfg.is_route,
                    bench_mode=cfg.is_bench)
 
-        score = pipe.evalCTM(file_gt='../src/ctm_gt.npy',
-                             file_rec='../src/ctm_rec.npy',
-                             cell_json='../result/ctmResult/CTMcell_index.json',
-                             eval_start=cfg.eval_start, eval_duration=cfg.eval_dur, method='mape')
+        # score = pipe.evalCTM(file_gt='../src/ctm_gt.npy',
+        #                      file_rec='../src/ctm_rec.npy',
+        #                      cell_json='../result/ctmResult/CTMcell_index.json',
+        #                      eval_start=cfg.eval_start, eval_duration=cfg.eval_dur, method='mape')
+    if cfg.ctm_cali:
+        sim = Simulation(start_time=600, max_time=cfg.sumo_maxtime, link_num=40, resolution=0.1,
+                         net_file=cfg.net_file, time_interval=5, sizeX=5, sizeY=5,
+                         link_dirct_file=cfg.link_node_dirct_file,
+                         demand_file=cfg.demand_file,
+                         turn_rate=cfg.turn_rate)
+        sim.calibrateCTM(ctm_fd=cfg.ctm_fd, ctm_interval=cfg.ctm_interval,
+                         cell_json="../result/ctmResult/CTMcell_index.json",
+                         sumo_config=cfg.sumo_cfg,
+                         saving_path=cfg.saving_path, ctm_demand_mode=cfg.is_real_demand)

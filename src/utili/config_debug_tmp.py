@@ -1,36 +1,41 @@
 
 class CaseStudyConfig(object):
-    def __init__(self):
+    def __init__(self, mode="toynet"):
 
-        self.loadCellidx()
-
-        self.small_net_od = {0: {'from': self.cellidx.index('A1.E101.C0'),
+        if mode =='small-ctm':
+            self.loadCellidx()
+        if mode =='toynet':
+            self.toy_net_od = {0: {'from': 24, 'to': 25, 'time': 0},
+                           1: {'from': 24, 'to': 25, 'time': 0},
+                           2: {'from': 24, 'to': 25, 'time': 0},
+                           3: {'from': 24, 'to': 25, 'time': 0}}
+        if mode == 'small-ctm':
+            self.small_net_od = {0: {'from': self.cellidx.index('A1.E101.C0'),
                                 'to': self.cellidx.index('A1.-E120.C0'),
                                 'time': 0},
                              1: {'from': self.cellidx.index('A1.E101.C0'),
                                 'to': self.cellidx.index('A1.-E120.C0'),
                                 'time': 0},
                              2: {'from': self.cellidx.index('A1.E101.C0'),
-                               'to': self.cellidx.index('A1.-E120.C0'),
-                               'time': 1},
-                           3: {'from': self.cellidx.index('A1.E101.C0'),
-                               'to': self.cellidx.index('A1.-E120.C0'),
-                               'time': 3},
-                           4: {'from': self.cellidx.index('A1.E101.C0'),
-                               'to': self.cellidx.index('A1.-E120.C0'),
-                               'time': 5},
-                           5: {'from': self.cellidx.index('A1.E101.C0'),
-                               'to': self.cellidx.index('A1.-E120.C0'),
-                               'time': 9},
-                           6: {'from': self.cellidx.index('A1.E101.C0'),
-                               'to': self.cellidx.index('A1.-E120.C0'),
-                               'time': 60},
-                           7: {'from': self.cellidx.index('A1.E101.C0'),
-                               'to': self.cellidx.index('A1.-E120.C0'),
-                               'time': 60},
-                           }
+                                 'to': self.cellidx.index('A1.-E120.C0'),
+                                 'time': 1},
+                             3: {'from': self.cellidx.index('A1.E101.C0'),
+                                 'to': self.cellidx.index('A1.-E120.C0'),
+                                 'time': 3},
+                             4: {'from': self.cellidx.index('A1.E101.C0'),
+                                 'to': self.cellidx.index('A1.-E120.C0'),
+                                 'time': 5},
+                             5: {'from': self.cellidx.index('A1.E101.C0'),
+                                 'to': self.cellidx.index('A1.-E120.C0'),
+                                 'time': 9},
+                             6: {'from': self.cellidx.index('A1.E101.C0'),
+                                 'to': self.cellidx.index('A1.-E120.C0'),
+                                 'time': 60},
+                             7: {'from': self.cellidx.index('A1.E101.C0'),
+                                 'to': self.cellidx.index('A1.-E120.C0'),
+                                 'time': 60}}
 
-        self.full_net_2200_od ={0: {'from': 286, 'to': 28, 'time': 0, 'route_length': 20},
+            self.full_net_2200_od ={0: {'from': 286, 'to': 28, 'time': 0, 'route_length': 20},
                                 1: {'from': 302, 'to': 18, 'time': 0, 'route_length': 35},
                                 2: {'from': 295, 'to': 18, 'time': 0, 'route_length': 30},
                                 3: {'from': 295, 'to': 23, 'time': 0, 'route_length': 30},

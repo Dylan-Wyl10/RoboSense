@@ -1,4 +1,4 @@
 <routes>
-    <vType id="bgv" color="255, 255, 0"/>
-    <vType id="cav" color="255, 0, 0"/>
+    <vType id="bgv" carFollowModel="IDM" color="255, 255, 0"/>
+    <vType id="cav" carFollowModel="IDM" color="255, 0, 0"/>
 </routes>

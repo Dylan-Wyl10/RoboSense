@@ -15,6 +15,7 @@ from src.utili.config_debug_tmp import CaseStudyConfig
 class RouteOptimGurobi:
     def __init__(self, CTM_FDParam, veh_od, max_time, current_time, CTM_resultPath=None, CTM_input=None, Load_mode='file'):
         # Initialize data matrices from file paths
+        self.Load_mode = Load_mode
         if Load_mode == 'file':
             self.CTM_numberMatrix_ori = pd.read_csv(CTM_resultPath['number']).iloc[:, 1:].to_numpy()
             self.CTM_signalMatrix_ori = pd.read_csv(CTM_resultPath['sigflag']).iloc[:, 1:].to_numpy()
@@ -26,6 +27,12 @@ class RouteOptimGurobi:
             self.CTM_signalMatrix_ori = CTM_input['sigflag'].to_numpy()
             self.CTM_connection_ori = CTM_input['cell connection']
             self.CTM_cellIdx_ori = CTM_input['cell idx']
+
+        elif Load_mode == "toynet":
+            self.CTM_numberMatrix_ori = None
+            self.CTM_signalMatrix_ori = None
+            self.CTM_connection_ori = None
+            self.CTM_cellIdx_ori = None
 
         self.veh_od = veh_od
         self.sumo_time = current_time
@@ -82,11 +89,25 @@ class RouteOptimGurobi:
     def get_costCTM(self, number_matrix, FD_param, signal_matrix):
         K = number_matrix / FD_param['length']  # density matrix
         Q = copy.deepcopy(K)
+        # set a binary variable to distiguish the shape of the FD
+        kc_l, kc_r = FD_param['q_max'] / FD_param['v_f'], FD_param['k_jam']-FD_param['q_max']/FD_param['w']
+        istrangle = True if abs(kc_l-kc_r) <= 1e-5 else False
         # flow matrix
-        for i in range(number_matrix.shape[0]):
-            for j in range(number_matrix.shape[1]):
-                Q[i, j] = FD_param['v_f'] * K[i, j] if K[i, j] <= FD_param['q_max'] / FD_param['v_f'] else -FD_param[
-                    'w'] * (K[i, j] - FD_param['k_jam'])
+        if istrangle:
+            for i in range(number_matrix.shape[0]):
+                for j in range(number_matrix.shape[1]):
+                    Q[i, j] = FD_param['v_f'] * K[i, j] if K[i, j] <= FD_param['q_max'] / FD_param['v_f'] else -FD_param[
+                        'w'] * (K[i, j] - FD_param['k_jam'])
+        else:  # if the FD is not trangle
+            for i in range(number_matrix.shape[0]):
+                for j in range(number_matrix.shape[1]):
+                    if K[i, j] <= kc_l:
+                        Q[i, j] = FD_param['v_f'] * K[i, j]
+                    elif kc_l < K[i, j] <= kc_r:
+                        Q[i, j] = FD_param['q_max']
+                    elif kc_r < K[i, j] <= FD_param['k_jam']:
+                        Q[i, j] = -FD_param['w'] * (K[i, j] - FD_param['k_jam'])
+
         V = np.ones(K.shape) * FD_param['v_f']
         C = np.ones(K.shape)
         V = V * signal_matrix
@@ -108,29 +129,38 @@ class RouteOptimGurobi:
         return K, Q, V, C
 
     @staticmethod
-    def get_small_net_param():
-        link, veh, time_step = 15, 2, 45
+    def get_small_net_param(veh=2, time_step=45):
+
+        # 2x2 network
+        # con = {1: [2, 9], 2: [11], 3: [4, 10], 4: [12], 5: [6], 6: [14],
+        #        7: [3, 8], 8: [5, 15], 9: [4, 10], 10: [6], 11: [12], 12: [14],
+        #        13: [7, 1], 14: [], 15: []}
+
+        # 3x3 network, single direction
+        con = {1: [2, 16], 2: [3, 19], 3: [22], 4: [5, 17], 5: [6, 20], 6: [23],
+               7: [8, 18], 8: [9, 21], 9: [24], 10: [11], 11: [12], 12: [26],
+               13: [4, 14], 14: [7, 15], 15: [10], 16: [5, 17], 17: [18, 8], 18: [11],
+               19: [6, 20], 20: [9, 21], 21: [12], 22: [23], 23: [24], 24: [26],
+               25: [1, 13], 26: []}
+
+        link = len(con)
+        # link, veh, time_step = 15, 2, 45
         C = np.ones((link, time_step))
         for i in range(C.shape[0]):
             for t in range(C.shape[1]):
-                C[i, t] = (C[i, t] + i + t + 2) % 4 + 1
-                # c = {(i, t): (C[i, t] + i + t + 2) % 4 + 1 for i in range(C.shape[0]) for t in range(C.shape[1])}
-        # self.c = c
-
-        # 2x2 network
-        con = {1: [2, 9], 2: [11], 3: [4, 10], 4: [12], 5: [6], 6: [14],
-               7: [3, 8], 8: [5, 15], 9: [4, 10], 10: [6], 11: [12], 12: [14],
-               13: [7, 1], 14: [], 15: []}
+                C[i, t] = (i + t + 1) % 5 + 1
 
         connection = np.zeros((len(con.keys()), len(con.keys())))
         for k, v in con.items():
             for vv in v:
                 connection[k - 1, vv - 1] = 1
 
-        veh_od = {0: {'from': 12, 'to': 13, 'time': 0},
-                  1: {'from': 12, 'to': 13, 'time': 0}}
+        # veh_od = {0: {'from': 1, 'to': 26, 'time': 0},
+        #           1: {'from': 1, 'to': 26, 'time': 1},
+        #           2: {'from': 1, 'to': 26, 'time': 2},
+        #           3: {'from': 1, 'to': 26, 'time': 3}}
 
-        return veh_od, connection, time_step, C
+        return connection, time_step, C
 
     def set_optm_input(self, veh_od, time_step):
         self.veh_od = veh_od
@@ -235,7 +265,7 @@ class RouteOptimGurobi:
 
         # Case_config = CaseStudyConfig()
         if small_net:
-            self.veh_od, self.CTM_connection, time_step, self.C = self.get_small_net_param()
+            self.CTM_connection, time_step, self.C = self.get_small_net_param()
         else:
             self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix,
                                                               self.ctm_fd,
@@ -366,10 +396,11 @@ class RouteOptimGurobi:
         #     a = xvar.VarName
         #     print(a)
 
+        print(f"build_model: veh_num={veh_num}")
         model.setObjective(
             alpha1 * quicksum(
-                c[key[1], key[2]] * x[key] for key in self.x_keys if (key[1], key[2]) in c) - alpha2 * quicksum(
-                y[ykey] for ykey in self.y_keys) / (self.CTM_connection.shape[0] * time_step),GRB.MINIMIZE)
+                (c[key[1], key[2]] * x[key] for key in self.x_keys if (key[1], key[2]) in c)) / veh_num - alpha2 * quicksum(
+                y[ykey] for ykey in self.y_keys) / (self.CTM_connection.shape[0] * time_step), GRB.MINIMIZE)
             # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
 
 
@@ -533,49 +564,20 @@ class RouteOptimGurobi:
         print(f'model build complete! at time {time.time() - t1}')
         return model
 
-    def build_model_smallexample(self, veh_num=100, alpha=0.5):  # this is temperoarily set as small
+
+    # this function is permanently abundoned, saving here for notes.
+    def build_model_smallexample(self, param, veh_od, alpha=0.5):  # this is temperoarily set as small
         # self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix, self.CTM_numberOutMatrix, self.ctm_fd,
         #                                                   self.CTM_signalMatrix)
 
-        # 20250401: update link, veh, time step without hardcoding.
-        self.link, self.veh, self.time_step = 15, 2, 45
+        # 20250401: update link, veh, max time step without hardcoding.
+        alpha1, alpha2, M, = param[0], param[1], param[2]
+        self.veh = len(veh_od)
 
-        self.C = np.ones((self.link, self.time_step))
-        # self.CTM_connection = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-        #                                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-        #                                 [0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-        #                                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        #                                 [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-        #                                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                                 [0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-        #                                 [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-        #                                 [0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-        #                                 [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-        #                                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        #                                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-        con = {1: [2, 9], 2: [11], 3: [4, 10], 4: [12], 5: [6], 6: [14],
-               7: [3, 8], 8: [5, 15], 9: [4, 10], 10: [6], 11: [12], 12: [14],
-               13: [7, 1], 14: [], 15: []}
+        self.CTM_connection, self.time_step, self.C = self.get_small_net_param()
 
-        # bi-directory 3x3
-        # con = {1: [2, 9], 2: [11], 3: [4, 10, 21], 4: [12, 23], 5: [6, 22], 6: [24, 26],
-        #        7: [3, 8], 8: [5], 9: [4, 10, 15], 10: [6, 17], 11: [12, 16], 12: [18, 26],
-        #        13: [19], 14: [9, 13], 15: [8, 19], 16: [10, 15, 21], 17: [20], 18: [17, 22],
-        #        19: [1], 20: [15, 19], 21: [2, 13], 22: [4, 15, 21], 23: [14], 24: [16, 23],
-        #        25: [1, 7], 26: []}
+        self.link = self.CTM_connection.shape[0]
 
-        ####################################################################################################
-        # a 3x3 grid network with multiple entry and exit, the index is real index but no -1
-        # con = {1: [2, 16], 2: [3, 19], 3: [22], 4: [5, 17], 5: [6, 20], 6: [23],
-        #        7: [8, 18], 8: [9, 21], 9: [24], 10: [11], 11: [12], 12: [24],
-        #        13: [4, 14], 14: [7, 15], 15: [10], 16: [5, 17], 17: [18, 8], 18: [11],
-        #        19: [6, 20], 20: [9, 21], 21: [12], 22: [23], 23: [24], 24: [26],
-        #        25: [1, 13], 26: []}
-        self.CTM_connection = np.zeros((len(con.keys()), len(con.keys())))
-        for k, v in con.items():
-            for vv in v:
-                self.CTM_connection[k - 1, vv - 1] = 1
-        #####################################################################################################
 
         # Example Data
         # max_t =   # max time step
@@ -585,37 +587,11 @@ class RouteOptimGurobi:
 
         self.para_set = (A, I, T)
 
-        # start and end node
-        veh_od = {0: {'from': self.CTM_cellIdx_downgrade.index('A1.E101.C0'),
-                      'to': self.CTM_cellIdx_downgrade.index('A0.E6.C4')},
-                  1: {'from': self.CTM_cellIdx_downgrade.index('A1.E101.C0'),
-                      'to': self.CTM_cellIdx_downgrade.index('A0.E6.C4')}}
-        #  notes 20250401:
-        # -1. the to node must be a complete last link without downstream link?, use index here
-        veh_odtmp = {0: {'from': 12, 'to': 13, 'time': 0},
-                     1: {'from': 12, 'to': 13, 'time': 0}}
-        # 2: {'from': 24, 'to': 25, 'time': 2},
-        # 3: {'from': 24, 'to': 25, 'time': 3}}
-        # veh_odtmp = {0: {'from': 12, 'to': 14}}
-
-        M = 999999
-
-        # for k, v in veh_od.items():
-        #     # a = v['from']
-        #     x[k, v['from'], 0].lb = 1
-        #     x[k, v['from'], 0].ub = 1
-
-        # start = 0  # Start node
-        # end = 3  # End node
-
         # Parameters as dictionaries
-        c = {(i, t): (self.C[i, t] + i + t + 2) % 4 + 1 for i in I for t in T}
+        c = {(i, t): self.C[i, t]for i in I for t in T}
         self.c = c
 
         Pi = {(i, j): self.CTM_connection[i, j] for i in I for j in I}
-        d = {(i, j, t): int(((self.C[i, t] + i + t + 2) % 4 + 1) * self.CTM_connection[i, j]) for i in I for j in I if
-             i != j for
-             t in T}  # Example: Travel cost increases with time
 
         # Model Initialization
         model = Model("TDVRP")
@@ -631,9 +607,8 @@ class RouteOptimGurobi:
         # eta = model.addVars(A, I, T, vtype=GRB.BINARY, name="eta")  # binary variable for arrive time constraint
 
         model.setObjective(
-            alpha * quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) - (
-                    1 - alpha)
-            * quicksum(y[i, t] for i in I for t in T) / (self.link * self.time_step),
+            alpha1 * quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) -
+            alpha2 * quicksum(y[i, t] for i in I for t in T) / (self.link * self.time_step),
             # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
             GRB.MINIMIZE
         )
@@ -649,9 +624,9 @@ class RouteOptimGurobi:
                                 model.addConstr(z[a, i, j, t, s] == 0, name='PresetZCondition_0')
                                 # else:
                                 # model.addConstr(z[a, i, j, t, s] <= 1, name='PresetZCondition_1')
-                                print('preset z[{},{},{},{},{}] with cost c[{},{}]={}, Pi = {}'.format(a, i, j, t, s, i,
-                                                                                                       t, c[i, t],
-                                                                                                       Pi[i, j]))
+                                # print('preset z[{},{},{},{},{}] with cost c[{},{}]={}, Pi = {}'.format(a, i, j, t, s, i,
+                                #                                                                        t, c[i, t],
+                                #                                                                        Pi[i, j]))
 
         print("condition 0 is completed")
         # 1. FLow conservation (linearlized)
@@ -660,7 +635,7 @@ class RouteOptimGurobi:
             for i in I:
                 for t in T:
                     # if (i != veh_odtmp[a]['to'] and i != 11):
-                    if i != veh_odtmp[a]['to']:
+                    if i != veh_od[a]['to']:
                         model.addConstr(x[a, i, t] == quicksum(z[a, i, j, t, s] for j in I for s in T),
                                         name='axillary variable z')
         # 2. Network Tepology constraint
@@ -680,15 +655,15 @@ class RouteOptimGurobi:
 
         # 3* network flow conservation law, od constraint
         for a in A:
-            model.addConstr(x[a, veh_odtmp[a]['from'], veh_odtmp[a]['time']] == 1)
-            model.addConstr(quicksum(x[a, veh_odtmp[a]['to'], t] for t in T) == 1)
+            model.addConstr(x[a, veh_od[a]['from'], veh_od[a]['time']] == 1)
+            model.addConstr(quicksum(x[a, veh_od[a]['to'], t] for t in T) == 1)
             for j in I:
                 for s in T:
                     # if (j == 0 or j == 6):
                     #     model.addConstr(quicksum(z[a, i, j, t, s] for i in I for t in T) - quicksum(z[a, j, k, s, r] for k in I for r in T) == -1, name='3*netflow_conservation1')
                     # if j == veh_odtmp[a]['to']:
                     #     model.addConstr(quicksum(z[a, i, j, t, s] for i in I for t in T) - quicksum(z[a, j, k, s, r] for k in I for r in T) == 1, name='3*netflow_conservation2')
-                    if (j != veh_odtmp[a]['from'] and j != veh_odtmp[a]['to']):
+                    if (j != veh_od[a]['from'] and j != veh_od[a]['to']):
                         #     print('j is {}'.format(j))
                         # else:
                         model.addConstr(quicksum(z[a, i, j, t, s] for i in I for t in T) - quicksum(
@@ -767,44 +742,45 @@ class RouteOptimGurobi:
             else:
                 cell_idx = self.CTM_cellIdx_ori
 
-            # save x variable,
-            # for a in range(solution_x.shape[0]):
-            #     for t in range(solution_x.shape[2]):
-            #         for i in range(solution_x.shape[1]):
-            #             var_x = self.model.getVarByName(f"x[{a},{i},{t}]")
-            #             if int(round(var_x.x)) == 1:
-            #                 print('#########x({},{},{})={}, at cell {} at time {}, cost is {} '.format(a, i, t, var_x.x,
-            #                                                                                            cell_idx[i], t,
-            #                                                                                            self.c[(i, t)]))
-            #             solution_x[a, i, t] = int(round(var_x.x))
+            # save x variable
+            if self.Load_mode == "toynet":
+                for a in range(solution_x.shape[0]):
+                    for t in range(solution_x.shape[2]):
+                        for i in range(solution_x.shape[1]):
+                            var_x = self.model.getVarByName(f"x[{a},{i},{t}]")
+                            if int(round(var_x.x)) == 1:
+                                print('#########x({},{},{})={}, at link {} at time {}, cost is {} '.format(a, i, t, var_x.x,
+                                                                                                       i+1, t,
+                                                                                                       self.c[(i, t)]))
+                            solution_x[a, i, t] = int(round(var_x.x))
+            else:
+                for xkey in self.x_keys:
+                    a, i, t = xkey[0], xkey[1], xkey[2]
+                    var_x = self.model.getVarByName(f"x[{a},{i},{t}]")
+                    if int(round(var_x.x)) == 1:
+                        # a, i, t = xkey[0], xkey[1], xkey[2]
+                        # print('#########x({},{},{})={}, at cell {} at time {}, cost is {} '.format(a, i, t, var_x.x,
+                        #                                                                              cell_idx[i], t,
+                        #                                                                              self.c[(i, t)]))
+                        solution_x[a, i, t] = int(round(var_x.x))
 
-            for xkey in self.x_keys:
-                a, i, t = xkey[0], xkey[1], xkey[2]
-                var_x = self.model.getVarByName(f"x[{a},{i},{t}]")
-                if int(round(var_x.x)) == 1:
-                    # a, i, t = xkey[0], xkey[1], xkey[2]
-                    # print('#########x({},{},{})={}, at cell {} at time {}, cost is {} '.format(a, i, t, var_x.x,
-                    #                                                                                    cell_idx[i], t,
-                    #                                                                                    self.c[(i, t)]))
-                    solution_x[a, i, t] = int(round(var_x.x))
+                # save y variable
+                for ykey in self.y_keys:
+                    i, t = ykey[0], ykey[1]
+                    var_y = self.model.getVarByName(f"y[{i},{t}]")
+                    solution_y[i, t] = int(var_y.x)
 
-            # save y variable
-            for ykey in self.y_keys:
-                i, t = ykey[0], ykey[1]
-                var_y = self.model.getVarByName(f"y[{i},{t}]")
-                solution_y[i, t] = int(var_y.x)
+                # save omg variable
+                # for a in range(solution_omg.shape[0]):
+                #     for i in range(solution_omg.shape[1]):
+                #         for t in range(solution_omg.shape[2]):
+                #             var_omg = self.model.getVarByName(f"omega[{a},{i},{t}]")
+                #             solution_omg[a, i, t] = int(var_omg.x)
 
-            # save omg variable
-            # for a in range(solution_omg.shape[0]):
-            #     for i in range(solution_omg.shape[1]):
-            #         for t in range(solution_omg.shape[2]):
-            #             var_omg = self.model.getVarByName(f"omega[{a},{i},{t}]")
-            #             solution_omg[a, i, t] = int(var_omg.x)
-
-            for wkey in self.w_keys:
-                a, i, t  = wkey[0], wkey[1], wkey[2]
-                var_omg = self.model.getVarByName(f"omega[{a},{i},{t}]")
-                solution_omg[a, i, t] = int(var_omg.x)
+                for wkey in self.w_keys:
+                    a, i, t  = wkey[0], wkey[1], wkey[2]
+                    var_omg = self.model.getVarByName(f"omega[{a},{i},{t}]")
+                    solution_omg[a, i, t] = int(var_omg.x)
 
             return solution_x, solution_y, solution_omg, self.model.objVal
         else:
@@ -853,18 +829,21 @@ if __name__ == '__main__':
     FD_param = {
         'v_f': 57.6,  # km/hr
         'k_jam': 133,  # veh/km
-        'q_max': 1744,  # veh/hour
-        'w': 17.94,
+        'q_max': 1890,  # veh/hour
+        'w': 19.85,
         'length': 0.08,  # km
         'delta_t': 5 / 3600,  # hr
     }
+    param = (1, 1e6, 999999)
 
     time1 = time.time()
+    # this is a case study for the subnet of CTM network
     caseConfig = CaseStudyConfig()
-    cav_od = caseConfig.full_net_2200_od
-    Ropt = RouteOptimGurobi(FD_param, veh_od=cav_od, max_time=150, CTM_resultPath=CTM_Path, Load_mode='file')
-    # Ropt.build_model_smallexample(veh_num=2)
-    Ropt.build_model(veh_num=len(cav_od), small_net=False)
+    cav_od = caseConfig.toy_net_od
+
+    Ropt = RouteOptimGurobi(FD_param, veh_od=cav_od, max_time=150, current_time=0, CTM_resultPath=CTM_Path, Load_mode='toynet')
+    Ropt.build_model_smallexample(param=param, veh_od=cav_od)
+    # Ropt.build_model(param=param, veh_num=len(cav_od), small_net=True)
     x, y, omg, objective_value = Ropt.solve_model(CtmDowngrade=False)
     print('time cost is {}'.format(time.time() - time1))
 

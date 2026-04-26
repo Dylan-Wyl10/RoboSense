@@ -171,7 +171,11 @@ class Intersection:
                 t_idx = 20 - SPaT[1]
             else:
                 t_idx = cycle_length - SPaT[1]
-            SPaT_target = 'g' if (t_idx + time_range)%cycle_length <= 20 else 'r'
+            SPaT_target = 'g' if (t_idx + time_range)%cycle_length < 20 else 'r'
+            # if e_id == 'E3':
+            #     print(f't_idx small for {e_id} is {t_idx}, spat is {SPaT}')
+            # elif e_id == 'E2':
+            #     print(f't_idx big for {e_id} is {t_idx}, spat is {SPaT}')
 
             if SPaT_target == 'r':
                 Cell.getCell(c6_id).sig_flag = 0

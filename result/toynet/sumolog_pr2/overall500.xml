@@ -10,9 +10,9 @@
     </input>
 
     <output>
-        <summary-output value="sumo_cfg/toy_net/../../../result/sumolog_tmp/summary500.xml"/>
-        <tripinfo-output value="sumo_cfg/toy_net/../../../result/sumolog_tmp/tripinfo500.xml"/>
-        <statistic-output value="sumo_cfg/toy_net/../../../result/sumolog_tmp/overall500.xml"/>
+        <summary-output value="sumo_cfg/toy_net/../../../result/sumolog/summary500.xml"/>
+        <tripinfo-output value="sumo_cfg/toy_net/../../../result/sumolog/tripinfo500.xml"/>
+        <statistic-output value="sumo_cfg/toy_net/../../../result/sumolog/overall500.xml"/>
     </output>
 
     <time>
