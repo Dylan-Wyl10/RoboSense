@@ -281,6 +281,22 @@ def make_spacer(tmpl_l0):
     return sp
 
 
+def make_title(tmpl_l0, text, size_pt=15):
+    """A bold, un-bulleted full-paper-title line to head a per-paper slide."""
+    tp = copy.deepcopy(tmpl_l0)
+    for r in tp.findall(qn("a:r"))[1:]:
+        tp.remove(r)
+    pPr = tp.find(qn("a:pPr"))
+    if pPr is None:
+        pPr = tp.makeelement(qn("a:pPr"), {}); tp.insert(0, pPr)
+    for tag in ("a:buChar", "a:buAutoNum"):
+        for e in pPr.findall(qn(tag)):
+            pPr.remove(e)
+    pPr.append(pPr.makeelement(qn("a:buNone"), {}))   # no bullet on the title line
+    set_para_text(tp, text, bold=True, size_pt=size_pt)
+    return tp
+
+
 def content_box(slide):
     for sh in slide.shapes:
         if sh.name == "TextBox 4":
@@ -293,6 +309,22 @@ def find_ph(slide, idx):
         if sh.is_placeholder and sh.placeholder_format.idx == idx:
             return sh
     return None
+
+
+# Full paper titles (verbatim from the literature-reviewer full-text reads on YIL-114/115),
+# keyed by the slide tag (subtitle.split()[0]) so each per-paper slide is labelled with its
+# actual article name — the abbreviations alone are hard to remember.
+TITLES = {
+ "A1":  "Attention, Learn to Solve Routing Problems!  (arXiv:1803.08475)",
+ "A2":  "POMO: Policy Optimization with Multiple Optima for Reinforcement Learning  (arXiv:2010.16011)",
+ "A3":  "TOP-Former: A Multi-Agent Transformer Approach for the Team Orienteering Problem  (arXiv:2311.18662)",
+ "A4":  "Multi-Start Team Orienteering Problem for UAS Mission Re-Planning with Data-Efficient Deep RL  (arXiv:2303.01963)",
+ "A5":  "The Dynamic Team Orienteering Problem in Spatial Crowdsourcing: A Scenario Sampling Approach  (arXiv:2601.11010)",
+ "LR2": "RouteFinder: Towards Foundation Models for Vehicle Routing Problems  (arXiv:2406.15007)",
+ "LR3": "Learning to Deliver: A Foundation Model for the Montreal Capacitated Vehicle Routing Problem  (arXiv:2403.00026)",
+ "LR4": "GOAL: A Generalist Combinatorial Optimization Agent Learner  (arXiv:2406.15079)",
+ "LR5": "On Unified Combinatorial Optimization via Problem Reduction to Matrix-Encoded General TSP  (OpenReview yEwakMNIex)",
+}
 
 
 def main():
@@ -321,6 +353,9 @@ def main():
         txbody = content_box(slide).text_frame._txBody
         for p in txbody.findall(qn("a:p")):                                     # clear cloned body paras
             txbody.remove(p)
+        tag = subtitle.split()[0]                                              # label per-paper slides with the full title
+        if tag in TITLES:
+            txbody.append(make_title(tmpl_l0, TITLES[tag]))
         for kind, text in paras:
             if kind == "s":
                 txbody.append(make_spacer(tmpl_l0)); continue

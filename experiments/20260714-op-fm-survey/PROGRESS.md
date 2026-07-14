@@ -45,9 +45,14 @@ Requested by yilin on 2026-07-14 (comment 799f9775 on YIL-113).
   subtitle (ph idx 10) = big bullet, keep short like "LR1"; body = content textbox 'TextBox 4', font Amasis MT Pro, 15/14 pt.
 - python-pptx installed into `torchnn`. Render check: `soffice --headless --convert-to pdf` + `pdftoppm`.
 
+## Revisions (post-delivery, on request)
+- **rev1 (07-14):** yilin — abbreviations hard to remember → added each paper's **full title** (bold, un-bulleted) atop the
+  9 per-paper slides via a `TITLES` map + `make_title()` in build_slides.py; titles verbatim from YIL-114/115 reads.
+  Re-rendered (A3/A4 densest, no overflow), re-attached to YIL-113. Overview slides (Agenda/Synthesis/Transfer) keep tags.
+
 ## Next step on resume
-DONE + delivered (deck attached to YIL-113 on 07-14, transfer verdict = iterate). Nothing pending unless yilin asks for
-edits — if so, iterate on `build_slides.py` and re-render, then re-attach. Possible follow-on the user floated: a RouteFinder
+DONE + delivered (deck attached to YIL-113 on 07-14, transfer verdict = iterate; rev1 title-labels added). Nothing pending
+unless yilin asks for edits — if so, iterate on `build_slides.py` and re-render, then re-attach. Possible follow-on the user floated: a RouteFinder
 (ai4co/routefinder) code-run spike — NOT requested yet, only a feasibility question; scope it only on explicit ask.
 
 ## Open items for the human (non-blocking)
