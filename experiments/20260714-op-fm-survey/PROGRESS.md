@@ -33,7 +33,7 @@ Requested by yilin on 2026-07-14 (comment 799f9775 on YIL-113).
 - [x] Built the deck: `op_fm_survey_slides.pptx` (13 slides) via `build_slides.py`; verified by PDF/PNG render.
 - [x] Wrote transfer-feasibility analysis → `TRANSFER_ANALYSIS.md`; `REPORT.md` done.
 - [x] Committed on branch `exp/op-fm-survey`.
-- [ ] Attach deck to YIL-113 + deliver to yilin; reply-accept on YIL-115.
+- [x] Delivered deck to YIL-113 (comment + op_fm_survey_slides.pptx attached, 07-14); reply-accepted on YIL-114/YIL-115; both sub-issues → done. **Task complete; YIL-113 in_review awaiting yilin.**
 
 ## Corrections folded in (verified)
 1. RouteFinder venue = **TMLR 09/2025**, not ICML 2025 (my intake error).
@@ -46,8 +46,9 @@ Requested by yilin on 2026-07-14 (comment 799f9775 on YIL-113).
 - python-pptx installed into `torchnn`. Render check: `soffice --headless --convert-to pdf` + `pdftoppm`.
 
 ## Next step on resume
-Deck + analysis are done and committed. Remaining = platform delivery (attach to YIL-113, reply on YIL-115). If yilin wants
-edits (content trims, reorder, or paste-into their deck), iterate on `build_slides.py` and re-render.
+DONE + delivered (deck attached to YIL-113 on 07-14, transfer verdict = iterate). Nothing pending unless yilin asks for
+edits — if so, iterate on `build_slides.py` and re-render, then re-attach. Possible follow-on the user floated: a RouteFinder
+(ai4co/routefinder) code-run spike — NOT requested yet, only a feasibility question; scope it only on explicit ask.
 
 ## Open items for the human (non-blocking)
 - Literature DB has **two duplicate UniCO pages** (all-caps …971d… + normal …a6e6…) → manual merge.
