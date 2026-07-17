@@ -64,14 +64,25 @@ train (CE teacher forcing + eval vs exact).
 **Result (2000 train / 200 test / 40 epochs, single seed):** 190/200 valid, 106/190 = 55.8% exact-
 optimal, mean normalized-obj gap 0.00088 (max 0.0079; mean exact obj 0.3917). Training ~2 min GPU.
 
-## Known gaps / next steps
-1. **Budget/horizon mask at decode missing** (10/200 invalid = graph-legal but horizon-infeasible
-   routes under that instance's deltas). = the OP/TOP delta. Implement time-tracking mask in
-   model.legal_next()/greedy_decode (needs per-sample elapsed-time given delta).
-2. 3-seed protocol + more data (label gen ~40 ms/instance → 50k instances ≈ 35 min) for REPORT.md.
-3. Scaling sweep (params 0.1-2M × data 1k-50k) for the user's scaling-law question.
-4. Optional: nucleus sampling multi-decode (FM-MCVRP's NS-100/1000) — likely pushes optimal% up.
+## 2026-07-17 later — user directive: GUROBI labels only (no brute force in pipeline) + bigger nets
+Commit f37ec54. Refactor complete:
+- toy_env → parametric `Grid(R,C)` (Grid(3,3) == legacy topology, verified). Horizon auto-calibrated
+  (worst route at max delta × 1.15) → all routes always feasible; 3x3 horizon now 61 (was legacy 45).
+- milp_baseline → **time-expanded arc-flow MILP** (polynomial, zero route enumeration; aggregated
+  integer flow for identical vehicles + path decomposition). Validated 5/5 == brute force on 3x3.
+  Enumeration survives ONLY as small-grid validator (solve_exact) — never in the label path.
+- data_gen: Gurobi labels (20 ms/inst 3x3, 74 ms/inst 4x4). model: decode mask now = graph-legality
+  + horizon/budget feasibility (_min_finish_time; NOTE: memo-less recursion, fine ≤ ~5x5, memoize later).
+- **3x3 w/ Gurobi labels (2000/200/40ep): 200/200 valid, 55.5% match Gurobi, mean gap 0.00101,
+  decode 2 ms/inst.** Budget mask fixed all previously-invalid decodes.
+- 4x4 run (2000/200/40ep) launched in background (task biuhn0mik); results → next comment/REPORT.
+
+## Next steps
+1. Collect 4x4 result; post comparison comment (3x3 vs 4x4 = the "more options" request).
+2. 3-seed protocol + REPORT.md draft (spike verdict).
+3. Scaling sweep (params 0.1-2M × data 1k-50k × grid 3x3/4x4/5x5) for the scaling-law question.
+4. Optional: nucleus-sampling multi-decode (FM-MCVRP NS-100) to push match% up.
 
 ## Next step on resume
-Read this file. Next: (1) horizon mask at decode, (2) 3-seed run + REPORT.md draft.
+Read this file. If 4x4 background task done: report results (comment + REPORT.md). Then 3-seed + sweep.
 Env: `source ~/anaconda3/etc/profile.d/conda.sh && conda activate torchnn`. Branch exp/fm-mcvrp-local.
