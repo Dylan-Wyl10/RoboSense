@@ -1,23 +1,31 @@
 """Toy 3x3 one-way network environment for the FM-MCVRP-style SL spike (YIL-113).
 
-Standalone (no SUMO). Mirrors the legacy small-example MILP in
-src/utili/routeOptimGurobi.py::build_model_smallexample:
-  min  alpha1 * total_travel_cost - alpha2 * coverage / (n_links * horizon)
-where coverage = |union over fleet of occupied (link, time) cells| (y[i,t]).
+Standalone (no SUMO). Objective mirrors the legacy small-example MILP
+(src/utili/routeOptimGurobi.py::build_model_smallexample) but with BOTH terms
+normalized to [0, 1] (user request, 2026-07-17):
 
-Graph: link-node representation of a 3x3 street grid. Nodes 1-12 horizontal
-(eastbound), 13-24 vertical (southbound), 25 = start, 26 = end (both cost-free).
-Topology identical to get_small_net_param()'s `con` and the user's figure.
+    min  alpha1 * total_cost / cost_norm  -  alpha2 * coverage / (n_links * horizon)
 
-Travel cost (user-specified, 2026-07-16): node i entered at time t costs
-    c(i, t) = (i + t) // 4 + 1
-interpreted as the travel time spent traversing node i; the vehicle occupies
-(i, t) .. (i, t + c - 1) for coverage purposes.
+where coverage = |union over fleet of occupied (link, time) cells| and
+cost_norm = fleet_size * (max single-route cost over the instance) — a tight,
+precomputable constant, so the MILP objective stays linear.
+
+Graph: link-node form of a 3x3 street grid. Nodes 1-12 horizontal (east),
+13-24 vertical (south), 25 = start, 26 = end (both cost-free). Topology
+identical to the legacy `con` dict and the user's figure. DAG: 20 routes,
+each visiting exactly 6 links.
+
+Cost (user formula, t = node ENTRY time) plus per-instance perturbation:
+    c_inst(i, t) = (i + t) // 4 + 1 + delta[i]
+delta[i] >= 0 are per-instance node offsets ("today's congestion") — the
+instance-variability axis, analogous to FM-MCVRP's daily demand subsets.
+delta = 0 recovers the user's exact formula.
 """
 
-from itertools import product
+from itertools import combinations_with_replacement
 
-# node -> list of successor nodes (verbatim from legacy get_small_net_param)
+import numpy as np
+
 CON = {1: [2, 16], 2: [3, 19], 3: [22], 4: [5, 17], 5: [6, 20], 6: [23],
        7: [8, 18], 8: [9, 21], 9: [24], 10: [11], 11: [12], 12: [26],
        13: [4, 14], 14: [7, 15], 15: [10], 16: [5, 17], 17: [18, 8], 18: [11],
@@ -25,19 +33,14 @@ CON = {1: [2, 16], 2: [3, 19], 3: [22], 4: [5, 17], 5: [6, 20], 6: [23],
        25: [1, 13], 26: []}
 
 START, END = 25, 26
-LINKS = [i for i in range(1, 25)]          # cost/coverage-bearing nodes
+LINKS = list(range(1, 25))
 N_LINKS = len(LINKS)
-
-
-def cost(i, t):
-    """Travel time through node i when entered at time t (start/end are free)."""
-    if i in (START, END):
-        return 0
-    return (i + t) // 4 + 1
+HORIZON = 45          # legacy time_step
+N_VEH = 4             # user setting 2026-07-17: 4 vehicles, same departure
+DEPART = 0
 
 
 def enumerate_routes(start=START, end=END):
-    """All simple start->end paths. The one-way grid is a DAG: expect 20."""
     routes, stack = [], [(start, [start])]
     while stack:
         node, path = stack.pop()
@@ -49,61 +52,100 @@ def enumerate_routes(start=START, end=END):
     return sorted(routes)
 
 
-ROUTES = enumerate_routes()
+ROUTES = enumerate_routes()          # 20 routes, len 8 incl. 25/26
+N_ROUTES = len(ROUTES)
 
 
-def simulate(route, t0, horizon=None):
-    """Drive one route departing at t0.
+class Instance:
+    """One problem instance = per-node cost offsets (+ fleet config)."""
 
-    Returns (total_cost, occupied) where occupied = {(i, t), ...} link-time
-    cells (the omega/y cells of the MILP). Start/end nodes add no cost and no
-    occupation. If horizon is given and the vehicle cannot finish (enter END)
-    strictly within it, returns (None, None) = infeasible.
-    """
-    t, total, occupied = t0, 0, set()
-    for node in route:
-        if node == END:
-            return (total, occupied) if horizon is None or t <= horizon else (None, None)
-        if node == START:
-            continue
-        c = cost(node, t)
-        if horizon is not None and t + c > horizon:
-            return None, None
-        occupied.update((node, s) for s in range(t, t + c))
-        total += c
-        t += c
-    raise ValueError("route did not reach END")
+    def __init__(self, delta=None, n_veh=N_VEH, depart=DEPART, horizon=HORIZON,
+                 alpha1=0.5, alpha2=0.5):
+        self.delta = np.zeros(N_LINKS, dtype=np.int64) if delta is None \
+            else np.asarray(delta, dtype=np.int64)
+        assert self.delta.shape == (N_LINKS,) and (self.delta >= 0).all()
+        self.n_veh, self.depart, self.horizon = n_veh, depart, horizon
+        self.alpha1, self.alpha2 = alpha1, alpha2
+        self._route_cache = None
 
+    def cost(self, i, t):
+        if i in (START, END):
+            return 0
+        return (i + t) // 4 + 1 + int(self.delta[i - 1])
 
-def fleet_objective(assignment, departures, alpha1=0.5, alpha2=0.5, horizon=45):
-    """MILP-equivalent objective (minimize) for a joint fleet assignment.
+    def simulate(self, route, t0=None):
+        """(total_cost, occupied-cell bool[N_LINKS*HORIZON]) or (None, None)."""
+        t0 = self.depart if t0 is None else t0
+        t, total = t0, 0
+        occ = np.zeros(N_LINKS * self.horizon, dtype=bool)
+        for node in route:
+            if node == END:
+                return (total, occ) if t <= self.horizon else (None, None)
+            if node == START:
+                continue
+            c = self.cost(node, t)
+            if t + c > self.horizon:
+                return None, None
+            occ[(node - 1) * self.horizon + t:(node - 1) * self.horizon + t + c] = True
+            total += c
+            t += c
+        raise ValueError("route did not reach END")
 
-    assignment: list of route indices (into ROUTES), one per vehicle.
-    departures: list of departure times t0, one per vehicle.
-    Returns (obj, total_cost, coverage) or None if any vehicle is infeasible.
-    """
-    total_cost, union = 0, set()
-    for ridx, t0 in zip(assignment, departures):
-        c, occ = simulate(ROUTES[ridx], t0, horizon)
-        if c is None:
+    def route_table(self):
+        """Simulate all 20 routes once: (costs[k], occ[k] bool matrix, feas[k])."""
+        if self._route_cache is None:
+            costs = np.full(N_ROUTES, -1, dtype=np.int64)
+            occs = np.zeros((N_ROUTES, N_LINKS * self.horizon), dtype=bool)
+            for k, r in enumerate(ROUTES):
+                c, o = self.simulate(r)
+                if c is not None:
+                    costs[k], occs[k] = c, o
+            self._route_cache = (costs, occs, costs >= 0)
+        return self._route_cache
+
+    @property
+    def cost_norm(self):
+        costs, _, feas = self.route_table()
+        return self.n_veh * int(costs[feas].max())
+
+    def objective(self, assignment):
+        """Normalized MILP objective for a route-index assignment (len n_veh)."""
+        costs, occs, feas = self.route_table()
+        idx = np.asarray(assignment)
+        if not feas[idx].all():
             return None
-        total_cost += c
-        union |= occ
-    cov = len(union)
-    obj = alpha1 * total_cost - alpha2 * cov / (N_LINKS * horizon)
-    return obj, total_cost, cov
+        total = int(costs[idx].sum())
+        cov = int(np.logical_or.reduce(occs[idx]).sum())
+        obj = (self.alpha1 * total / self.cost_norm
+               - self.alpha2 * cov / (N_LINKS * self.horizon))
+        return obj, total, cov
+
+    def solve_exact(self):
+        """Provably-optimal joint assignment by vectorized enumeration.
+
+        Same departure time => vehicles interchangeable => enumerate multisets
+        (C(20+V-1, V) = 8855 for V=4 instead of 20^4).
+        Returns (assignment, obj, total_cost, coverage).
+        """
+        costs, occs, feas = self.route_table()
+        combos = np.array(list(combinations_with_replacement(
+            np.flatnonzero(feas), self.n_veh)))            # (M, V)
+        tot = costs[combos].sum(axis=1)                     # (M,)
+        cov = np.logical_or.reduce(occs[combos], axis=1).sum(axis=1)
+        obj = (self.alpha1 * tot / self.cost_norm
+               - self.alpha2 * cov / (N_LINKS * self.horizon))
+        b = int(np.argmin(obj))
+        return list(combos[b]), float(obj[b]), int(tot[b]), int(cov[b])
 
 
-def solve_exact(departures, alpha1=0.5, alpha2=0.5, horizon=45):
-    """Brute-force exact optimum over all 20^V joint assignments (V small).
+def sample_instance(rng, max_delta=1, min_feasible=4, **kw):
+    """Random instance: iid per-node offsets in {0..max_delta} ('daily traffic').
 
-    Returns (best_assignment, best_obj, best_cost, best_cov).
+    max_delta=1 keeps all instances solvable within HORIZON (base route costs
+    are 32-44 vs horizon 45, so larger offsets kill feasibility). Resamples
+    until at least `min_feasible` of the 20 routes are feasible.
     """
-    best = None
-    for assign in product(range(len(ROUTES)), repeat=len(departures)):
-        res = fleet_objective(list(assign), departures, alpha1, alpha2, horizon)
-        if res is None:
-            continue
-        if best is None or res[0] < best[1]:
-            best = (list(assign), *res)
-    return best
+    while True:
+        inst = Instance(delta=rng.integers(0, max_delta + 1, size=N_LINKS), **kw)
+        if int(inst.route_table()[2].sum()) >= min_feasible:
+            return inst
