@@ -28,15 +28,32 @@ decoder adapted to our selective/max-utility TOP shape (budget masks + subset se
 1. Where is the HGS code the user mentioned?
 2. OK to default to Gurobi-as-label-machine for the spike?
 
+## 2026-07-16 update — user simplified the setting (comment 4827d78c): NO SUMO
+Pure 3x3 one-way graph (their figure): nodes 1-12 horizontal(E), 13-24 vertical(S), 25->{1,13},
+{12,24}->26. == legacy `get_small_net_param()` con dict EXACTLY (also = slide-8 toy).
+Cost: c(i,t)=(i+t)//4+1 (user's NEW formula; legacy was (i+t+1)%5+1). Assumed t = node ENTRY time,
+occupation spans traversal (matches omega constraints) — stated to user, awaiting correction if wrong.
+Objective (from legacy build_model_smallexample — P0 done): min a1*total_cost - a2*|union (i,t) cells|/(24*45);
+y[i,t]=fleet coverage counted once. veh_od per-vehicle from/to/time → different start/end already supported.
+
 ## Status
-- [x] Repo recon + env verification (above).
-- [x] Branch `exp/fm-mcvrp-local` + this dir.
-- [x] Plan comment posted to YIL-113.
-- [ ] P0 semantics pass on routeOptimGurobi.build_model (next session start here).
-- [ ] P1 generator + smoke (3 tiny instances end-to-end) → then scale.
+- [x] Repo recon + env verification.
+- [x] Branch `exp/fm-mcvrp-local` + this dir; plan comment posted.
+- [x] P0: build_model_smallexample semantics extracted (objective/variables above).
+- [x] **`neural_route/toy_env.py`** (new top-level module, commit 99933e4): DAG (20 routes, verified vs
+      slide-8 + hand-checked costs), simulate(), MILP-equivalent fleet_objective(), solve_exact()
+      brute force 20^V (V<=4 ⇒ PROVABLE optimum — stronger than Gurobi labels on the toy).
+- [ ] Validate legacy MILP vs solve_exact on same instances (catches bugs both ways).
+- [ ] data_gen.py: sample departures/V → exact labels → (instance, solution) pairs.
+- [ ] model.py + train.py: joint-sequence tokens [v1 route SEP v2 route ...], ~0.2-0.5M param enc-dec.
+- [ ] eval.py: gap vs exact, 3 seeds.
+
+## Key finding to resolve (flagged to user)
+With c=(i+t)//4+1, cost term (tens) >> normalized coverage (<=1): at a1=a2=0.5 the 2-veh optimum
+puts BOTH vehicles on the same cheapest route (obj 33.98, cost 68, cov 49) — coverage barely moves
+the needle, no route diversity. Legacy alphas were tuned for the old ~1-5 cost scale. Options offered:
+rebalance alpha, or normalize the cost term. Awaiting user choice (proceeding with alpha sweep default).
 
 ## Next step on resume
-Read PROGRESS first (this file). Start P0: read `src/utili/routeOptimGurobi.py` build_model/
-build_model_smallexample/solve_model/getRouteFromX closely; extract the instance spec
-(inputs: veh_od, max_time, CTM state; outputs: per-veh cell/segment routes + utility).
-Then write P1 generator under this dir. Commit early/often on exp/fm-mcvrp-local.
+Read this file. Next: data_gen.py (+ MILP-vs-exact cross-validation), then model/train.
+Commit early/often on exp/fm-mcvrp-local. torchnn env: `source ~/anaconda3/etc/profile.d/conda.sh`.
