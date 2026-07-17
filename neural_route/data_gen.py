@@ -1,77 +1,80 @@
-"""Offline (instance -> exact-optimal solution) dataset for the toy spike.
+"""Offline (instance -> solution) dataset, labels from the GUROBI MILP.
 
-FM-MCVRP-style: labels are computed OFFLINE before training (here by the
-provably-exact enumeration solver — no Gurobi calls during training).
+User directive 2026-07-17: no brute force in the pipeline — Gurobi generates
+the training labels (time-expanded flow MILP, milp_baseline.solve_milp), the
+same code path that will run on large networks. FM-MCVRP-style: all labels
+computed offline; the training loop makes zero solver calls.
 
-Token scheme (vocab 28):
-    0 PAD | 1..24 link/node ids | 25 SEP (end of one vehicle's route,
-    emitted where the route reaches END via node 12 or 24) | 26 BOS | 27 EOS
-Target sequence for a 4-vehicle solution (canonical: routes sorted):
-    BOS v1_links... SEP v2_links... SEP v3_links... SEP v4_links... SEP EOS
+Token scheme for a grid with L links (vocab L+4):
+    0 PAD | 1..L link ids | L+1 SEP (route reached END) | L+2 BOS | L+3 EOS
+Target: BOS v1_links... SEP v2... SEP v3... SEP v4... SEP EOS
+(routes canonically sorted; every route has exactly grid.route_len links).
 """
 
 import numpy as np
 
 from . import toy_env as te
+from .milp_baseline import solve_milp
 
-PAD, SEP, BOS, EOS = 0, 25, 26, 27
-VOCAB = 28
-SEQ_LEN = 1 + te.N_VEH * 7 + 1          # BOS + 4*(6 links + SEP) + EOS = 30
+PAD = 0
 
 
-def solution_to_tokens(assignment):
-    toks = [BOS]
-    for k in sorted(assignment):
-        toks.extend(te.ROUTES[k][1:-1])  # 6 link ids (drop 25/26)
-        toks.append(SEP)
-    toks.append(EOS)
+def vocab_of(grid):
+    L = grid.n_links
+    return {"SEP": L + 1, "BOS": L + 2, "EOS": L + 3, "size": L + 4}
+
+
+def seq_len_of(grid, n_veh=4):
+    return 1 + n_veh * (grid.route_len + 1) + 1
+
+
+def solution_to_tokens(grid, routes):
+    vb = vocab_of(grid)
+    toks = [vb["BOS"]]
+    for r in sorted(routes):
+        toks.extend(r[1:-1])
+        toks.append(vb["SEP"])
+    toks.append(vb["EOS"])
     return np.array(toks, dtype=np.int64)
 
 
-def tokens_to_assignment(toks):
-    """Inverse: token list -> route indices (None if any route invalid)."""
-    route_lookup = {tuple(r[1:-1]): k for k, r in enumerate(te.ROUTES)}
+def tokens_to_routes(grid, toks, n_veh=4):
+    """Token list -> explicit routes (None if malformed)."""
+    vb = vocab_of(grid)
     routes, cur = [], []
     for tk in toks:
-        if tk in (BOS, PAD):
+        tk = int(tk)
+        if tk in (vb["BOS"], PAD):
             continue
-        if tk == EOS:
+        if tk == vb["EOS"]:
             break
-        if tk == SEP:
-            k = route_lookup.get(tuple(cur))
-            if k is None:
+        if tk == vb["SEP"]:
+            if len(cur) != grid.route_len:
                 return None
-            routes.append(k)
+            routes.append([grid.START] + cur + [grid.END])
             cur = []
         else:
-            cur.append(int(tk))
-    return routes if len(routes) == te.N_VEH and not cur else None
+            cur.append(tk)
+    return routes if len(routes) == n_veh and not cur else None
 
 
-def generate(n, seed=0):
-    """Returns features (n, 24) float32 = per-node delta, targets (n, SEQ_LEN)."""
+def generate(n, grid=te.GRID3, seed=0, n_veh=4, time_limit=60, log_every=200):
+    """Returns X (n, n_links) float32 deltas, Y (n, seq_len) tokens, objs (n,)."""
     rng = np.random.default_rng(seed)
-    X = np.zeros((n, te.N_LINKS), dtype=np.float32)
-    Y = np.full((n, SEQ_LEN), PAD, dtype=np.int64)
+    SL = seq_len_of(grid, n_veh)
+    X = np.zeros((n, grid.n_links), dtype=np.float32)
+    Y = np.full((n, SL), PAD, dtype=np.int64)
     objs = np.zeros(n)
     for i in range(n):
-        inst = te.sample_instance(rng)
-        assign, obj, _, _ = inst.solve_exact()
-        toks = solution_to_tokens(assign)
+        inst = te.sample_instance(rng, grid=grid, n_veh=n_veh)
+        res = solve_milp(inst, time_limit=time_limit)
+        if res is None:
+            raise RuntimeError(f"MILP produced no solution for instance {i}")
+        routes, obj, _, _ = res
+        toks = solution_to_tokens(grid, routes)
         X[i] = inst.delta
         Y[i, :len(toks)] = toks
         objs[i] = obj
+        if log_every and (i + 1) % log_every == 0:
+            print(f"  labelled {i+1}/{n}")
     return X, Y, objs
-
-
-if __name__ == "__main__":
-    import sys, time
-    n = int(sys.argv[1]) if len(sys.argv) > 1 else 100
-    t0 = time.time()
-    X, Y, objs = generate(n)
-    out = f"neural_route/data/toy_{n}.npz"
-    import os
-    os.makedirs("neural_route/data", exist_ok=True)
-    np.savez_compressed(out, X=X, Y=Y, objs=objs)
-    print(f"saved {out}: {n} instances in {time.time()-t0:.1f}s "
-          f"(mean exact obj {objs.mean():.4f})")
