@@ -86,3 +86,8 @@ Commit f37ec54. Refactor complete:
 ## Next step on resume
 Read this file. If 4x4 background task done: report results (comment + REPORT.md). Then 3-seed + sweep.
 Env: `source ~/anaconda3/etc/profile.d/conda.sh && conda activate torchnn`. Branch exp/fm-mcvrp-local.
+
+## 4x4 result (background run biuhn0mik, 2026-07-17)
+2000/200/40ep, Gurobi labels: **200/200 valid, 137/200 = 68.5% match/beat Gurobi ref, mean gap
+0.00032, max 0.00496, decode 3 ms/inst.** Larger grid ⇒ closer to Gurobi (68.5% vs 55.5% on 3x3) —
+plausible (more near-optimal ties) but unconfirmed; revisit with 3 seeds. Comparison comment posted.
