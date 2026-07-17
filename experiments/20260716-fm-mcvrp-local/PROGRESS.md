@@ -48,12 +48,30 @@ y[i,t]=fleet coverage counted once. veh_od per-vehicle from/to/time → differen
 - [ ] model.py + train.py: joint-sequence tokens [v1 route SEP v2 route ...], ~0.2-0.5M param enc-dec.
 - [ ] eval.py: gap vs exact, 3 seeds.
 
-## Key finding to resolve (flagged to user)
-With c=(i+t)//4+1, cost term (tens) >> normalized coverage (<=1): at a1=a2=0.5 the 2-veh optimum
-puts BOTH vehicles on the same cheapest route (obj 33.98, cost 68, cov 49) — coverage barely moves
-the needle, no route diversity. Legacy alphas were tuned for the old ~1-5 cost scale. Options offered:
-rebalance alpha, or normalize the cost term. Awaiting user choice (proceeding with alpha sweep default).
+## 2026-07-17 update — user directives applied; FULL PIPELINE BUILT & RUN (commit 0f81a3b)
+User: normalize cost inside the MILP ✓ (both terms now in [0,1]; cost_norm = V*max feasible route
+cost — constant scaling, objective stays linear; diversity now emerges at a=0.5/0.5).
+User: 4 vehicles, same departure t=0 ✓ (defaults N_VEH=4/DEPART=0; symmetry → multiset enum, 8855).
+Degenerate-instance problem solved: per-instance node offsets delta in {0,1} ("daily congestion",
+FM-MCVRP demand-subset analog; max_delta=1 else horizon kills feasibility — measured 0/33/129
+zero-feasible out of 200 at max_delta=1/2/3). delta IS the model input (24 values).
+
+Pipeline now in neural_route/: toy_env (env + exact solver), milp_baseline (normalized Gurobi MILP,
+5/5 == brute force), data_gen (offline exact labels; token scheme BOS/links/SEP/EOS, vocab 28),
+model (0.50M enc-dec, d=96, 2 enc + 3 dec, delta-conditioned encoder, masked greedy decode),
+train (CE teacher forcing + eval vs exact).
+
+**Result (2000 train / 200 test / 40 epochs, single seed):** 190/200 valid, 106/190 = 55.8% exact-
+optimal, mean normalized-obj gap 0.00088 (max 0.0079; mean exact obj 0.3917). Training ~2 min GPU.
+
+## Known gaps / next steps
+1. **Budget/horizon mask at decode missing** (10/200 invalid = graph-legal but horizon-infeasible
+   routes under that instance's deltas). = the OP/TOP delta. Implement time-tracking mask in
+   model.legal_next()/greedy_decode (needs per-sample elapsed-time given delta).
+2. 3-seed protocol + more data (label gen ~40 ms/instance → 50k instances ≈ 35 min) for REPORT.md.
+3. Scaling sweep (params 0.1-2M × data 1k-50k) for the user's scaling-law question.
+4. Optional: nucleus sampling multi-decode (FM-MCVRP's NS-100/1000) — likely pushes optimal% up.
 
 ## Next step on resume
-Read this file. Next: data_gen.py (+ MILP-vs-exact cross-validation), then model/train.
-Commit early/often on exp/fm-mcvrp-local. torchnn env: `source ~/anaconda3/etc/profile.d/conda.sh`.
+Read this file. Next: (1) horizon mask at decode, (2) 3-seed run + REPORT.md draft.
+Env: `source ~/anaconda3/etc/profile.d/conda.sh && conda activate torchnn`. Branch exp/fm-mcvrp-local.
