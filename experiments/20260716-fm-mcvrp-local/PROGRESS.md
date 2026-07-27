@@ -91,3 +91,12 @@ Env: `source ~/anaconda3/etc/profile.d/conda.sh && conda activate torchnn`. Bran
 2000/200/40ep, Gurobi labels: **200/200 valid, 137/200 = 68.5% match/beat Gurobi ref, mean gap
 0.00032, max 0.00496, decode 3 ms/inst.** Larger grid ⇒ closer to Gurobi (68.5% vs 55.5% on 3x3) —
 plausible (more near-optimal ties) but unconfirmed; revisit with 3 seeds. Comparison comment posted.
+
+## 2026-07-27 — case-by-case comparison (user request)
+train.py exports per-instance CSV (obj/cost/cov/gap, identical-routes flag, both parties' routes)
++ model checkpoint (commit 71973b8). 3x3 seed0 breakdown: 97/200 identical route sets,
+14/200 alternative-optima ties (same obj, different routes), 89/200 worse (all gap lives here,
+mean 0.00226), 0 beats (Gurobi optimal on these). Worst case = two vehicles duplicated a route
+(coverage waste) — failure mode is "insufficient dispersion", not illegality. 3x3 CSV posted to
+YIL-113. 4x4 per-case rerun relaunched (prev killed by session teardown); on completion post 4x4
+digest + CSV as follow-up comment. Then: 3-seed REPORT, scaling sweep.
