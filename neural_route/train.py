@@ -18,7 +18,8 @@ from .data_gen import PAD, generate, tokens_to_routes
 from .model import RouteModel, greedy_decode
 
 
-def main(R=3, C=3, n_train=2000, n_test=200, epochs=40, d=96, seed=0):
+def main(R=3, C=3, n_train=2000, n_test=200, epochs=40, d=96, seed=0,
+         out_dir=None):
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     torch.manual_seed(seed)
     grid = te.Grid(R, C)
@@ -64,6 +65,7 @@ def main(R=3, C=3, n_train=2000, n_test=200, epochs=40, d=96, seed=0):
     tok_lists = greedy_decode(model, insts, Xte_t)
     t_dec = (time.time() - t0) / n_test
     gaps, n_valid, n_le = [], 0, 0
+    cases = []                       # per-instance model-vs-Gurobi comparison
     for i in range(n_test):
         routes = tokens_to_routes(grid, tok_lists[i], insts[i].n_veh)
         if routes is None:
@@ -76,7 +78,32 @@ def main(R=3, C=3, n_train=2000, n_test=200, epochs=40, d=96, seed=0):
         gaps.append(gap)
         if gap < 1e-9:
             n_le += 1
+        g_routes = tokens_to_routes(grid, Yte[i], insts[i].n_veh)
+        g_res = insts[i].objective(g_routes)
+        cases.append({
+            "idx": i, "gap": gap,
+            "model_obj": res[0], "gurobi_obj": obj_te[i],
+            "model_cost": res[1], "gurobi_cost": g_res[1],
+            "model_cov": res[2], "gurobi_cov": g_res[2],
+            "same_routes": sorted(routes) == sorted(g_routes),
+            "model_routes": "|".join("-".join(map(str, r[1:-1]))
+                                     for r in sorted(routes)),
+            "gurobi_routes": "|".join("-".join(map(str, r[1:-1]))
+                                      for r in sorted(g_routes)),
+        })
     gaps = np.array(gaps)
+    if out_dir and cases:
+        import csv, os
+        os.makedirs(out_dir, exist_ok=True)
+        path = f"{out_dir}/eval_cases_{R}x{C}_seed{seed}.csv"
+        with open(path, "w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=list(cases[0].keys()))
+            w.writeheader()
+            w.writerows(cases)
+        torch.save(model.state_dict(), f"{out_dir}/model_{R}x{C}_seed{seed}.pt")
+        n_same = sum(c["same_routes"] for c in cases)
+        print(f"  identical route sets   : {n_same}/{len(cases)}")
+        print(f"  per-case CSV -> {path}")
     print(f"\neval on {n_test} held-out instances "
           f"({t_dec*1000:.0f} ms/instance decode):")
     print(f"  valid solutions          : {n_valid}/{n_test}")
@@ -91,4 +118,5 @@ def main(R=3, C=3, n_train=2000, n_test=200, epochs=40, d=96, seed=0):
 
 if __name__ == "__main__":
     args = [int(a) for a in sys.argv[1:6]]
-    main(*args)
+    out = sys.argv[6] if len(sys.argv) > 6 else None
+    main(*args, out_dir=out)
