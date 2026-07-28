@@ -100,3 +100,12 @@ mean 0.00226), 0 beats (Gurobi optimal on these). Worst case = two vehicles dupl
 (coverage waste) — failure mode is "insufficient dispersion", not illegality. 3x3 CSV posted to
 YIL-113. 4x4 per-case rerun relaunched (prev killed by session teardown); on completion post 4x4
 digest + CSV as follow-up comment. Then: 3-seed REPORT, scaling sweep.
+
+## 2026-07-28 — measured cost benchmark + 4x4 review delivered
+RTX 3090: labels 20-43 ms (3x3) / 74-99 ms (4x4) per inst -> ~1.5 / ~3-4 min for 2200; training
+0.4 s/epoch (14 s / 40 ep) BOTH grids; peak VRAM 99 / 131 MB (0.4-0.5% of 24 GB); end-to-end
+~2-3 / ~4-6 min. Bottleneck = labeling, not NN (CPU-trainable at this scale). 4x4 cases: 133
+identical / 4 alt-optima / 63 worse (mean 0.0010) / 0 beat; worst idx=122 = coverage-overbuy
+(cov 260 vs 200, cost +10, net loss under current alpha) — DIFFERENT failure mode than 3x3's
+duplicate-route; alpha-pricing behavioral note for later tuning. fig4/fig5 in results/, posted.
+Remaining: 3-seed REPORT + scaling sweep (incl. 5x5).
