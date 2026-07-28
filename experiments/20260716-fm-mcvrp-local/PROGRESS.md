@@ -125,3 +125,16 @@ distribution generalization verified; OOD / cross-scale = graceful-degradation e
 Start P1: neural_route/extract_5x5.py — instantiate Network(sizeX,sizeY,net_file,...) + CTM(...).init()
 offline (see simulation.py:40 for ctor args; sumo_cfg/5x5net/ has all files), dump cells/adjacency/
 free-flow times. Then P2 MILP timing probe. Branch exp/fm-mcvrp-local.
+
+## 2026-07-28 late — signal mechanism decoded (user caution verified); sample-size method set
+Signal chain (line-verified): cell.sig_flag multiplies merge/diverge flows (ctmcomponent 258-264,
+345-346); runCTM calls node.getEdgeSignalPhase(t*5) each step (ctmcomponent:995) -> sets C6/C7
+stopline cells 0/1 (network.py:136). traci provides ONLY (a) edge->phase-index map
+(getControlledLinks; derivable offline via sumolib TLS connections) and (b) the cycle anchor
+(getPhase/getNextSwitch). Future g/r is code-projected: (t_idx+range)%cycle<20, phase_split_time
+=[20,3,2]x8 cycle=100s; net.xml has 50 STATIC tlLogic with explicit per-intersection offsets ->
+OFFLINE replication is exact: sig_flag(e,t) = ((t+offset)%100)<20 on C6/C7 + net.xml phase map.
+P1 must include a sigflag parity check vs archived CTMsigflag logs. Bonus: offsets = extra
+instance-variability axis. Sample size: agreed 2200 insufficient; P2 = MILP timing (tight+relaxed
+MIPGap) + 1k/2k/5k data-scaling slope -> extrapolate (prior guess 10-20k, levers: relaxed-gap
+labels per FM-MCVRP, curriculum pretrain on small grids, 12-16-worker label farm).
