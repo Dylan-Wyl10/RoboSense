@@ -109,3 +109,19 @@ identical / 4 alt-optima / 63 worse (mean 0.0010) / 0 beat; worst idx=122 = cove
 (cov 260 vs 200, cost +10, net loss under current alpha) — DIFFERENT failure mode than 3x3's
 duplicate-route; alpha-pricing behavioral note for later tuning. fig4/fig5 in results/, posted.
 Remaining: 3-seed REPORT + scaling sweep (incl. 5x5).
+
+## 2026-07-28 later — 5x5 (760-cell) validation scoped (user request); recon done, plan posted
+Confirmed from result/middle_result0520/x_tmp.npy: real problem = (8 veh, 760 CTM cells, 150 steps).
+CTMcell_index.json = newline list of 760 cell names (NOT json). Offline extraction feasible:
+ctmcomponent.py has NO sumo/traci imports; Network (src/utili/network.py:191) builds from static
+files (net.xml + linkdirction_5x5.csv + demand/turn); traci only in simulation.py. Plan (defaults
+posted, non-blocking): P1 dump network_5x5.json via offline Network+CTM.init(); P2 time ONE
+time-expanded-flow MILP instance at 760x150 (go/no-go number) + instance spec (8 veh, entry->exit,
+synthetic per-cell congestion delta first, real CTM snapshots phase-2, signals baked into c[i,t]);
+P3 parallel label farm (500-2200 by timing); P4 same eval + case review. Q1 answered: same-
+distribution generalization verified; OOD / cross-scale = graceful-degradation expected, untested.
+
+## Next step on resume
+Start P1: neural_route/extract_5x5.py — instantiate Network(sizeX,sizeY,net_file,...) + CTM(...).init()
+offline (see simulation.py:40 for ctor args; sumo_cfg/5x5net/ has all files), dump cells/adjacency/
+free-flow times. Then P2 MILP timing probe. Branch exp/fm-mcvrp-local.
