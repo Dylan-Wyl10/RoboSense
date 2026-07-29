@@ -138,3 +138,17 @@ P1 must include a sigflag parity check vs archived CTMsigflag logs. Bonus: offse
 instance-variability axis. Sample size: agreed 2200 insufficient; P2 = MILP timing (tight+relaxed
 MIPGap) + 1k/2k/5k data-scaling slope -> extrapolate (prior guess 10-20k, levers: relaxed-gap
 labels per FM-MCVRP, curriculum pretrain on small grids, 12-16-worker label farm).
+
+## 2026-07-29 — OD-transfer / pct-gap / foundation-model questions (comment 557fa4fb)
+Q1 answered: current model CANNOT transfer OD (25->26 hardcoded, not an input feature; decode
+anchored to CON[START]) — by design, not method limit. Fix offered (pending user nod): OD as
+instance input + randomized-OD training (veh_od already supports; UAS-MSTOP precedent). ~1 day.
+Q2: prior gaps were ABSOLUTE (normalized units). Pct distributions computed + fig6 posted:
+3x3 mean 0.26% max 2.60%; 4x4 mean 0.09% max 1.34%; median 0 both. "GBDT" interpreted as Gurobi
+(flagged); offered real GBDT baseline as optional ablation if actually meant.
+Q3: delegated to literature-reviewer as YIL-123 (1b9381dc) — per-paper: input tied to fixed graph
+vs coordinate-based; dataset-switch mode (zero-shot/fine-tune/retrain + numbers); cross-graph
+evidence; their "foundation model" criteria. Preliminary take posted: ours = single-network
+single-OD amortized solver; FM-MCVRP-level ("per-city FM") reachable via OD-conditioning +
+wider instance distribution; cross-network FM needs coordinate/feature cell encoding (arch step).
+On reviewer return: synthesize comparison table + gap list for the user.
