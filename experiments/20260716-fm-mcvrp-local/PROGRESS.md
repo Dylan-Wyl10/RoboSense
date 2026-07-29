@@ -152,3 +152,23 @@ evidence; their "foundation model" criteria. Preliminary take posted: ours = sin
 single-OD amortized solver; FM-MCVRP-level ("per-city FM") reachable via OD-conditioning +
 wider instance distribution; cross-network FM needs coordinate/feature cell encoding (arch step).
 On reviewer return: synthesize comparison table + gap list for the user.
+
+## 2026-07-29 later — EXTENSION 1 greenlit & designed (comment 4b0e59c4): OD-conditioning
+User wants: 8 gates on 4x4 (their count: 28 ODs), variable OD + variable fleet at inference; then
+cross-network training later. Geometry verified: one-way E/S grid => ODs are ORDERED + reachability-
+constrained; 28=C(8,2) needs bidirectional (deferred to cross-network phase, told user). Verified
+placement: entries NW (N-edge cols 0,1 + W-edge rows 1,2), exits SE (S-edge cols 2,3 + E-edge rows
+2,3) -> ALL 16 ordered ODs feasible. Design posted:
+- Instance = {delta, [(o_k,d_k)] per veh, V in 2-8}.
+- MILP -> multi-commodity (group by identical OD).
+- Model: +V task tokens (emb(o)+emb(d)) in encoder; decoder segment-k masks use (o_k,d_k):
+  start=CON[o_k], SEP at pred(d_k), budget mask = min-finish-to-d_k. Variable V via token count.
+- Eval 3 layers: same-distribution; OD-ZERO-SHOT (hold 2-3 OD pairs out of training entirely);
+  fleet-size extrapolation (train V{2,3,4,6}, test V{5,8}).
+- Estimate 3 work sessions. 5x5 P1 extraction stays queued behind this (user prioritized OD ext).
+
+## Next step on resume
+Implement extension 1 in neural_route/: (1) gates in Grid (entry/exit node ids > n_links+...),
+sample_instance with od_list+V; (2) milp_baseline multi-commodity; validate vs per-OD route
+enumeration on 3-5 instances; (3) model task tokens + per-vehicle masks; (4) data/train/3-layer eval.
+Branch exp/fm-mcvrp-local. Also pending: YIL-123 reviewer return (foundation-model synthesis).
