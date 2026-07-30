@@ -82,13 +82,11 @@ class BiGrid:
             self.con[lid] = [nxt for nxt in out_of.get(b, [])
                              if nxt != self.reverse[lid]]
 
-        # 8 gates, 2 per side at symmetric boundary intersections
-        mids = (1, 2) if min(R, C) >= 3 else (0, min(R, C))
+        # 8 gates (user spec 2026-07-30): 4 corners + 4 edge midpoints
         self.gate_pos = {
-            "G1_N": (0, mids[0]), "G2_N": (0, mids[1]),
-            "G3_E": (mids[0], C), "G4_E": (mids[1], C),
-            "G5_S": (R, mids[0]), "G6_S": (R, mids[1]),
-            "G7_W": (mids[0], 0), "G8_W": (mids[1], 0),
+            "G1_NW": (0, 0), "G2_N": (0, C // 2), "G3_NE": (0, C),
+            "G4_E": (R // 2, C), "G5_SE": (R, C), "G6_S": (R, C // 2),
+            "G7_SW": (R, 0), "G8_W": (R // 2, 0),
         }
         self.gates = {}                   # gate name -> gate node id (n_links+1..)
         for k, name in enumerate(self.gate_pos, start=1):
