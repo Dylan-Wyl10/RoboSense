@@ -172,3 +172,23 @@ Implement extension 1 in neural_route/: (1) gates in Grid (entry/exit node ids >
 sample_instance with od_list+V; (2) milp_baseline multi-commodity; validate vs per-OD route
 enumeration on 3-5 instances; (3) model task tokens + per-vehicle masks; (4) data/train/3-layer eval.
 Branch exp/fm-mcvrp-local. Also pending: YIL-123 reviewer return (foundation-model synthesis).
+
+## 2026-07-29 night — bidirectional network built + lit table spun out (comment d5aa7c57)
+User approved OD design, then directed: bidirectional 4x4 + viz for confirmation; cross-network
+PAUSED; multi-veh/multi-OD is the focus; separate issue for the lit transferability table.
+Done (commit 536d406): neural_route/bigrid.py — BiGrid 80 directed links, no U-turn, 8 gates
+(2/side) each entry+exit = 56 ordered / 28 unordered ODs, ALL verified reachable; time-dependent
+Dijkstra (FIFO ✓) replaces enumeration (cyclic graph) for horizon calib (H=212) + future budget
+mask. fig7 (network + 8x8 earliest-arrival heatmap) posted for confirmation.
+DECISION PENDING (user): cost asymmetry (a) keep direction-dependent (N/W pricier, id artifact
+of (i+t)//4 formula) vs (b) same base cost both directions. Default (a).
+Lit table: YIL-124 (backlog, ref issue) — 9 rows x 5 cols from YIL-114/115/123 verified reads +
+3 quotable conclusions (headline: NO paper demonstrates cross-network transfer; all
+"not addressed"). PPT version offered on request.
+YIL-123 returned + prior run already posted foundation-model synthesis (comment 6e56d60d) — loop closed.
+
+## Next step on resume
+After user confirms fig7 network (+ a/b cost choice): implement multi-commodity MILP on BiGrid
+(group by same OD), timing probe, then task-token model + stratified OD training-set design
+(difficulty layers via earliest-arrival matrix; min per-OD coverage; hold out 3-4 OD pairs for
+zero-shot). Est: MILP+timing 1 session, model 1, data/train/eval 1.
