@@ -192,3 +192,17 @@ After user confirms fig7 network (+ a/b cost choice): implement multi-commodity 
 (group by same OD), timing probe, then task-token model + stratified OD training-set design
 (difficulty layers via earliest-arrival matrix; min per-OD coverage; hold out 3-4 OD pairs for
 zero-shot). Est: MILP+timing 1 session, model 1, data/train/eval 1.
+
+## 2026-07-30 — gates moved to corners+midpoints (user spec); Dijkstra explained; work greenlit
+Commit 18ed61f: gate_pos = 4 corners (G1 NW, G3 NE, G5 SE, G7 SW) + 4 edge midpoints (G2 N, G4 E,
+G6 S, G8 W). 56 ODs reachable at delta 0/1. Horizon 212 -> 418 (diagonal ODs against pricey N/W
+directions; shrinks if cost-symmetry option (b) chosen — STILL PENDING, default (a)). fig8 posted.
+User note "网线对照表...先做起来" interpreted as green light for next-phase work (lit table itself
+already delivered = YIL-124; interpretation flagged to user). Time-dependent Dijkstra explained
+with hand-checked example (G1->G2=2 vs G2->G1=13 from the heatmap).
+
+## Next step on resume
+Build multi-commodity flow MILP on BiGrid (commodities = distinct ODs, counts; y coverage same),
+single-instance timing probe, then stratified OD training-set design (difficulty layers from
+earliest-arrival matrix, min per-OD coverage, hold out 3-4 OD pairs), task-token model, train+eval.
+Watch for user override on cost symmetry (a->b) — would need horizon recalib + regen.
