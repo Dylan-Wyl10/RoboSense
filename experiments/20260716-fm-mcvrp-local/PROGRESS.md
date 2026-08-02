@@ -274,3 +274,11 @@ stats + PAUSE ITSELF -> silence when healthy. Farm status at setup: 348/5000 tra
 0.4 inst/s, ETA ~3h (train shard) + ~1h (test/zeroshot/vextrap shards).
 Resume layers: (1) generator skips finished idx (JSONL); (2) watchdog restarts dead farm;
 (3) PROGRESS.md carries PID/log/commands for manual resume.
+
+## 2026-08-02 night — METHODOLOGY DECK v1 DELIVERED (parallel to farm)
+method_deck_v1.pptx (12 slides, commit af3e03f) built from user's template.pptx and attached to
+YIL-113. Built it MYSELF (not a spawned agent — accuracy over delegation; user allowed either).
+Fixed during render-check: figure overflow + STALE fig8 (option-a horizon 418) -> regenerated
+fig8b_bigrid_optionb.png (horizon 338, symmetric arrivals). Slide 11 = [RESULTS PENDING]
+placeholder; v2 after extension-1 training (fill results + add per-case pages).
+Farm at deck delivery: 2000/5000 train (40%), 0 errors, PID alive 1h15m, ETA ~2h for train shard.
