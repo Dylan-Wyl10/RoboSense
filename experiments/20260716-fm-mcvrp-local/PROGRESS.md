@@ -264,3 +264,13 @@ launching the farm detached THIS session per §6:
    train 40ep, 3-layer eval, 3 seeds -> stable checkpoint -> pipeline REVIEW -> delegate PPT
    (template at experiments/20260716-fm-mcvrp-local/ppt/template.pptx).
 2) If farm died: restart same command (resumable), investigate tail of farm.log.
+
+## 2026-08-02 latest — PLATFORM WATCHDOG ADDED (user request)
+Autopilot "YIL-113 label-farm watchdog" id 7c6293c2-ac18-4d91-be2c-59ce5bb5dbd5, ACTIVE, run_only,
+assignee = ML_Optimize_Research_Agent, schedule cron "37 */2 * * *" (every 2h, America/Indiana/
+Indianapolis), trigger bd540480, first run 2026-08-02T20:37Z. Playbook in the autopilot description:
+check pid/log/counts -> restart resumable farm if dead (+comment) -> on FARM COMPLETE post final
+stats + PAUSE ITSELF -> silence when healthy. Farm status at setup: 348/5000 train, 0 errors,
+0.4 inst/s, ETA ~3h (train shard) + ~1h (test/zeroshot/vextrap shards).
+Resume layers: (1) generator skips finished idx (JSONL); (2) watchdog restarts dead farm;
+(3) PROGRESS.md carries PID/log/commands for manual resume.
