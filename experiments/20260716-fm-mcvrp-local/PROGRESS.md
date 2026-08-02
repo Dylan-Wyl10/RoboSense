@@ -248,3 +248,19 @@ Built this session:
    masks via inst.min_finish. Train 40ep; eval 3 layers (same-dist / OD-zero-shot / V-extrapolation).
 3. Stable checkpoint + config + 3 seeds -> full pipeline REVIEW comment + REPORT.md.
 4. Delegate PPT to a separate agent (template + content brief from the review).
+
+## 2026-08-02 later — LABEL FARM RUNNING (user asked "are you actually executing?")
+Honest state: between comment-triggered runs nothing was executing (event-driven runtime); fixed by
+launching the farm detached THIS session per §6:
+- **PID 3063842**, log: experiments/20260716-fm-mcvrp-local/data/farm.log,
+  pid file: data/farm.pid. Script: data/run_farm.sh (sequential: 5000 train seed0 -> 500 test
+  seed10000 -> 300 zeroshot seed20000 -> 300 vextrap seed30000; 12 workers, MIPGap 2%, 60s cap).
+- Generator: neural_route/bigrid_datagen.py (commit pending above). Resumable: rerun the same
+  command and it skips existing idx. Verified producing (8 labels in first ~70s; rate prints
+  every 100 in farm.log). Expect several hours; check `wc -l data/*.jsonl` on resume.
+## Next step on resume
+1) Check farm: `ps -p $(cat .../data/farm.pid)`, `tail farm.log`, `wc -l data/*.jsonl`. If done:
+   build bigrid model (task tokens Emb(o)+Emb(d)+Proj(t0); variable-len seqs; min_finish masks),
+   train 40ep, 3-layer eval, 3 seeds -> stable checkpoint -> pipeline REVIEW -> delegate PPT
+   (template at experiments/20260716-fm-mcvrp-local/ppt/template.pptx).
+2) If farm died: restart same command (resumable), investigate tail of farm.log.
