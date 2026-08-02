@@ -15,12 +15,16 @@ Structure (R x C blocks, default 4x4 => 5x5 intersections):
   Gates 2 per side at symmetric boundary intersections; every gate is both
   entry (gate -> outgoing links) and exit (incoming links -> gate).
 
-Cost: c(i,t) = (i+t)//4 + 1 + delta[i]  (same family as before; i = link id,
-so the two directions of one street have different base costs — interpreted
-as direction-dependent congestion). FIFO holds (t + c(i,t) nondecreasing in
-t), so earliest-arrival is computed with time-dependent Dijkstra — this also
-replaces route enumeration (impossible on a cyclic graph) for horizon
-calibration and for the decoder's budget mask.
+Cost (OPTION B, user decision 2026-08-02): symmetric base cost per street —
+    c(i,t) = (base(i)+t)//4 + 1 + delta[i],   base(i) = min(i, reverse(i))
+both directions of one street share the base cost; direction-dependent
+variation enters ONLY through the per-directed-link delta. FIFO holds
+(t + c(i,t) nondecreasing in t), so earliest-arrival is computed with
+time-dependent Dijkstra — replaces route enumeration (impossible on a cyclic
+graph) for horizon calibration and the decoder's budget mask.
+
+Tasks (extension-1 spec): per-vehicle (o_gate, d_gate, t0) — departure time
+is part of the instance.
 """
 
 import heapq
@@ -69,6 +73,9 @@ class BiGrid:
                 self.reverse[S(i, j)] = N(i, j)
                 self.reverse[N(i, j)] = S(i, j)
 
+        # option (b): base cost id = the lower id of the two directions
+        self.base = {lid: min(lid, self.reverse[lid]) for lid in self.ends}
+
         out_of = {}                       # intersection -> outgoing link ids
         into = {}                         # intersection -> incoming link ids
         for lid, (a, b) in self.ends.items():
@@ -106,14 +113,15 @@ class BiGrid:
 
 
 class BiInstance:
-    """delta offsets + per-vehicle (o, d) gate tasks; costs as before."""
+    """delta offsets + per-vehicle (o_gate, d_gate, t0) tasks."""
 
     def __init__(self, grid, delta, tasks, depart=0, horizon=None,
-                 alpha1=0.5, alpha2=0.5):
+                 alpha1=0.3, alpha2=0.7):
         self.grid = grid
         self.delta = np.asarray(delta, dtype=np.int64)
         assert self.delta.shape == (grid.n_links,)
-        self.tasks = list(tasks)          # [(o_gate_id, d_gate_id), ...]
+        # tasks: [(o, d, t0), ...]; (o, d) pairs are padded with t0=depart
+        self.tasks = [t if len(t) == 3 else (*t, depart) for t in tasks]
         self.depart = depart
         self.horizon = horizon
         self.alpha1, self.alpha2 = alpha1, alpha2
@@ -121,7 +129,7 @@ class BiInstance:
     def cost(self, i, t):
         if i > self.grid.n_links:         # gate nodes are free
             return 0
-        return (i + t) // 4 + 1 + int(self.delta[i - 1])
+        return (self.grid.base[i] + t) // 4 + 1 + int(self.delta[i - 1])
 
     def earliest_arrival(self, o_gate, t0=None):
         """Time-dependent Dijkstra from gate o (FIFO costs): returns
@@ -148,14 +156,89 @@ class BiInstance:
                     heapq.heappush(pq, (s, -nxt))
         return entry, arrive
 
+    def min_finish(self, lid, t, d_gate):
+        """Earliest arrival at gate d if we ENTER link lid at time t (exact,
+        memoised per (lid, t, d) — the decoder budget-mask query)."""
+        key = (lid, t, d_gate)
+        if not hasattr(self, "_mf"):
+            self._mf = {}
+        if key in self._mf:
+            return self._mf[key]
+        g = self.grid
+        best = np.inf
+        entry = {}
+        pq = [(t, -lid)]
+        while pq:
+            tt, neg = heapq.heappop(pq)
+            l = -neg
+            if tt >= best:
+                break                      # labels are popped in order
+            if l in entry and entry[l] <= tt:
+                continue
+            entry[l] = tt
+            s = tt + self.cost(l, tt)
+            if l in g.gate_in[d_gate]:
+                best = min(best, s)
+            for nxt in g.con[l]:
+                if nxt not in entry or entry[nxt] > s:
+                    heapq.heappush(pq, (s, -nxt))
+        self._mf[key] = best
+        return best
 
-def calibrate_horizon(grid, max_delta=1, slack=1.6):
-    """Horizon = slack * max over ordered ODs of earliest arrival under the
-    worst congestion (all deltas at max)."""
+    def simulate(self, route, t0):
+        """Drive one explicit route (list of link ids, no gates) from t0.
+        Returns (total_cost, occupied bool[n_links*horizon], finish_time)
+        or (None, None, None) if the horizon is busted."""
+        H = self.horizon
+        t, total = t0, 0
+        occ = np.zeros(self.grid.n_links * H, dtype=bool)
+        for lid in route:
+            c = self.cost(lid, t)
+            if t + c > H:
+                return None, None, None
+            base = (lid - 1) * H
+            occ[base + t:base + t + c] = True
+            total += c
+            t += c
+        return total, occ, t
+
+    def objective(self, routes):
+        """Normalized objective for explicit per-vehicle routes (aligned with
+        self.tasks order; route k departs at tasks[k][2]).
+
+        BOTH terms are normalized by V*H (2026-08-02 design decision):
+        max achievable fleet coverage ~= total travel time <= V*H, so this
+        puts cost and coverage on the same scale; with alpha 0.3/0.7 the
+        optimum makes real sensing detours instead of collapsing to
+        min-time routing (validated vs the min-time heuristic).
+            min (a1*cost - a2*coverage) / (V*H)
+        """
+        g, H = self.grid, self.horizon
+        total, union = 0, np.zeros(g.n_links * H, dtype=bool)
+        for (o, d, t0), route in zip(self.tasks, routes):
+            if not route or route[0] not in g.gate_out[o] \
+               or route[-1] not in g.gate_in[d]:
+                return None
+            for a, b in zip(route, route[1:]):
+                if b not in g.con[a]:
+                    return None
+            c, occ, _ = self.simulate(route, t0)
+            if c is None:
+                return None
+            total += c
+            union |= occ
+        cov = int(union.sum())
+        obj = (self.alpha1 * total - self.alpha2 * cov) / (len(self.tasks) * H)
+        return obj, total, cov
+
+
+def calibrate_horizon(grid, max_delta=1, slack=1.6, max_t0=5):
+    """Horizon = slack * max over ordered ODs of earliest arrival under worst
+    congestion, departing at the latest allowed t0 (FIFO => worst case)."""
     inst = BiInstance(grid, np.full(grid.n_links, max_delta), tasks=[])
     worst = 0
     for o in grid.gates.values():
-        _, arrive = inst.earliest_arrival(o)
+        _, arrive = inst.earliest_arrival(o, t0=max_t0)
         for d in grid.gates.values():
             if d != o:
                 if d not in arrive:
