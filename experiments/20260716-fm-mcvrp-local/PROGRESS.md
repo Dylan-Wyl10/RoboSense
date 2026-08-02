@@ -206,3 +206,11 @@ Build multi-commodity flow MILP on BiGrid (commodities = distinct ODs, counts; y
 single-instance timing probe, then stratified OD training-set design (difficulty layers from
 earliest-arrival matrix, min per-OD coverage, hold out 3-4 OD pairs), task-token model, train+eval.
 Watch for user override on cost symmetry (a->b) — would need horizon recalib + regen.
+
+## 2026-07-30 later — presentation walkthrough posted (comment 56e3967c); PPT pending template
+Posted the full present-grade pipeline narrative on YIL-113: 6 modules (M1 env / M2 Gurobi label
+machine / M3 offline data gen / M4 model+mask / M5 training / M6 eval) each with ✅ vs 🔧 status
+tags, the step-by-step single-inference walkthrough (encode once -> masked decode loop with
+per-vehicle clocks -> routes, 2-4 ms), the honest evidence-vs-design boundary, and a proposed
+8-10 slide outline. USER WILL SEND A PPT TEMPLATE — when it arrives, produce the deck per that
+template (existing figs 1/2/4/6/8 cover several slides; build_slides.py machinery reusable).
