@@ -224,3 +224,27 @@ but the policy is timing-blind -> suboptimal). Design fix folded into EXTENSION 
 (o, t0) (few lines); training randomizes t0 incl. mixed same/staggered patterns; extra eval layer
 "unseen departure patterns". UAS-MSTOP = literature precedent (heterogeneous starts learnable).
 Still gated on user's final network sign-off (fig8 + cost-symmetry a/b choice).
+
+## 2026-08-02 — GREEN LIGHT (fig8 OK, cost option B); extension-1 env+MILP BUILT (commit c5018c5)
+User signed off: fig8 layout + option (b) symmetric street costs; do full 4x4 extension + training
+-> stable model -> tests -> complete pipeline review; PPT from their template (archived at
+experiments/20260716-fm-mcvrp-local/ppt/template.pptx) via a SEPARATE agent.
+Built this session:
+- bigrid option (b): base=min(id,reverse); G1<->G2 now symmetric; horizon 418->338 (max_t0=5).
+  Note: vertical streets (base 41-60) pricier than horizontal (1-20) — street-class feature, disclosed.
+- Tasks = (o, d, t0) per vehicle; simulate/objective/min_finish (memoised budget query) on BiInstance.
+- **Objective redesign (important, disclosed to user)**: with cov normalized by n_links*H the optimum
+  collapsed to min-time routes (cov term ~20x smaller than cost). Fix: BOTH terms /(V*H), alpha
+  0.3/0.7 -> MILP roams fresh cells (cost==cov, 5-13x min-time coverage), solve 1.4-10.1s (V=2-4),
+  proven optimal. This is the label-richness guarantee.
+- bigrid_milp: multi-commodity flow (commodity=(o,d,t0) group), decomposition==objective asserted,
+  4/4 validation vs min-time upper bound.
+
+## Next steps (in order)
+1. bigrid data_gen: stratified OD sampling (terciles from earliest-arrival matrix), 4 held-out OD
+   pairs, V in {2,3,4,6} train / {5,8} eval, t0 in {0..5}; MIPGap 1-2%; PARALLEL label farm
+   (nohup, 12-16 workers, PID in PROGRESS per session discipline; ~5k first batch).
+2. bigrid model: task tokens (Emb(o)+Emb(d)+Proj(t0)); variable-length routes (seq cap from labels);
+   masks via inst.min_finish. Train 40ep; eval 3 layers (same-dist / OD-zero-shot / V-extrapolation).
+3. Stable checkpoint + config + 3 seeds -> full pipeline REVIEW comment + REPORT.md.
+4. Delegate PPT to a separate agent (template + content brief from the review).
