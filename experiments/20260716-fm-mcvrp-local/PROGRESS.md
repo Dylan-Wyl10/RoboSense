@@ -214,3 +214,13 @@ tags, the step-by-step single-inference walkthrough (encode once -> masked decod
 per-vehicle clocks -> routes, 2-4 ms), the honest evidence-vs-design boundary, and a proposed
 8-10 slide outline. USER WILL SEND A PPT TEMPLATE — when it arrives, produce the deck per that
 template (existing figs 1/2/4/6/8 cover several slides; build_slides.py machinery reusable).
+
+## 2026-07-31 — staggered departures question (comment f8304fa6): honest answer + design update
+User asked: veh 1-2 depart t=0, veh 3-4 depart t=2 — can current model handle? Answer posted:
+CURRENT checkpoint cannot (departure time is NOT in its input — encoder eats only delta; all
+training data t=0; rule parts (clock/mask/simulator) would use true t0 so output stays feasible,
+but the policy is timing-blind -> suboptimal). Design fix folded into EXTENSION 1: instance is now
+{delta, [(o, d, t0)] x V}; task token = Emb(o)+Emb(d)+Proj(t0); MILP per-commodity source at
+(o, t0) (few lines); training randomizes t0 incl. mixed same/staggered patterns; extra eval layer
+"unseen departure patterns". UAS-MSTOP = literature precedent (heterogeneous starts learnable).
+Still gated on user's final network sign-off (fig8 + cost-symmetry a/b choice).
