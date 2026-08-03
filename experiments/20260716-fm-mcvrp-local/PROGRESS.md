@@ -324,3 +324,20 @@ MLP([alpha2]) in encoder; farm randomizes alpha2 in {0.5..0.9} (below ~0.5 colla
 labels per-instance alpha; eval adds unseen-alpha interpolation (train {0.5,0.7,0.9} test {0.6,0.8}).
 RouteFinder global-attribute-embedding = literature precedent. Fold into NEXT farm batch (with slope
 extension). Default proceeding unless user redirects.
+
+## 2026-08-03 night — alpha objective ANALYSIS (user challenge; farm extension ON HOLD pending discussion)
+User challenged "a2<0.5 useless" claim. Verified with code + math + sweep (fixed V=3 instance,
+MIPGap 0.5%):
+- Current objective (bigrid_milp:94): min (a1*cost - a2*cov)/(V*H) — BOTH terms same denominator
+  => normalized, same scale. (Legacy small-example had mismatched norms: cost raw, cov/(links*T).)
+- Marginal coupling: 1 step through fresh cell => dC=dK=1 => dObj=(a1-a2)/VH. Sign flips at
+  a2/a1=1 REGARDLESS of normalization => knife-edge at 0.5 is structural, not scaling.
+- Sweep: a2=0.30/0.45 -> cost=cov=170 (EXACT min-time routes); a2=0.50 -> 843 (degenerate tie);
+  a2=0.55/0.70/0.90 -> 1001 (horizon-saturated roaming, nearly invariant).
+- => alpha in this formulation is a BINARY REGIME SWITCH (min-time vs full-roam), not a dial;
+  H does the real limiting. My earlier "completely useless" refined: below 0.5 coverage still
+  tie-breaks among min-cost solutions (invisible here: min-time already 0-overlap).
+- Design options posted for a REAL dial: (a) per-vehicle BUDGET B<=H conditioning (natural,
+  shift-time semantics, no objective change); (c) per-cell utility weights w_i (matches real PartB
+  sensing landscape; a2/a1 becomes visit-worthiness threshold -> continuous response).
+  Farm extension WAITS for user's choice (their instinct: discuss before scaling — correct).
