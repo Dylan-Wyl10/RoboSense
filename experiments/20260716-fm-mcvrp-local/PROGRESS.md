@@ -314,3 +314,13 @@ data slope 1k/2k/5k, NS multi-sample decode, bigger d.
 Collect train300 (results/bigrid_model_seed0_ep300.pt), re-eval 3 layers; then 1k/2k/5k slope,
 NS-16 decode eval; per-case CSV + route viz for bigrid; REPORT.md + full pipeline REVIEW comment;
 deck v2 (fill slide 11 + results pages). 3 seeds if time.
+
+## 2026-08-03 later — 300ep collected (NEGATIVE-ISH result) + alpha-conditioning designed
+train300 done: CE 0.32->0.085 but best val_gap WORSE (0.0722->0.0736) = imitation overfitting.
+ep300 3-layer eval: L1 0.0776 (was 0.0813, +5/500 match), L2 0.0869 (flat), L3 0.0602 (59/300 beat).
+Conclusion: longer training exhausted; levers = DATA VOLUME (slope 1k/2k/5k->extend farm) + NS
+multi-sample decode + possibly larger d. Alpha-conditioning (user Q): design = global config token
+MLP([alpha2]) in encoder; farm randomizes alpha2 in {0.5..0.9} (below ~0.5 collapses to min-time);
+labels per-instance alpha; eval adds unseen-alpha interpolation (train {0.5,0.7,0.9} test {0.6,0.8}).
+RouteFinder global-attribute-embedding = literature precedent. Fold into NEXT farm batch (with slope
+extension). Default proceeding unless user redirects.
