@@ -295,3 +295,22 @@ Data is ready. Build bigrid model (task tokens Emb(o)+Emb(d)+Proj(t0); variable-
 min_finish masks), train 40ep, 3-layer eval (same-dist / OD-zero-shot / V-extrapolation),
 3 seeds -> stable checkpoint -> pipeline REVIEW comment -> PPT v2 (results slides).
 Branch exp/fm-mcvrp-local. Env: `source ~/anaconda3/etc/profile.d/conda.sh && conda activate torchnn`.
+
+## 2026-08-03 — FARM COMPLETE + FIRST EXTENSION-1 MODEL TRAINED & EVALUATED (commit a0788ac)
+Farm: 6100/6100 labels, 0 errors (5000 train / 500 test / 300 zeroshot / 300 vextrap); route len
+med 10 (roaming ~2x min = sensing behavior in labels); vextrap solves hit 60s cap (looser refs).
+Watchdog: fired 3x silently (healthy), now PAUSED by me (farm done).
+Training (bigrid_train.py): BiRouteModel 1.05M, 60ep ~4min GPU, checkpoint results/
+bigrid_model_seed0.pt (best val_gap 0.0722, still converging).
+**3-layer eval (masked greedy):**
+- L1 same-dist: 500/500 feasible, mean gap 0.0813 (~21% of |obj|), 4/500 match Gurobi
+- L2 OD-ZERO-SHOT: 300/300 feasible, mean gap 0.0866 — ONLY +6.5% rel. vs L1 => OD transfer WORKS
+- L3 V-extrap {5,8}: 300/300 feasible, mean gap 0.0605, **51/300 BEAT the (time-capped) Gurobi ref**
+Honest read: much harder task than toy (roaming tours, 56 ODs, var V) — v1 quality far from toy's
+0.1-0.3%; but feasibility 1100/1100, OD-conditioning validated, first beats-reference cases appear.
+Levers queued: longer training (300ep run LAUNCHED, PID 3203182, log results/train300.log),
+data slope 1k/2k/5k, NS multi-sample decode, bigger d. 
+## Next step on resume
+Collect train300 (results/bigrid_model_seed0_ep300.pt), re-eval 3 layers; then 1k/2k/5k slope,
+NS-16 decode eval; per-case CSV + route viz for bigrid; REPORT.md + full pipeline REVIEW comment;
+deck v2 (fill slide 11 + results pages). 3 seeds if time.
