@@ -282,3 +282,16 @@ Fixed during render-check: figure overflow + STALE fig8 (option-a horizon 418) -
 fig8b_bigrid_optionb.png (horizon 338, symmetric arrivals). Slide 11 = [RESULTS PENDING]
 placeholder; v2 after extension-1 training (fill results + add per-case pages).
 Farm at deck delivery: 2000/5000 train (40%), 0 errors, PID alive 1h15m, ETA ~2h for train shard.
+
+## 2026-08-02 ~20:00 EDT — FARM COMPLETE (watchdog confirmed; autopilot paused)
+farm.log ends `FARM COMPLETE Sun 02 Aug 2026 07:55:53 PM EDT`; PID 3063842 exited cleanly.
+All 4 shards at target, **6100 labels total, 0 error lines** (grep -c error):
+train_seed0 5000/5000, test_seed10000 500/500, zeroshot_seed20000 300/300, vextrap_seed30000 300/300.
+Completion comment posted on YIL-113; watchdog autopilot 7c6293c2 paused per its playbook.
+Training NOT auto-started (bigrid model code not yet built — next-step list below still applies).
+
+## Next step on resume
+Data is ready. Build bigrid model (task tokens Emb(o)+Emb(d)+Proj(t0); variable-len seqs;
+min_finish masks), train 40ep, 3-layer eval (same-dist / OD-zero-shot / V-extrapolation),
+3 seeds -> stable checkpoint -> pipeline REVIEW comment -> PPT v2 (results slides).
+Branch exp/fm-mcvrp-local. Env: `source ~/anaconda3/etc/profile.d/conda.sh && conda activate torchnn`.
