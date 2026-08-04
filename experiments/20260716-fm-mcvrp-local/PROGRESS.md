@@ -341,3 +341,12 @@ MIPGap 0.5%):
   shift-time semantics, no objective change); (c) per-cell utility weights w_i (matches real PartB
   sensing landscape; a2/a1 becomes visit-worthiness threshold -> continuous response).
   Farm extension WAITS for user's choice (their instinct: discuss before scaling — correct).
+
+## 2026-08-03 latest — bounds verification (user normalization requirement)
+Proved + verified on all 6100 labels: cost/(VH) and cov/(VH) both in (0,1], max exactly 1.000,
+never exceeding (chain cov <= cost <= V*H). User requirement SATISFIED by current normalization.
+Subtlety disclosed: lower bounds are instance-dependent floors (min-time), not 0; per-instance
+affine re-baseline offered (cosmetic — does not change argmin). Reconciliation posted:
+boundedness (global scale, satisfied) and marginal knife-edge (route-shape, structural) are
+orthogonal — re-baselining cannot create a continuous alpha dial; structure change (budget-B
+and/or per-cell w_i) still the路径. Awaiting user's "part 1 refinement" direction; farm still HELD.
