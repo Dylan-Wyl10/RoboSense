@@ -41,9 +41,10 @@ evaluate() {
 }
 
 report() {
-  echo "=== [4/4] figures + deck v2 ==="
+  echo "=== [4/4] figures + deck ==="
   python build_figs.py
-  python build_deck_v2.py
+  python build_method_figs.py
+  python build_deck_final.py
 }
 
 case "$STAGE" in
