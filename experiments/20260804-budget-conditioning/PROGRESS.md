@@ -55,6 +55,25 @@ optimal 60/60; undershoot grows with slack (rho=4: 514 vs 708 cells).
   controls HOW MUCH to roam; WHICH cells needs w_i (deferred by user decision).
 - Greedy decoding only; multi-sample decoding untried.
 
+## 2026-08-04 later — CONSOLIDATED & FROZEN (user request)
+
+- The two earlier decks were merged into ONE self-contained document,
+  `ppt/sensing_routing_method_and_results.pptx` (15 slides), reorganised around the current
+  benchmark: problem → change (a) objective (why the weight was a switch + the budget) →
+  change (b) model (architecture + rationale) → pipeline → eval design → results → summary.
+  Per user instruction it presents the current setting's numbers plainly: NO prior-round
+  results and NO cross-version gap caveats appear anywhere.
+- Two method figures rebuilt because the old ones were stale for this model:
+  `build_method_figs.py` → figM1 (pipeline) and figM2 (architecture, with the two redesign
+  points called out). The old figB still showed d=96 / 2 encoder layers / no budget token.
+- The deck build is now self-contained: `ppt/template.pptx` and `results/fig0_network.png`
+  are local copies, so nothing outside this directory is read.
+- Cleanup: deleted only disposables (`__pycache__`, duplicate per-case CSVs, .pid files,
+  superseded eval txt/json). MOVED (not deleted) to `experiments/ARCHIVE_superseded/`:
+  method_deck_v1/v2 + their builder, and the 4 pre-budget checkpoints. That directory has a
+  README with the one-line command to delete it for real.
+- Frozen at git tag `benchmark-v1-20260804` on branch `exp/fm-mcvrp-local`.
+
 ## Next step on resume (in priority order)
 
 1. Multi-sample / non-greedy decoding (free accuracy, no retraining) — FM-MCVRP's NS trick.

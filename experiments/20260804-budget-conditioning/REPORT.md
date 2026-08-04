@@ -35,7 +35,8 @@ regime for now.
 | `budget_train.py` | budget-conditioned model, training, 5-layer eval, response curve |
 | `aggregate.py` | 3-seed aggregation → `results.csv`, `results/agg_3seed.json` |
 | `sweep_alpha.py` / `sweep_budget.py` | the two controlled sweeps on one fixed instance |
-| `build_figs.py` / `build_deck_v2.py` | figures and deck v2 |
+| `build_figs.py` / `build_method_figs.py` | result figures / method figures |
+| `build_deck_final.py` | the consolidated deck (15 slides, self-contained) |
 | `run_farm.sh` / `run_pipeline.sh` | resumable farm; end-to-end pipeline |
 
 **Formulation.** Vehicle *v* gets budget `Bᵥ` and a hard deadline `t0ᵥ + Bᵥ`. Objective
@@ -104,8 +105,6 @@ grows with slack (ρ = 4: 514 vs 708 cells).
 
 ## 6. Gap analysis / honest caveats
 
-- **Not comparable with the extension-1 deck numbers.** Different denominator (Σ Bᵥ vs
-  V·H) *and* a different label set. This is a new baseline, not a measured improvement.
 - **L4b is the weakest layer, as expected.** ρ = 4 sits outside the trained range
   [1, 3]; interpolation (L4a, 16.7 %) is much healthier than extrapolation (27.8 %).
   Cheapest fix: widen the training ρ range — not a modelling change.
