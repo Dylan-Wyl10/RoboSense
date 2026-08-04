@@ -74,6 +74,22 @@ optimal 60/60; undershoot grows with slack (rho=4: 514 vs 708 cells).
   README with the one-line command to delete it for real.
 - Frozen at git tag `benchmark-v1-20260804` on branch `exp/fm-mcvrp-local`.
 
+## 2026-08-04 latest — literature positioning (user request: contribution evaluation)
+
+- `LITERATURE_POSITIONING.md` written: 7-axis definition of benchmark-v1, per-work
+  two-direction delta tables across 5 shelves (neural OP/TOP, VRP foundation models,
+  TD/arc neural routing, drive-by-sensing OR, adjacent paradigms), 20+ works.
+- Sweep = SUMMARIES.md (batches A+B verbatim) + Notion 文献管理 DB (2 pages queried;
+  key adds: Han et al. 2024 TR-B drive-by-sensing coverage; Chen/Qin/Sun 2024 coordinated
+  CV monitoring routing; Zhu et al. 2014; Guo&Qian 2024; O'Keeffe 2019 PNAS; OP surveys)
+  + 5 web searches (new finds: DeCoST ICLR'26 arXiv:2603.06260; SED2AM TKDD'25
+  arXiv:2503.04085; neural CARP line; TD-AOP OR heuristic).
+- Verdict: NO identical work; nearest neighbours (TOP-Former / FM-MCVRP / Han'24) each
+  miss >=2 of the 7 axes. Contribution = bridge between the application shelf (right
+  problem, no learning) and the neural shelf (right method, wrong problem) + alpha
+  knife-edge finding + value-level zero-shot & response-curve protocol. Threats logged
+  (uniform-w degeneracy, toy scale, gap optics, DeCoST-style prior-art drift).
+
 ## Next step on resume (in priority order)
 
 1. Multi-sample / non-greedy decoding (free accuracy, no retraining) — FM-MCVRP's NS trick.
