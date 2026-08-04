@@ -1,0 +1,62 @@
+{
+ "L1_same": {
+  "label": "L1 same-distribution",
+  "n": 800,
+  "feasible": 800,
+  "match_or_better": 273,
+  "mean_gap": 0.03451241704798387,
+  "median_gap": 0.014171622314574583,
+  "max_gap": 0.20716253443526164,
+  "mean_ref_obj": -0.3648690511620923,
+  "rel_gap": 0.0945885021984279,
+  "ms_per_case": 7.4
+ },
+ "L2_odzero": {
+  "label": "L2 OD zero-shot",
+  "n": 400,
+  "feasible": 400,
+  "match_or_better": 62,
+  "mean_gap": 0.08479165301888707,
+  "median_gap": 0.07748912188932738,
+  "max_gap": 0.33518518518518514,
+  "mean_ref_obj": -0.3577899532992589,
+  "rel_gap": 0.2369872385655461,
+  "ms_per_case": 6.8
+ },
+ "L3_vextrap": {
+  "label": "L3 fleet extrapolation V in {5,8}",
+  "n": 400,
+  "feasible": 400,
+  "match_or_better": 46,
+  "mean_gap": 0.058397631781090614,
+  "median_gap": 0.05479746095381266,
+  "max_gap": 0.23572649572649573,
+  "mean_ref_obj": -0.35959113236726764,
+  "rel_gap": 0.1624000886691675,
+  "ms_per_case": 9.6
+ },
+ "L4a_rhoint": {
+  "label": "L4a UNSEEN rho (interp 1.25/1.75)",
+  "n": 400,
+  "feasible": 400,
+  "match_or_better": 30,
+  "mean_gap": 0.06026330394037212,
+  "median_gap": 0.05574581430745812,
+  "max_gap": 0.28897637795275594,
+  "mean_ref_obj": -0.36175693580124657,
+  "rel_gap": 0.16658506852645796,
+  "ms_per_case": 5.8
+ },
+ "L4b_rhoext": {
+  "label": "L4b UNSEEN rho (extrap 4.0)",
+  "n": 300,
+  "feasible": 300,
+  "match_or_better": 0,
+  "mean_gap": 0.10677781119948418,
+  "median_gap": 0.10576923076923073,
+  "max_gap": 0.21134328358208948,
+  "mean_ref_obj": -0.3826390261671384,
+  "rel_gap": 0.2790562485721024,
+  "ms_per_case": 8.4
+ }
+}

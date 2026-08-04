@@ -1,0 +1,82 @@
+[
+ {
+  "rho": 1.0,
+  "n": 60,
+  "feasible": 60,
+  "gurobi_cov": 192.63333333333333,
+  "model_cov": 192.63333333333333,
+  "gurobi_cost": 199.36666666666667,
+  "model_cost": 199.36666666666667,
+  "mean_gap": 0.0
+ },
+ {
+  "rho": 1.25,
+  "n": 60,
+  "feasible": 60,
+  "gurobi_cov": 225.85,
+  "model_cov": 201.65,
+  "gurobi_cost": 226.5,
+  "model_cost": 205.33333333333334,
+  "mean_gap": 0.039123827466200245
+ },
+ {
+  "rho": 1.5,
+  "n": 60,
+  "feasible": 60,
+  "gurobi_cov": 262.31666666666666,
+  "model_cov": 247.95,
+  "gurobi_cost": 262.7,
+  "model_cost": 250.61666666666667,
+  "mean_gap": 0.019666937103785132
+ },
+ {
+  "rho": 1.75,
+  "n": 60,
+  "feasible": 60,
+  "gurobi_cov": 324.35,
+  "model_cov": 257.76666666666665,
+  "gurobi_cost": 325.0833333333333,
+  "model_cost": 262.9,
+  "mean_gap": 0.07459463900741249
+ },
+ {
+  "rho": 2.0,
+  "n": 60,
+  "feasible": 60,
+  "gurobi_cov": 361.6,
+  "model_cov": 323.43333333333334,
+  "gurobi_cost": 362.4166666666667,
+  "model_cost": 328.23333333333335,
+  "mean_gap": 0.03445116375795143
+ },
+ {
+  "rho": 2.5,
+  "n": 60,
+  "feasible": 60,
+  "gurobi_cov": 461.26666666666665,
+  "model_cov": 338.2,
+  "gurobi_cost": 461.6166666666667,
+  "model_cost": 341.8666666666667,
+  "mean_gap": 0.10046331897856736
+ },
+ {
+  "rho": 3.0,
+  "n": 60,
+  "feasible": 60,
+  "gurobi_cov": 550.2,
+  "model_cov": 446.6333333333333,
+  "gurobi_cost": 550.5,
+  "model_cost": 452.6333333333333,
+  "mean_gap": 0.06399292891615828
+ },
+ {
+  "rho": 4.0,
+  "n": 60,
+  "feasible": 60,
+  "gurobi_cov": 708.4166666666666,
+  "model_cov": 514.2,
+  "gurobi_cost": 708.6833333333333,
+  "model_cost": 523.2166666666667,
+  "mean_gap": 0.10806888929118488
+ }
+]

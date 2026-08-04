@@ -1,56 +1,66 @@
 # 20260804-budget-conditioning — option (a): per-vehicle budget B as the real dial
 
-Context: YIL-113 thread. 2026-08-03 analysis showed alpha is a BINARY regime switch
-(min-time vs horizon-saturated roaming), not a dial, because cost and coverage are
-marginally 1:1 coupled. Proposed replacement dial = per-vehicle budget B_v.
-User asked (2026-08-04) for the detailed idea. This dir holds the feasibility spike.
+Context: YIL-113. 2026-08-03 analysis showed alpha is a BINARY regime switch (min-time vs
+horizon-saturated roaming), not a dial, because cost and coverage are marginally 1:1 coupled.
+User decision 2026-08-04: do (a) per-vehicle budget ONLY; defer (b) heterogeneous cell utility
+w_i ("keep the state where picking A or B is equivalent"). Also asked for the analysis to be
+written into the existing deck, plus adjusted training + a usable pipeline.
 
-## Done (2026-08-04)
+## STATUS: COMPLETE — delivered 2026-08-04. Verdict ADOPT (see REPORT.md).
 
-- `budget_milp.py` — per-vehicle-budget variant of the bigrid MILP. NEW FILE; does not
-  touch `neural_route/` (imports it). Deltas vs `neural_route/bigrid_milp.py`:
-  * commodity key (o,d,t0) -> (o,d,t0,B); time-expanded DAG pruned at min(H, t0+B_v)
-  * normalizer V*H -> sum_v B_v (keeps both terms in (0,1]: cov <= cost <= sum B)
-  * coverage grid stays on [0,H) so cells are comparable across budgets
-  * `budgets_from_slack`: B_v = ceil(rho * tau_min_v), floored at tau_min, capped at H-t0
-    -> rho (slack ratio) is the OD-comparable, model-conditionable scalar
-  * `objective_budget` re-verifies per-vehicle deadlines; MILP obj asserted == decomposed obj
-- `sweep_budget.py` + `results_sweep.csv` — fixed V=3 instance (seed 7), alpha FROZEN at
-  0.3/0.7, rho swept 1.0 -> 99.
+## Done
 
-## Key results
+**Feasibility spike (earlier session)**
+- `budget_milp.py` — per-vehicle-budget MILP (commodity key (o,d,t0,B), DAG pruned at
+  min(H,t0+B), normalizer sum_v B_v, `budgets_from_slack`, `objective_budget`).
+- `sweep_budget.py` -> `results_sweep.csv`. B is a continuous dial; reduces EXACTLY to the
+  full-horizon MILP at B>=H; solving is faster, not slower.
 
-1. **B is a continuous dial** (alpha was not). rho 1.0 -> 99 on the same instance:
-   cost 172, 181, 200, 231, 287, 314, 407, 450, 497, 626, 999; route lengths
-   [2,6,2] -> [10,12,10]. Smooth monotone ramp, no plateau/jump. (Contrast alpha sweep:
-   170 -> 170 -> 843 -> 1001 -> 1001 -> 1001.)
-2. **Reduction check**: at rho=99 (B >= H) the budget MILP returns EXACTLY the original
-   full-horizon MILP solution (cost 999, cov 999, lens [10,12,10]). Objective differs only
-   by the normalizer (sum B = 1000 vs V*H = 1014).
-3. **Solve cost is LOWER, not higher**: 0.2-1.4 s for rho <= 6 vs 3.0 s at rho=99 —
-   tight budgets prune the time-expanded DAG. Extending the farm with B is cheaper per label
-   than the current farm.
-4. **NEGATIVE / degeneracy finding (matters for the paper)**: overlap = cost - cov is ZERO
-   in the sweep at every rho, and across the existing 6100 labels: train 92.2% zero-overlap
-   (mean 1.18), test 90.0%, zeroshot 93.3%; only vextrap V=8 has real contention
-   (44.3% zero, mean 52.7). cov/cost mean 0.999 at V<=6.
-   => with uniform cell utility, coverage is currently a near-restatement of cost, so the
-   objective degenerates to "burn the whole budget on a feasible path". B controls HOW MUCH
-   (real dial), but there is little WHICH-cells selection pressure to learn.
-   => this is the evidence-backed argument for pairing (a) with (b) heterogeneous w_i.
+**This session**
+- `sweep_alpha.py` -> `results_alpha.csv`: alpha swept on the SAME instance (seed 7), 13 values
+  -> 2 distinct solutions (flat 172 for a2<=0.48, flat 999 for a2>=0.52). Controlled twin of the
+  budget sweep, so the two panels of figS1 share one instance.
+- `budget_datagen.py` + `run_farm.sh`: 7-mode resumable farm. **10 780 labels, 0 errors, 0 hit
+  the 60 s cap** (old farm: 5.1% capped), mean solve 0.90 s (old: 26 s), ~17 min on 15 workers.
+  Trained rho anchors {1.0,1.5,2.0,3.0}; HELD OUT {1.25,1.75} (interp) and {4.0} (extrap);
+  65% heterogeneous fleets / 35% homogeneous; `curve` mode = 60 instances x 8 rho.
+- `budget_train.py`: task token gains Proj([rho, B/H]); decoder mask threshold H -> t0_v + B_v;
+  5-layer eval + response curve. 1.04M params, 60 ep ~4 min/seed, 3 seeds.
+- `aggregate.py` -> `results.csv` + `results/agg_3seed.json` + per-case CSVs.
+- `build_figs.py` -> figS1 (switch vs dial), figS2 (response curve), figS3 (5-layer exam).
+- `build_deck_v2.py` -> `ppt/method_deck_v2.pptx`: 18 slides = v1's 11 + 7 new (v1 file NOT
+  modified; the stale v1 closing slide is replaced by a refreshed one in v2 only).
+- `run_pipeline.sh` — farm | train | eval | report | all; every stage idempotent. Verified.
 
-## Honest caveats
+## Results (3 seeds, mean +- std)
 
-- Normalizing by sum_v B_v makes obj values across different rho not directly comparable as a
-  difficulty measure (obj wobbles -0.400 .. -0.358 non-monotonically) because discreteness
-  prevents exactly saturating B. Within an instance sum B is a constant -> argmin unaffected.
-- Budget labels are NOT comparable in objective value with the existing 6100 labels
-  (different denominator). Routes/instances remain valid; a re-solve is needed for a joint set.
+| layer | n | feasible | rel. gap |
+|---|---|---|---|
+| L1 same-dist | 800 | 800/800 | 9.2% +- 0.3 (274/800 match-or-beat) |
+| L2 OD zero-shot | 400 | 400/400 | 24.0% +- 0.7 |
+| L3 V in {5,8} | 400 | 400/400 | 15.2% +- 0.7 |
+| L4a UNSEEN budget (interp) | 400 | 400/400 | 16.7% +- 0.0 |
+| L4b UNSEEN budget (extrap rho=4) | 300 | 300/300 | 27.8% +- 0.4 |
 
-## Next step (blocked on user's direction)
+2 300 unseen cases, 100% feasible everywhere, 6-9 ms/case. Response curve: model tracks the
+monotone budget ramp including at the 3 never-trained rho values; at rho=1 model is EXACTLY
+optimal 60/60; undershoot grows with slack (rho=4: 514 vs 708 cells).
 
-If green-lit: (1) extend `bigrid_datagen` sampler with rho ~ U[1.0, 3.0] per vehicle
-(+ a homogeneous-fleet fraction); (2) task token gains B/rho features (mirror of t0_proj);
-(3) decoder mask `min_finish(j,t,d) <= inst.horizon` -> `<= t0_v + B_v` (hard feasibility,
-so unseen budgets stay feasible by construction); (4) new eval layer L4 = unseen rho
-interpolation + extrapolation, reported as a coverage-vs-rho response curve (model vs Gurobi).
+## Honest caveats (also stated on the slides)
+
+- Gaps are NOT comparable with the extension-1 deck numbers: different denominator (sum B_v vs
+  V*H) AND a different label set. New baseline, not an improvement claim.
+- L4b (rho=4) is outside the trained range [1,3] — widen the range, don't change the model.
+- Uniform-utility degeneracy unchanged: overlap=0 in ~92% of labels => coverage ~= cost. Budget
+  controls HOW MUCH to roam; WHICH cells needs w_i (deferred by user decision).
+- Greedy decoding only; multi-sample decoding untried.
+
+## Next step on resume (in priority order)
+
+1. Multi-sample / non-greedy decoding (free accuracy, no retraining) — FM-MCVRP's NS trick.
+2. Widen training rho range (e.g. anchors up to 5) to repair L4b extrapolation.
+3. Data-volume slope now that labelling is ~30x cheaper (1k/2k/4k/8k).
+4. w_i heterogeneous utility, when the user wants "which cells" to become a real decision.
+
+Env: `source ~/anaconda3/etc/profile.d/conda.sh && conda activate torchnn`. Branch
+`exp/fm-mcvrp-local`. Nothing outside this directory is written; `neural_route/` untouched.
