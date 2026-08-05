@@ -12,6 +12,11 @@ Revision per user comments (YIL-113, 2026-08-05):
 
 Equations are pre-rendered PNGs (render_eqs.py). Charts stay PNGs. All diagrams
 are native shapes. Built from the user's template (master/theme/banner kept).
+
+Revision 2026-08-05 later (YIL-125 r1): slide-4 caption now states the heatmap
+is the (t0=0, delta=0) slice and explains the link-id numbers; two new slides
+after it — TD travel-time animation (figA_td_travel.gif, animates in slideshow)
+and the delta operating-day figure (figA_delta_day.png), both from build_anim.py.
 """
 
 import copy
@@ -82,13 +87,15 @@ def bullets(slide, x, y, w, lines, size=14):
     return tb
 
 
-def pic(slide, path, w, y, caption=None, cap_size=12.5, x=None):
+def pic(slide, path, w, y, caption=None, cap_size=12.5, x=None,
+        cap_x=0.7, cap_w=11.9):
     if x is None:
         x = (13.333 - w) / 2
     slide.shapes.add_picture(path, IN(x), IN(y), width=IN(w))
     if caption:
         iw, ih = Image.open(path).size
-        bullets(slide, 0.7, y + w * ih / iw + 0.10, 11.9, caption, size=cap_size)
+        bullets(slide, cap_x, y + w * ih / iw + 0.10, cap_w, caption,
+                size=cap_size)
 
 
 def eq(slide, name, y, height=None, x=None):
@@ -291,10 +298,46 @@ set_ph(s, 11, "The problem")
 set_ph(s, 10, "Network & instances")
 pic(s, f"{R}/fig0_network.png", 9.4, 1.5, [
     (0, "Fixed bidirectional 4×4: 80 directed links, no U-turns · 8 gates (4 corners + 4 edge "
-        "midpoints) · all 56 ordered OD pairs feasible (heatmap) · horizon H = 338", False),
+        "midpoints) · all 56 ordered OD pairs feasible · horizon H = 338. Link numbers = "
+        "directed link ids 1–80 (E 1–20 · W 21–40 · S 41–60 · N 61–80) — the model's token "
+        "ids; base(i) = min(id, reverse id) sets each street's base cost, so E/W streets are "
+        "structurally faster than N/S", False),
+    (0, "Heatmap = earliest arrival departing t₀ = 0 on the δ = 0 day — ONE slice of a "
+        "time-varying quantity (next two slides)", True),
     (0, "The network and the OD set are FIXED; what varies per case is δ, V, and each vehicle's "
-        "(o, d, t₀, B)", True),
-])
+        "(o, d, t₀, B)", False),
+], cap_size=11.5, cap_x=2.05, cap_w=10.6)
+
+# ------------------------------------- 5 time-dependence (animated, YIL-125 r1)
+s = clone(prs, CONTENT)
+set_ph(s, 11, "The problem")
+set_ph(s, 10, "Time-dependence")
+pic(s, f"{R}/figA_td_travel.gif", 9.8, 1.45)
+bullets(s, 2.05, 5.75, 10.6, [
+    (0, "The previous slide's heatmap is ONE frame of this animation: departing t₀ = 0 on the "
+        "δ = 0 day. Re-running TD-Dijkstra at later departures: G1→G2 takes 2 / 47 / 92 and "
+        "G7→G3 takes 159 / 555 / 955 at t₀ = 0 / 80 / 160 (* = would arrive after H = 338)", True),
+    (0, "Why: entry cost c(i,t) = (base(i)+t)//4 + 1 + δᵢ rises with t (FIFO staircase, +1 every "
+        "4 steps) — so earliest arrival depends on departure time, and the pipeline always uses "
+        "the right one: Bᵥ at the vehicle's own t₀ᵥ, the decoder mask at the current decode "
+        "time", False),
+    (0, "Animated GIF — plays in slideshow mode; in print this page shows the t₀ = 0 frame", False),
+], size=11.5)
+
+# ------------------------------------------- 6 day-to-day delta (YIL-125 r1)
+s = clone(prs, CONTENT)
+set_ph(s, 11, "The problem")
+set_ph(s, 10, "Day-to-day: δ")
+pic(s, f"{R}/figA_delta_day.png", 9.6, 1.5)
+bullets(s, 2.05, 5.55, 10.6, [
+    (0, "δ ∈ {0,1}⁸⁰: one bit per DIRECTED link, drawn i.i.d. Bernoulli(½) per operating day "
+        "(the farm's sampler); δᵢ = 1 adds +1 to EVERY traversal of link i that day", True),
+    (0, "An instance property shared by the whole fleet — not a vehicle attribute; the two "
+        "directions of one street can differ (left: one-way congestion is visible)", False),
+    (0, "Effect at t₀ = 0 (right): this sampled day adds +0 … +19 steps across the 56 ODs. The "
+        "model sees δ in the encoder: each link token = link_emb(i) + Proj(δᵢ) (encoder "
+        "slide)", False),
+], size=11.5)
 
 # ------------------------------------------ 5 change (a): objective before/after
 s = clone(prs, CONTENT)

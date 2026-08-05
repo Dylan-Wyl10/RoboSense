@@ -43,6 +43,7 @@ evaluate() {
 report() {
   echo "=== [4/4] figures + equations + deck ==="
   python build_figs.py
+  python build_anim.py
   python render_eqs.py
   python build_deck_final.py
 }

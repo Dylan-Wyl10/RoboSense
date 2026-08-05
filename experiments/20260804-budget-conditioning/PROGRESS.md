@@ -127,6 +127,32 @@ overlaps, no clipped equations). run_pipeline report stage now renders equations
 - "How Bv is set" slide gained a plain-words intro line and Step 2 now points back to
   the Step-0 slide. codebox() helper added to build_deck_final.py.
 
+## 2026-08-05 latest — YIL-125 r1 (PPT presentation discussion, round 1)
+
+User questions on the network slide answered + deck now 24 slides:
+- Numbers on the 4x4 figure = DIRECTED LINK ids 1-80 (E 1-20 / W 21-40 / S 41-60
+  / N 61-80), not vehicle anything; they are also the encoder token ids AND
+  base(i)=min(id, rev id) feeds c(i,t) — slide-4 caption now says all of this.
+- The 8x8 "earliest arrival" heatmap verified BY RECOMPUTATION to be the
+  (t0=0, delta=0) slice (G1G2=2, G7G3=159, G5G1=141 all match). Caption fixed.
+  Pipeline itself was always time-correct: budgets_from_slack -> min_travel_time
+  at each vehicle's own t0v; decoder mask min_finish at current decode time;
+  horizon calibrated at delta=1, t0=5.
+- NEW `build_anim.py` (added to run_pipeline report stage):
+  results/figA_td_travel.gif — 33-frame animation, t0 sweeps 0..160 step 5
+  (constants T0_MAX/T0_STEP at top), left = links coloured by entry cost
+  c(i,t0), right = 8x8 duration matrix, '*' = arrival past H; 1.4s/0.26s/2s
+  frame timing; plays in PowerPoint slideshow, PDF shows frame 1 (=t0=0).
+  results/figA_delta_day.png — day seed 7 (42/80 congested), delta on the
+  network + increment matrix (+0..+19) vs delta=0 at t0=0.
+  Gotchas hit: PillowWriter wrote bogus uniform durations (assemble GIF via
+  PIL save with a duration list instead); fig.canvas.buffer_rgba() is a LIVE
+  view — .copy() per frame or all frames = last state.
+- New slides 5 "Time-dependence" + 6 "Day-to-day: δ" (subtitles MUST be short:
+  placeholder wraps ~20+ chars and the figure covers line 2; bottom bullet
+  blocks at x=2.05 to clear the CART logo — same convention as the objective
+  slide). Verified via PDF render pages 4/5/6/7/11/24.
+
 ## Next step on resume (in priority order)
 
 1. Multi-sample / non-greedy decoding (free accuracy, no retraining) — FM-MCVRP's NS trick.
