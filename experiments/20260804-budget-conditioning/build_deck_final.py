@@ -210,6 +210,35 @@ def ntable(slide, x, y, w, col_ws, rows, header_fill=FILL, font=9,
     return tbl
 
 
+def codebox(slide, x, y, w, h, lines, size=10, fill="F7F7F5"):
+    """Monospace pseudocode panel (native shape, editable)."""
+    sp = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
+                                IN(x), IN(y), IN(w), IN(h))
+    try:
+        sp.adjustments[0] = 0.04
+    except Exception:
+        pass
+    sp.fill.solid()
+    sp.fill.fore_color.rgb = RGBColor.from_string(fill)
+    sp.line.color.rgb = RGBColor.from_string(EDGE)
+    sp.line.width = Pt(1.2)
+    sp.shadow.inherit = False
+    tf = sp.text_frame
+    tf.word_wrap = False
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.margin_left = tf.margin_right = IN(0.14)
+    tf.margin_top = tf.margin_bottom = IN(0.06)
+    for i, (txt, hl) in enumerate(lines):
+        pr = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        pr.text = txt
+        pr.font.size = Pt(size)
+        pr.font.name = "Courier New"
+        pr.font.bold = hl
+        pr.font.color.rgb = RGBColor.from_string(ORANGE if hl else INK)
+        pr.alignment = PP_ALIGN.LEFT
+    return sp
+
+
 # ================================================================== build
 prs = Presentation(TPL)
 n0 = len(prs.slides)
@@ -367,23 +396,63 @@ pic(s, f"{R}/figS1_knob_vs_switch.png", 11.6, 1.5, [
         "RIGHT: α frozen at 0.3/0.7, per-vehicle budget swept → 10 distinct, monotone solutions", False),
 ])
 
-# ------------------------------------------------ 9 how B_v is set
+# ------------------------------------------------ 9 TD-Dijkstra (prerequisite)
+s = clone(prs, CONTENT)
+set_ph(s, 11, "Change (a) — objective")
+set_ph(s, 10, "Step 0: earliest arrival")
+label(s, 0.75, 1.48, 11.9, "Before any budget can be set, we must know the fastest "
+      "this vehicle could possibly make its trip TODAY — earliest arrival on the "
+      "current network, under this case's congestion δ. One run per vehicle:",
+      size=12.5, align=PP_ALIGN.LEFT, bold=True)
+codebox(s, 0.75, 2.14, 9.10, 2.75, [
+    ("EarliestArrival(o, t₀, δ):        # one run per vehicle, on today's network", True),
+    ("  entry[l] ← t₀  for every link l leaving gate o;  push (t₀, l)", False),
+    ("  while queue not empty:", False),
+    ("      (t, l) ← pop the SMALLEST entry time     # ordinary Dijkstra order", False),
+    ("      if t > entry[l]: continue                # stale label", False),
+    ("      s ← t + c(l, t)      # exit time; the clock is INSIDE the cost", True),
+    ("      if l ends at a gate g:  arrive[g] ← min(arrive[g], s)", False),
+    ("      for every successor j of l (no U-turn):", False),
+    ("          if s < entry[j]:  entry[j] ← s;  push (s, j)", False),
+    ("  return arrive                               # earliest arrival at EVERY gate", False),
+    ("", False),
+    ("τᵐⁱⁿ_v = arrive[d_v] − t₀_v", True),
+], size=9.6)
+b1 = nbox(s, 10.10, 2.14, 2.70, 2.75, "Where it runs",
+          "① budget assignment:\nV runs per case\n(~41 000 in the farm)\n\n"
+          "② decoder mask:\nmin_finish(l, t, d) —\nsame algorithm from one\nlink, memoised\n\n"
+          "③ horizon calibration:\nonce, all 8 gates",
+          fill=FILL_O, edge=ORANGE, tc=ORANGE, tsize=10.5, bsize=8.6)
+bullets(s, 0.7, 5.15, 12.1, [
+    (0, "It is ordinary Dijkstra with ONE change: a label is a time, not a distance, and "
+        "relaxing link l entered at time t costs c(l, t) — today's congestion δ sits inside c", True),
+    (0, "Why the greedy order stays correct: our costs are FIFO — t + c(l, t) never decreases "
+        "in t (entering later can never mean exiting earlier), so the first label popped for a "
+        "link is final, exactly the classic Dijkstra invariant", False),
+    (0, "One run touches at most 80 links → microseconds; ~41 000 runs across the whole farm "
+        "are negligible next to the 0.90 s MILP solves. The mask's memoised queries are part "
+        "of the 6–9 ms inference time", False),
+], size=12)
+
+# ------------------------------------------------ 10 how B_v is set
 s = clone(prs, CONTENT)
 set_ph(s, 11, "Change (a) — objective")
 set_ph(s, 10, "How Bᵥ is set")
-label(s, 0.75, 1.50, 11.8, "Bᵥ is NOT a fixed constant — it is derived per "
-      "vehicle, per instance, from a slack ratio ρᵥ:", size=12.5,
+label(s, 0.75, 1.48, 11.9, "In plain words: first compute the fastest this vehicle "
+      "could make its trip today (τᵐⁱⁿᵥ, previous slide); the budget is that minimum "
+      "times a slack factor — 'you get ρ× the minimum time'. Not a fixed constant: "
+      "derived per vehicle, per instance.", size=12.5,
       align=PP_ALIGN.LEFT, bold=True)
-eq(s, "eq_budget", 1.90, height=0.40)
-eq(s, "eq_taumin", 2.42, height=0.36)
-bullets(s, 0.7, 2.98, 12.0, [
+eq(s, "eq_budget", 2.06, height=0.40)
+eq(s, "eq_taumin", 2.58, height=0.36)
+bullets(s, 0.7, 3.12, 12.0, [
     (0, "Step 1 — draw the slack ratio ρᵥ.  Training farm: per vehicle from the anchors "
         "{1.0, 1.5, 2.0, 3.0}; in 35 % of fleets all vehicles share one ρ (homogeneous), "
         "in 65 % each vehicle draws its own (heterogeneous). At TEST time ρ is arbitrary — "
         "including values never seen in training ({1.25, 1.75} interpolation, 4.0 extrapolation)", False),
-    (0, "Step 2 — compute the feasibility floor τᵐⁱⁿᵥ.  Earliest arrival o→d departing at t₀ "
-        "under THIS instance's congestion δ (time-dependent Dijkstra) — instance-specific, "
-        "not a table lookup", False),
+    (0, "Step 2 — the feasibility floor τᵐⁱⁿᵥ comes from the TD-Dijkstra run of the previous "
+        "slide (earliest arrival o→d departing at t₀ under THIS instance's δ) — "
+        "instance-specific, not a table lookup", False),
     (0, "Step 3 — Bᵥ = ⌈ρᵥ · τᵐⁱⁿᵥ⌉, floored at τᵐⁱⁿᵥ (a task is never born infeasible) and "
         "capped at H − t₀ᵥ (never beyond the coverage grid)", False),
     (0, "Why a RATIO and not an absolute number: the same B = 100 is vacuous for a near OD "

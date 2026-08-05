@@ -113,6 +113,20 @@ All six addressed; deck now 21 slides (`build_deck_final.py` + `render_eqs.py`):
 Verified via LibreOffice PDF render of all 21 slides (subtitles single-line, no logo
 overlaps, no clipped equations). run_pipeline report stage now renders equations too.
 
+## 2026-08-05 later — TD-Dijkstra slide (user follow-up on Bv)
+
+- User confirmed the Bv math; asked for (i) plain-language description, (ii) explicit
+  acknowledgment that earliest arrival is a PREREQUISITE computed before Bv, (iii) a
+  presentation of the time-dependent Dijkstra itself. ("10遍 Dijkstra" in the comment =
+  speech-to-text of "TD Dijkstra".)
+- Deck now 22 slides: NEW slide 9 "Step 0: earliest arrival" placed BEFORE "How Bv is
+  set" — pseudocode panel (native monospace codebox, editable) of
+  BiInstance.earliest_arrival, FIFO-correctness bullet, cost bullet, and a "Where it
+  runs" box: (1) budget assignment V runs/case (~41 000 across the farm, counted from
+  the shards), (2) decoder mask min_finish memoised variant, (3) horizon calibration.
+- "How Bv is set" slide gained a plain-words intro line and Step 2 now points back to
+  the Step-0 slide. codebox() helper added to build_deck_final.py.
+
 ## Next step on resume (in priority order)
 
 1. Multi-sample / non-greedy decoding (free accuracy, no retraining) — FM-MCVRP's NS trick.
