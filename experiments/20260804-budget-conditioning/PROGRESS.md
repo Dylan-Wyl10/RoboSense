@@ -90,6 +90,29 @@ optimal 60/60; undershoot grows with slack (rho=4: 514 vs 708 cells).
   knife-edge finding + value-level zero-shot & response-curve protocol. Threats logged
   (uniform-w degeneracy, toy scale, gap optics, DeCoST-style prior-art drift).
 
+## 2026-08-05 — deck v2 (user's 6 review comments)
+
+All six addressed; deck now 21 slides (`build_deck_final.py` + `render_eqs.py`):
+1. NEW slide "How Bv is set": B_v = min(max(ceil(rho*taumin), taumin), H-t0), 3-step
+   algorithm, why ratio-not-absolute, worked example, enters MILP+input+mask.
+2. NEW slide "Objective, before vs now": both objectives as rendered equations + a
+   4-row what-changed table (control/constraint/normaliser/response).
+3. Rigorous math now TWO slides ("Why alpha is a switch, proof I/II"): setup f_alpha,
+   cell-accounting Lemma (0<=K<=C, detour bound), collapse Theorem (K=C => f =
+   (a1-a2)C/N => step function), Prop A robustness bound C* + a2(C*-K0)/(a1-a2),
+   Prop B detour inequality => budget saturation; empirics inline (K/C median 0.999,
+   K=C in 84-93%). Equations rendered via matplotlib mathtext (results/eq/*.png).
+4. NEW literature slides: 10x8 setting-comparison matrix (axes x works, OURS row) +
+   "Neighbours vs ours" takeaway (closest 3, honesty box, C1-C3, threats).
+5. Pipeline split into Training (offline; mechanism spelled out: CE teacher forcing,
+   selection-by-generation, budget enters twice) and Generation (online; AR loop,
+   mask box, 6-9ms) — both as NATIVE shapes.
+6. Architecture = 3 slides (overview / encoder token construction / decoder one step),
+   all NATIVE rounded boxes + glued ELBOW connectors with arrowheads — fully editable
+   in PowerPoint (user can drag; connectors follow).
+Verified via LibreOffice PDF render of all 21 slides (subtitles single-line, no logo
+overlaps, no clipped equations). run_pipeline report stage now renders equations too.
+
 ## Next step on resume (in priority order)
 
 1. Multi-sample / non-greedy decoding (free accuracy, no retraining) — FM-MCVRP's NS trick.

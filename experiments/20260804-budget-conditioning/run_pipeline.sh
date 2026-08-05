@@ -41,9 +41,9 @@ evaluate() {
 }
 
 report() {
-  echo "=== [4/4] figures + deck ==="
+  echo "=== [4/4] figures + equations + deck ==="
   python build_figs.py
-  python build_method_figs.py
+  python render_eqs.py
   python build_deck_final.py
 }
 
