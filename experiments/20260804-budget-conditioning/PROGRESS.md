@@ -153,6 +153,30 @@ User questions on the network slide answered + deck now 24 slides:
   blocks at x=2.05 to clear the CART logo — same convention as the objective
   slide). Verified via PDF render pages 4/5/6/7/11/24.
 
+## 2026-08-05 latest — YIL-125 r2 (periodic link cost, figures only)
+
+User: add a modulo to the first cost term so link cost is bounded for every
+t0; animation step 5 -> 1; figures only, NO deck rebuild (deck untouched).
+- `build_anim_periodic.py` (standalone, NOT in run_pipeline): BiInstance
+  subclasses ModInstance (first term ((base+t) % 96)//4, as asked, sawtooth)
+  and TriInstance (fold of period 192, FIFO-safe); exact non-FIFO earliest
+  arrival via time-expanded (link, entry-time) Dijkstra with early break.
+- Outputs: figB_current_step1.gif (161 fr), figB_mod96_step1.gif (96 fr, one
+  seamless period), figB_tri192_step1.gif (192 fr), figB_cost_profiles.png.
+- FACTS established (all printed by the script's checks):
+  * sawtooth BREAKS FIFO: base=1 link, enter t=94 -> exit 118 vs enter
+    t=95 -> exit 96; single-label TD-Dijkstra then WRONG on 18.1% of
+    (OD, t0) cells, overestimating up to 32 steps -> adopting sawtooth means
+    replacing earliest_arrival / min_finish / Bv machinery (or accepting
+    inexpressible wait-at-wrap incentives). Triangle: pointwise <= current,
+    slope >= -1, FIFO holds, TD==exact verified.
+  * bounded costs shrink far ODs at t0=0 (wrap arrives mid-trip):
+    G7->G3 159 -> 67 (mod) / 101 (tri); G1->G5 106 -> 45 / 85. Both variants
+    == current cost at t=0 per LINK (base <= 60 < 96); trip-level equality
+    only for arrivals <= 36. Durations bounded: mod <= 84, tri <= 112.
+  * adoption = recalibrate H + refarm labels + retrain (cheap now); decision
+    parked with user; bigrid.py NOT touched (subclass wrappers only).
+
 ## Next step on resume (in priority order)
 
 1. Multi-sample / non-greedy decoding (free accuracy, no retraining) — FM-MCVRP's NS trick.
