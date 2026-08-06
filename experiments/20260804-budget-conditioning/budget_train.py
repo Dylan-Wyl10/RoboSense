@@ -41,7 +41,9 @@ DATA = f"{HERE}/data_mod"
 OUTD = f"{HERE}/results_mod"
 PAD, SEP, BOS, EOS = 0, 81, 82, 83
 VOCAB = 84
-MAX_LEN = 84                    # farm max observed 72
+MAX_LEN = 128                   # mod-96 farm: routes are longer (bounded
+                                # cheap links); pre-mod max was 72, mod
+                                # train shard already hits 82
 MAX_V = 8
 
 GRID = BiGrid(4, 4)

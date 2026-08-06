@@ -45,8 +45,8 @@ R = f"{HERE}/results"
 EQ = f"{R}/eq"
 EMU_IN = 914400
 
-AGG = json.load(open(f"{R}/agg_3seed.json"))
-CURVE = json.load(open(f"{R}/curve.json"))
+AGG = json.load(open(f"{HERE}/results_mod/agg_3seed.json"))
+CURVE = json.load(open(f"{HERE}/results_mod/curve.json"))
 
 INK, INK2 = "0B0B0B", "52514E"
 BLUE, ORANGE = "2A78D6", "EB6834"
@@ -311,8 +311,8 @@ pic(s, f"{R}/figA_network_mod.png", 9.4, 1.5, [
         "cycles the same cost range 1–24, offset by base (at t = 0: E/W cheap, N/S mid-cycle)", False),
     (0, "Heatmap = earliest arrival departing t₀ = 0 on the δ = 0 day — ONE frame of a "
         "PERIODIC quantity (period 96; next two slides)", True),
-    (0, "Network and OD set FIXED; per case: δ, V, and each vehicle's (o, d, t₀, B) · H will be "
-        "re-calibrated with the label/model re-run (same rule gives ≈ 135; pre-mod value 338)", False),
+    (0, "Network and OD set FIXED; per case: δ, V, and each vehicle's (o, d, t₀, B) · horizon "
+        "H = 135 (re-calibrated under mod-96, same worst-case rule; pre-mod value 338)", False),
 ], cap_size=11.5, cap_x=2.05, cap_w=10.6)
 
 # ------------------------------------- 5 time-dependence (animated, YIL-125 r1)
@@ -456,15 +456,14 @@ label(s, 0.75, 1.48, 11.9, "Before any budget can be set, we must know the faste
       "current network, under this case's congestion δ. One run per vehicle:",
       size=12.5, align=PP_ALIGN.LEFT, bold=True)
 codebox(s, 0.75, 2.14, 9.10, 2.75, [
-    ("EarliestArrival(o, t₀, δ):        # one run per vehicle, on today's network", True),
-    ("  entry[l] ← t₀  for every link l leaving gate o;  push (t₀, l)", False),
+    ("EarliestArrival(o, t₀, δ):   # one run per vehicle · exact under mod-96", True),
+    ("  push (t₀, l)  for every link l leaving gate o", False),
     ("  while queue not empty:", False),
-    ("      (t, l) ← pop the SMALLEST entry time     # ordinary Dijkstra order", False),
-    ("      if t > entry[l]: continue                # stale label", False),
+    ("      (t, l) ← pop the SMALLEST entry time    # state = (link, entry time)", False),
+    ("      if (l, t) already expanded: continue    # dedup STATES, not links", True),
     ("      s ← t + c(l, t)      # exit time; the clock is INSIDE the cost", True),
     ("      if l ends at a gate g:  arrive[g] ← min(arrive[g], s)", False),
-    ("      for every successor j of l (no U-turn):", False),
-    ("          if s < entry[j]:  entry[j] ← s;  push (s, j)", False),
+    ("      for every successor j of l (no U-turn):  push (s, j)", False),
     ("  return arrive                               # earliest arrival at EVERY gate", False),
     ("", False),
     ("τᵐⁱⁿ_v = arrive[d_v] − t₀_v", True),
@@ -475,15 +474,17 @@ b1 = nbox(s, 10.10, 2.14, 2.70, 2.75, "Where it runs",
           "③ horizon calibration:\nonce, all 8 gates",
           fill=FILL_O, edge=ORANGE, tc=ORANGE, tsize=10.5, bsize=8.6)
 bullets(s, 2.05, 5.15, 10.55, [
-    (0, "Ordinary Dijkstra with ONE change: a label is a time, not a distance; relaxing link l "
-        "entered at time t costs c(l, t) — today's congestion δ sits inside c", True),
-    (0, "Greedy popping is exact only for FIFO costs (t + c nondecreasing in t) — true for the "
-        "pre-mod cost that produced every number in this deck. The NEW mod-96 cost breaks FIFO "
-        "at the wrap, so this pass becomes an exact search over (link, entry-time) states — "
-        "same structure, still fast on 80 links", True),
-    (0, "One run ≤ 80 links → microseconds (~41 000 farm runs negligible; the mask's memoised "
-        "queries sit inside the 6–9 ms inference). Labels, model, H and all results slides are "
-        "still the pre-mod benchmark — the re-run under mod-96 is the next step", False),
+    (0, "Ordinary Dijkstra with two changes: a label is a TIME (today's congestion δ sits "
+        "inside c), and there is one label per (link, entry-time) STATE, popped in time order — "
+        "exact for any positive time-dependent cost, FIFO or not", True),
+    (0, "Why states are necessary: the mod-96 wrap breaks FIFO — entering a link one step later "
+        "can mean exiting 22 steps earlier — so 'the first label per LINK is final' fails "
+        "(single-label TD-Dijkstra is wrong on 18 % of (OD, t₀) queries under this cost); "
+        "per-state dedup restores the classic invariant", True),
+    (0, "One run = bounded states on 80 links → sub-millisecond; ~41 000 runs across the farm "
+        "are negligible next to the MILP solves, and the mask's memoised state-searches sit "
+        "inside the per-case inference time. All numbers in this deck are the mod-96 benchmark "
+        "(H = 135, re-run 2026-08-06)", False),
 ], size=11.5)
 
 # ------------------------------------------------ 10 how B_v is set
@@ -507,11 +508,11 @@ bullets(s, 0.7, 3.12, 12.0, [
         "instance-specific, not a table lookup", False),
     (0, "Step 3 — Bᵥ = ⌈ρᵥ · τᵐⁱⁿᵥ⌉, floored at τᵐⁱⁿᵥ (a task is never born infeasible) and "
         "capped at H − t₀ᵥ (never beyond the coverage grid)", False),
-    (0, "Why a RATIO and not an absolute number: the same B = 100 is vacuous for a near OD "
-        "(τᵐⁱⁿ = 14) and infeasible for a far one (τᵐⁱⁿ = 120). ρ is comparable across all "
+    (0, "Why a RATIO and not an absolute number: the same B = 50 is vacuous for a near OD "
+        "(τᵐⁱⁿ = 14) and infeasible for a far one (τᵐⁱⁿ = 61). ρ is comparable across all "
         "ODs:  ρ = 1 ⇔ exactly the min-time trip;  ρ = 2 ⇔ twice the minimum time", True),
-    (0, "Worked example (the sweep instance, V = 3, τᵐⁱⁿ = [38, 120, 14]):  ρ = 1.5 for all "
-        "⇒  B = [57, 180, 21] — same slack semantics, very different absolute budgets", False),
+    (0, "Worked example (the sweep instance, V = 3, τᵐⁱⁿ = [38, 61, 14]):  ρ = 1.5 for all "
+        "⇒  B = [57, 92, 21] — same slack semantics, very different absolute budgets", False),
     (0, "Bᵥ then enters BOTH sides of the pipeline: the MILP constraint (labels) and the "
         "model input (conditioning) + the decoder feasibility mask", True),
 ], size=12.5)
