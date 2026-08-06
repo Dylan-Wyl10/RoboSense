@@ -42,7 +42,7 @@ def main():
         w.writeheader()
         for r in rows:
             w.writerow(r)
-    print("wrote results_alpha.csv")
+    print("wrote results_alpha_mod.csv")
 
 
 if __name__ == "__main__":

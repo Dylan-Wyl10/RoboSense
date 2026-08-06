@@ -73,7 +73,7 @@ def main():
         w.writeheader()
         for r in rows:
             w.writerow(r)
-    print(f"\nwrote {OUT}/results_sweep.csv")
+    print(f"\nwrote {OUT}/results_sweep_mod.csv")
 
 
 if __name__ == "__main__":

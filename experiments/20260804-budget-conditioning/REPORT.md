@@ -125,3 +125,44 @@ actually transfers to. Labelling also got ~30× cheaper, which unblocks scale.
 Next, in order: (1) multi-sample decoding — free accuracy at inference; (2) widen the ρ
 range to repair L4b; (3) data-volume slope on the now-cheap farm; (4) then wᵢ, when the
 user wants "which cells" to become a real decision.
+
+---
+
+## 2026-08-06 — mod-96 re-run (YIL-125 r4): the environment's cost law changed
+
+**Decision (user, YIL-125):** `c(i,t) = ((base(i)+t) mod 96)//4 + 1 + δᵢ` —
+periodic congestion, bounded ≤ 24 + δᵢ. The wrap breaks FIFO, so all
+earliest-arrival machinery moved to an exact time-expanded (link, entry-time)
+search (`modenv.py`; `neural_route/` untouched; single-label TD-Dijkstra is
+wrong on 18.1 % of (OD, t₀) queries under this cost).
+
+**New benchmark (everything re-derived):** H = 135 (was 338) · 10 780 labels
+in `data_mod/` (0 errors, 32 = 0.3 % hit the 60 s cap — best incumbent kept,
+2.08 s mean) · MAX_LEN 84 → 128 (mod routes are longer; farm max seq 88) ·
+3 seeds retrained (~4 min/seed, 1.04 M params unchanged).
+
+| layer | n | feasible | rel. gap % (mean ± std) | match-or-beat |
+|---|---|---|---|---|
+| L1 same-dist | 800 | 800/800 | 12.7 ± 0.4 | 162/800 |
+| L2 OD zero-shot | 400 | 400/400 | 16.1 ± 1.3 | 64 |
+| L3 V ∈ {5,8} | 400 | 400/400 | 16.7 ± 0.5 | 36 |
+| L4a ρ interp | 400 | 400/400 | 15.1 ± 0.4 | 27 |
+| L4b ρ extrap 4.0 | 300 | 300/300 | 18.0 ± 0.5 | 4 |
+
+100 % feasible everywhere · 8–14 ms/case · response curve: near-exact at
+ρ = 1 (mean gap 0.1 %), monotone tracking incl. unseen ρ, undershoot at
+ρ = 4 (339 vs 409 cells). NOT comparable to the pre-mod table (different
+cost law, H, labels). Gap profile flattened: zero-shot/extrapolation layers
+improved, L1 slightly worse.
+
+**Environment facts established on the way** (all measured, in the deck):
+zero-overlap regime persists (median K/C = 1.000, 86.8 % of labels exact;
+65–92 % per shard — larger fleets overlap more) · α-sweep now shows the
+theorem's knife-edge measured AT α₂ = 0.5 (three plateaus 113 / 330-tie /
+391) · budget sweep stays a clean monotone dial (113 → 391, overlap 0) ·
+sawtooth oddity on record: a congested day can make 4/56 ODs FASTER
+(delay pushes a later link past its wrap into the cheap zone).
+
+**Verdict: adopt** (the mod-96 benchmark replaces pre-mod as the working
+baseline; pre-mod artifacts remain untouched in `data/`, `results/`,
+`results*.csv` and under tag `benchmark-v1-20260804`).

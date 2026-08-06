@@ -71,15 +71,20 @@ def fig_s1():
     axL.set_title("The weight is a SWITCH", color=INK, fontsize=13,
                   fontweight="bold", loc="left", pad=12)
     axL.axvline(0.5, color=MUTED, lw=1, ls=(0, (4, 3)), zorder=1)
-    axL.annotate("min-time routes\n(172 cells, flat over 0.10–0.48)",
-                 xy=(0.28, 172), xytext=(0.10, 470), fontsize=10, color=INK2,
+    axL.annotate(f"min-time routes\n({acov[0]} cells, flat over 0.10–0.48)",
+                 xy=(0.28, acov[0]), xytext=(0.10, ymax * 0.72), fontsize=10,
+                 color=INK2,
                  arrowprops=dict(arrowstyle="-", color=MUTED, lw=1))
-    axL.annotate("horizon-saturated roaming\n(999 cells, flat over 0.52–0.90)",
-                 xy=(0.80, 999), xytext=(0.58, 620), fontsize=10, color=INK2,
+    axL.annotate(f"budget-saturated roaming\n({acov[-1]} cells, flat over 0.52–0.90)",
+                 xy=(0.80, acov[-1]), xytext=(0.55, ymax * 0.52), fontsize=10,
+                 color=INK2,
                  arrowprops=dict(arrowstyle="-", color=MUTED, lw=1))
     axL.text(0.485, ymax * 0.965, "knife-edge  $\\alpha_2/\\alpha_1 = 1$",
              fontsize=10, color=MUTED, ha="right", va="top")
-    axL.text(0.06, ymax * 0.06, "13 values of $\\alpha_2$  →  2 distinct solutions",
+    n_plat = len(set(acov))
+    axL.text(0.06, ymax * 0.06,
+             f"{len(ax2v)} values of $\\alpha_2$  →  {n_plat} plateaus "
+             "(tie point at exactly 0.5)",
              fontsize=10.5, color=INK, fontweight="bold")
 
     axR.plot(rho, bcov, "-o", color=ORANGE, lw=2, ms=8,
@@ -95,14 +100,14 @@ def fig_s1():
         axR.annotate(f"{y}", xy=(x, y), xytext=(0, 12), fontsize=10,
                      color=INK2, textcoords="offset points", ha="center")
     axR.text(0.85, ymax * 0.06,
-             "10 values of $\\rho$  →  10 distinct solutions, monotone",
+             f"{len(rho)} values of $\\rho$  →  monotone response, overlap 0",
              fontsize=10.5, color=INK, fontweight="bold")
 
     for ax in (axL, axR):
         style(ax)
         ax.yaxis.set_major_locator(MaxNLocator(5))
-    fig.suptitle("Same instance (V=3, 4×4 bidirectional grid), same MILP, "
-                 "same solver — only the control variable differs",
+    fig.suptitle("Same instance (V=3, 4×4 bidirectional grid, mod-96 cost), "
+                 "same MILP, same solver — only the control variable differs",
                  fontsize=11, color=INK2, y=1.005, x=0.011, ha="left")
     fig.tight_layout()
     fig.savefig(f"{R}/figS1_knob_vs_switch.png", bbox_inches="tight",
@@ -140,10 +145,11 @@ def fig_s2():
     ax.set_ylabel("fleet coverage  (space–time cells)")
     ax.set_title("The model tracks the dial — including at budgets it never saw",
                  color=INK, fontsize=13, fontweight="bold", loc="left", pad=12)
-    ax.text(1.02, 690, "$\\rho=1$: budget forces the min-time route\n"
-                       "→ model is EXACTLY optimal, 60/60",
+    ytop = max(gur) * 1.35
+    ax.text(1.02, ytop * 0.83, "$\\rho=1$: budget forces the min-time route\n"
+                               "→ model is near-exact (mean gap 0.1 %)",
             fontsize=10, color=INK2, va="top")
-    ax.set_ylim(0, 830)
+    ax.set_ylim(0, ytop)
     style(ax)
     fig.tight_layout()
     fig.savefig(f"{R}/figS2_response_curve.png", bbox_inches="tight",

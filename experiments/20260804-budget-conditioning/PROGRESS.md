@@ -202,6 +202,25 @@ benchmark — the Step-0 slide carries that transition note explicitly.
   exact search (propose bigrid.py diff first per repo rules!), recalibrate
   H (~135), refarm labels, retrain 3 seeds, refresh results slides.
 
+## 2026-08-06 — YIL-125 r4: FULL MOD-96 RE-RUN COMPLETE (user go: "可以开工")
+
+Everything re-derived under the adopted cost; see REPORT.md 2026-08-06
+section for the numbers table. Mechanics for future sessions:
+- `modenv.py` = the environment now (ModInstance + exact min_finish +
+  calibrate_horizon -> H=135). budget_datagen/train + sweeps import it;
+  `neural_route/` still untouched.
+- Paths: labels `data_mod/` (untracked, like `data/`), model/eval/curve
+  `results_mod/`, sweeps/results at `results_*_mod.csv` + `results_mod.csv`.
+  Pre-mod files byte-identical, tag benchmark-v1-20260804 still valid.
+- MAX_LEN 84 -> 128 (farm max seq 88). Params still 1.04 M.
+- Farm: 10 780 labels, 33 min/15 workers, 2.08 s mean, 32 cap hits (0.3 %,
+  incumbents kept). Train ~4 min/seed x 3. Eval: 100 % feasible, rel gaps
+  12.7/16.1/16.7/15.1/18.0 %, 8-14 ms/case; curve near-exact at rho=1.
+- Deck fully refreshed (24 slides) and consistent end-to-end with mod-96;
+  figS1/figS2 in-figure annotations now data-driven (they were baked-in
+  pre-mod literals — check them whenever data changes).
+- Delivered to YIL-125: final pptx attached to the r4 comment.
+
 ## Next step on resume (in priority order)
 
 1. Multi-sample / non-greedy decoding (free accuracy, no retraining) — FM-MCVRP's NS trick.

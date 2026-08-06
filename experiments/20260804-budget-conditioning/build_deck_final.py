@@ -24,6 +24,13 @@ figA_network_mod.png; slide 5 uses figA_td_travel_mod.gif (full period, step 1);
 slide 6 uses figA_delta_day_mod.png (diverging: congestion can speed trips up).
 Step-0 slide carries the transition note: FIFO broken at the wrap -> exact
 (link, entry-time) search; labels/model/H still pre-mod until the re-run.
+
+Revision 2026-08-06 (YIL-125 r4): FULL mod-96 re-run landed. All results now
+from data_mod/ + results_mod/ (H=135, 10 780 labels, 3 seeds): K/C stats,
+farm boxes (2.1 s, 32 cap hits, ~33 min), 8-14 ms inference, near-exact rho=1
+curve wording, sweep captions re-measured (three plateaus incl. the alpha=0.5
+knife-edge), summary overlap ~87 %. Step-0 slide now documents the deployed
+exact state-search as current machinery.
 """
 
 import copy
@@ -386,9 +393,10 @@ label(s, 0.75, 2.62, 11.8, "Lemma (cell accounting).  Each time-step of travel "
       "occupies exactly one (link, time) cell, and the union counts every cell "
       "once. Hence", size=12.5, align=PP_ALIGN.LEFT)
 eq(s, "eq_lemma", 3.06, height=0.34)
-label(s, 0.75, 3.55, 11.8, "Measured on all 10 780 optimal labels: median K/C = "
-      "0.999; K = C exactly (zero overlap) in 84–93 % per shard — the "
-      "zero-overlap regime is the TYPICAL one, not a corner case.", size=11,
+label(s, 0.75, 3.55, 11.8, "Measured on all 10 780 mod-96 optimal labels: median K/C "
+      "= 1.000; K = C exactly (zero overlap) in 86.8 % of labels (65–92 % per "
+      "shard — larger fleets overlap more). The zero-overlap regime is the "
+      "TYPICAL one, not a corner case.", size=11,
       color=INK2, align=PP_ALIGN.LEFT)
 label(s, 0.75, 4.30, 11.8, "Theorem (collapse in the zero-overlap regime).  "
       "If K(R) = C(R) for the instance's candidate solutions, the objective "
@@ -428,7 +436,7 @@ bullets(s, 0.7, 4.52, 12.0, [
     (0, "For α₂ > α₁ every FULLY-fresh detour (ΔK = k) strictly improves — so at any "
         "optimum, no vehicle can still afford one: budgets bind. The threshold "
         "ΔK/k > α₁/α₂ also explains why solutions barely move across α₂ ∈ "
-        "[0.52, 0.90] in the zero-overlap regime", False),
+        "[0.52, 0.9] — measured: identical (cost, coverage) across that whole range", False),
     (0, "Conclusion: α selects one of two regimes; the quantity that positions a "
         "solution INSIDE the roam regime is the budget. C*(B) grows monotonically in "
         "bounded increments as B grows — a graded, learnable response", True),
@@ -442,9 +450,11 @@ s = clone(prs, CONTENT)
 set_ph(s, 11, "Change (a) — objective")
 set_ph(s, 10, "Switch vs dial — measured")
 pic(s, f"{R}/figS1_knob_vs_switch.png", 11.6, 1.5, [
-    (0, "One fixed instance, one MILP, one solver, MIPGap 0.5 %. LEFT: 13 values of α₂ with the budget "
-        "fixed at H → 2 distinct solutions (α₂ = 0.10–0.48 identical link-for-link). "
-        "RIGHT: α frozen at 0.3/0.7, per-vehicle budget swept → 10 distinct, monotone solutions", False),
+    (0, "One fixed instance (mod-96), one MILP, one solver. LEFT: α₂ swept, budgets fixed → min-time "
+        "plateau (cost = cov = 113) for α₂ ≤ 0.48, budget-saturated plateau (391) for α₂ ≥ 0.52; at "
+        "exactly α₂ = α₁ = 0.5 every feasible solution ties — the theorem's knife-edge, measured. "
+        "RIGHT: α frozen at 0.3/0.7, ρ swept 1 → 99 → monotone continuous response 113 → 391 cells, "
+        "overlap 0 at every point, reduces to the full-horizon solution once Bᵥ caps at H − t₀", False),
 ])
 
 # ------------------------------------------------ 9 TD-Dijkstra (prerequisite)
@@ -592,10 +602,10 @@ bA = [
          "ρᵥ ~ anchors {1, 1.5, 2, 3}\nBᵥ = ⌈ρᵥ·τᵐⁱⁿᵥ⌉\n65 % heterogeneous fleets",
          fill=FILL_O, edge=ORANGE),
     nbox(s, xs[3], yA, w5, hA, "Gurobi MILP",
-         "time-expanded flow\nper-vehicle deadline t₀+B\nMIPGap 2 % · 0.90 s/case",
+         "time-expanded flow\nper-vehicle deadline t₀+B\nMIPGap 2 % · 2.1 s/case",
          fill=FILL_B, edge=BLUE, tc=BLUE),
     nbox(s, xs[4], yA, w5, hA, "Label set",
-         "10 780 (case, routes)\n0 errors · 0 hit the cap\n~17 min · 15 workers"),
+         "10 780 (case, routes)\n0 errors · 32 hit 60 s cap\n~33 min · 15 workers"),
 ]
 for a, b in zip(bA, bA[1:]):
     elbow(s, a, b, 3, 1)
@@ -654,7 +664,7 @@ mask = nbox(s, 1.0, 3.3, 4.5, 1.55, "Feasibility mask (0 parameters)",
             fill=FILL_O, edge=ORANGE, tc=ORANGE, bsize=9.2)
 elbow(s, mask, c3, 0, 2, color=ORANGE)
 bullets(s, 0.7, 5.30, 12.0, [
-    (0, "6–9 ms per case on one GPU — including the mask's earliest-arrival queries; no solver "
+    (0, "8–14 ms per case on one GPU — including the mask's exact state-search queries; no solver "
         "call anywhere at deployment", True),
     (0, "The mask is why unseen budgets stay feasible: feasibility is ENFORCED by rules, the "
         "network only ranks the legal moves (the budget has a hard mechanical channel, not just "
@@ -681,7 +691,7 @@ m5 = nbox(s, 9.55, 4.10, 3.20, 1.30, "Feasibility mask",
           "topology · OWN deadline\nt₀ᵥ + Bᵥ · SEP/EOS grammar",
           fill=FILL_O, edge=ORANGE, tc=ORANGE)
 m6 = nbox(s, 5.60, 4.10, 2.90, 1.30, "Fleet plan",
-          "V feasible routes\n6–9 ms per case")
+          "V feasible routes\n8–14 ms per case")
 elbow(s, m1, m2, 3, 1)
 elbow(s, m2, m3, 3, 1)
 elbow(s, m3, m4, 3, 1)
@@ -789,9 +799,9 @@ s = clone(prs, CONTENT)
 set_ph(s, 11, "Data")
 set_ph(s, 10, "Label set")
 bullets(s, 0.7, 1.65, 11.9, [
-    (0, "10 780 Gurobi labels · 0 errors · 0 solves hit the 60 s cap · 0.90 s mean per case "
-        "(tight budgets prune the time-expanded graph → labelling ~30× faster than the "
-        "full-horizon farm) · ~17 min on 15 workers, fully resumable", True),
+    (0, "10 780 Gurobi labels · 0 errors · 2.1 s mean per case · 32 solves (0.3 %) hit the 60 s "
+        "cap — best incumbent kept, optimality not certified there · ~33 min on 15 workers, "
+        "fully resumable", True),
     (0, "Shards:", True),
     (1, "train 8 000 · same-distribution test 800", False),
     (1, "OD zero-shot 400 (4 gate pairs never trained) · fleet extrapolation 400 (V ∈ {5,8})", False),
@@ -827,7 +837,7 @@ s = clone(prs, CONTENT)
 set_ph(s, 11, "Results")
 set_ph(s, 10, "Five-layer exam")
 pic(s, f"{R}/figS3_layers.png", 9.4, 1.5, [
-    (0, f"3 seeds × 60 epochs · 2 300 held-out cases, 100 % feasible in every layer · 6–9 ms per case "
+    (0, f"3 seeds × 60 epochs · 2 300 held-out cases, 100 % feasible in every layer · 8–14 ms per case "
         f"· {AGG['L1_same']['match_mean']:.0f}/800 of L1 match or beat Gurobi", False),
     (0, "Unseen budgets (L4a, orange) cost about as much accuracy as an unseen fleet size — the "
         "budget generalises like the other conditioned attributes, not worse", True),
@@ -839,7 +849,7 @@ set_ph(s, 11, "Results")
 set_ph(s, 10, "Budget response curve")
 pic(s, f"{R}/figS2_response_curve.png", 9.0, 1.5, [
     (0, f"Monotone response reproduced — including at ρ = 1.25 / 1.75 / 4.0, absent from every training "
-        f"label. At ρ = 1 the model is EXACTLY optimal (60/60); tracking degrades as slack grows "
+        f"label. At ρ = 1 the model is near-exact (mean gap 0.1 %); tracking degrades as slack grows "
         f"(ρ = 4: {CURVE[-1]['model_cov']:.0f} vs {CURVE[-1]['gurobi_cov']:.0f} cells) — the limit "
         f"of greedy decoding", True),
 ])
@@ -858,7 +868,7 @@ bullets(s, 0.7, 1.7, 11.9, [
         "(right method, different problem)", False),
     (0, "Verification chain at every step: MILP ≡ flow decomposition ≡ simulator · budget MILP ≡ the "
         "full-horizon MILP at B ≥ H · per-case CSVs against Gurobi on every held-out layer", False),
-    (0, "Known and deliberately open: with uniform cell utility, overlap = 0 in ~92 % of optimal "
+    (0, "Known and deliberately open: with uniform cell utility, overlap = 0 in ~87 % of optimal "
         "solutions, so coverage ≈ cost. The budget controls HOW MUCH to roam; making WHICH cells a "
         "real decision needs heterogeneous utility wᵢ — the next modelling step, not a fix", False),
     (0, "Next levers, in order: multi-sample (non-greedy) decoding · wider ρ range for extrapolation "
