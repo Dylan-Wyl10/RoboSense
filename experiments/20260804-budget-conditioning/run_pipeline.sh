@@ -30,14 +30,14 @@ farm() {
 train() {
   echo "=== [2/4] training ${EPOCHS} epochs x seeds ${SEEDS} ==="
   for s in $SEEDS; do
-    python budget_train.py train $EPOCHS results/budget_model_seed$s.pt $s
+    python budget_train.py train $EPOCHS results_mod/budget_model_seed$s.pt $s
   done
 }
 
 evaluate() {
   echo "=== [3/4] 3-seed five-layer eval + response curve ==="
   python aggregate.py
-  python budget_train.py curve results/budget_model_seed0.pt
+  python budget_train.py curve results_mod/budget_model_seed0.pt
 }
 
 report() {

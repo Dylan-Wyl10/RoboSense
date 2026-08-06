@@ -15,7 +15,8 @@ import time
 import numpy as np
 
 sys.path.insert(0, "/home/yilin/Research/Route_TSC_CART")
-from neural_route.bigrid import BiGrid, BiInstance, calibrate_horizon  # noqa: E402
+from neural_route.bigrid import BiGrid  # noqa: E402
+from modenv import ModInstance as BiInstance, calibrate_horizon  # noqa: E402
 
 from budget_milp import (budgets_from_slack, min_travel_time,  # noqa: E402
                          solve_budget_milp)
@@ -67,7 +68,7 @@ def main():
         print(f"rho={rho:5} B={B} sumB={sum(B):5} | cost={cost:5} cov={cov:5} "
               f"overlap={overlap:4} | lens={lens} | obj={obj:.5f} | {dt:.1f}s")
 
-    with open(f"{OUT}/results_sweep.csv", "w", newline="") as fh:
+    with open(f"{OUT}/results_sweep_mod.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
         w.writeheader()
         for r in rows:

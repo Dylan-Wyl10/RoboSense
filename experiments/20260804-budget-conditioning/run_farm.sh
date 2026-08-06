@@ -4,7 +4,7 @@
 cd "$(dirname "$0")"
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate torchnn
-D=data
+D=data_mod
 W=15
 
 run() {  # mode n seed

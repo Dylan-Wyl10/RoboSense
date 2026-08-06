@@ -51,8 +51,8 @@ def read(path):
 
 # ------------------------------------------------------------ figS1
 def fig_s1():
-    a = read(f"{HERE}/results_alpha.csv")
-    b = read(f"{HERE}/results_sweep.csv")
+    a = read(f"{HERE}/results_alpha_mod.csv")
+    b = read(f"{HERE}/results_sweep_mod.csv")
     b = [r for r in b if float(r["rho"]) <= 6.0]          # drop the rho=99 point
     ax2v = [float(r["alpha2"]) for r in a]
     acov = [int(r["cov"]) for r in a]
@@ -112,7 +112,7 @@ def fig_s1():
 
 # ------------------------------------------------------------ figS2
 def fig_s2():
-    rows = json.load(open(f"{R}/curve.json"))
+    rows = json.load(open(f"{HERE}/results_mod/curve.json"))
     rho = [r["rho"] for r in rows]
     gur = [r["gurobi_cov"] for r in rows]
     mdl = [r["model_cov"] for r in rows]
@@ -153,7 +153,7 @@ def fig_s2():
 
 # ------------------------------------------------------------ figS3
 def fig_s3():
-    agg = json.load(open(f"{R}/agg_3seed.json"))
+    agg = json.load(open(f"{HERE}/results_mod/agg_3seed.json"))
     order = ["L1_same", "L2_odzero", "L3_vextrap", "L4a_rhoint", "L4b_rhoext"]
     labels = ["L1  same-distribution", "L2  OD zero-shot",
               "L3  fleet extrapolation\n      V ∈ {5,8}",

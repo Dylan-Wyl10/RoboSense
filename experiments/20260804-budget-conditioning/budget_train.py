@@ -31,13 +31,14 @@ import torch.nn as nn
 sys.path.insert(0, "/home/yilin/Research/Route_TSC_CART")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from neural_route.bigrid import BiGrid, BiInstance, calibrate_horizon  # noqa: E402
+from neural_route.bigrid import BiGrid  # noqa: E402
+from modenv import ModInstance as BiInstance, calibrate_horizon  # noqa: E402
 
 from budget_milp import objective_budget  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DATA = f"{HERE}/data"
-OUTD = f"{HERE}/results"
+DATA = f"{HERE}/data_mod"
+OUTD = f"{HERE}/results_mod"
 PAD, SEP, BOS, EOS = 0, 81, 82, 83
 VOCAB = 84
 MAX_LEN = 84                    # farm max observed 72

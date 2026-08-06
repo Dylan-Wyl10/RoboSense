@@ -41,7 +41,8 @@ import numpy as np
 sys.path.insert(0, "/home/yilin/Research/Route_TSC_CART")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from neural_route.bigrid import BiGrid, BiInstance, calibrate_horizon  # noqa: E402
+from neural_route.bigrid import BiGrid  # noqa: E402
+from modenv import ModInstance as BiInstance, calibrate_horizon  # noqa: E402
 from neural_route.bigrid_datagen import HOLDOUT_ODS  # noqa: E402
 
 from budget_milp import budgets_from_slack, solve_budget_milp  # noqa: E402
