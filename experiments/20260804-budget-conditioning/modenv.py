@@ -1,11 +1,16 @@
-"""Mod-96 environment (YIL-125 r4, 2026-08-06): the adopted cost law plus
+"""Mod-24 environment (YIL-125 r5, 2026-08-06): the adopted cost law plus
 EXACT earliest-arrival machinery that stays correct without FIFO.
 
-    c(i,t) = ((base(i)+t) mod 96)//4 + 1 + delta_i      bounded <= 24 + delta
+    c(i,t) = (base(i)+t) mod 24 + 1 + delta_i           bounded <= 24 + delta
+
+User simplification r5: drop the //4. Mathematically the r4 cost
+((base+t) mod 96)//4 was identical to ((base+t)//4) mod 24 — a mod-24
+sawtooth on a 4x-slowed clock — so this keeps the amplitude (0..23) and
+removes the slow clock: the congestion cycle is now 24 steps.
 
 The sawtooth wrap breaks FIFO (t + c can decrease in t), so the single-label
-TD-Dijkstra in `neural_route.bigrid` is inexact here (wrong on 18.1% of
-(OD, t0) cells, YIL-125 r2). Every query below therefore runs Dijkstra over
+TD-Dijkstra in `neural_route.bigrid` is inexact here (wrong on 28.4% of
+(OD, t0) cells under mod-24; 18.1% under the r4 mod-96 law). Every query below therefore runs Dijkstra over
 time-expanded states (link, entry-time) — exact for arbitrary positive costs,
 no waiting (the environment has no waiting).
 
@@ -16,7 +21,7 @@ Drop-in interface (same names/signatures as neural_route.bigrid):
     calibrate_horizon(grid)               same rule as bigrid's, exact search.
 
 `neural_route/` is NOT modified; pipeline scripts import from here instead.
-Run `python modenv.py` for the self-checks (H, r3 anchor values, min_finish
+Run `python modenv.py` for the self-checks (H, anchor values, min_finish
 vs brute force, periodicity).
 """
 
@@ -29,7 +34,7 @@ import numpy as np
 sys.path.insert(0, os.path.expanduser("~/Research/Route_TSC_CART"))
 from neural_route.bigrid import BiGrid, BiInstance  # noqa: E402
 
-PERIOD = 96
+PERIOD = 24
 
 
 class ModInstance(BiInstance):
@@ -37,7 +42,7 @@ class ModInstance(BiInstance):
     def cost(self, i, t):
         if i > self.grid.n_links:
             return 0
-        return (((self.grid.base[i] + t) % PERIOD) // 4
+        return ((self.grid.base[i] + t) % PERIOD
                 + 1 + int(self.delta[i - 1]))
 
     def _link_gates(self):
@@ -125,13 +130,13 @@ def calibrate_horizon(grid, max_delta=1, slack=1.6, max_t0=5):
 if __name__ == "__main__":
     g = BiGrid(4, 4)
     H = calibrate_horizon(g)
-    assert H == 135, f"H changed: {H}"            # r3 established value
+    assert H == 128, f"H changed: {H}"            # r5 established value
     inst = ModInstance(g, np.zeros(g.n_links), tasks=[], horizon=H)
     ids = list(g.gates.values())
     _, a1 = inst.earliest_arrival(ids[0], t0=0)
     _, a7 = inst.earliest_arrival(ids[6], t0=0)
-    assert a1[ids[1]] == 2 and a1[ids[4]] == 45, "G1 row anchor"
-    assert a7[ids[2]] == 67, "G7->G3 anchor"      # r3: 159 -> 67 under mod
+    assert a1[ids[1]] == 7 and a1[ids[4]] == 55, "G1 row anchor"
+    assert a7[ids[2]] == 69, "G7->G3 anchor"      # r5 mod-24 value
     _, p0 = inst.earliest_arrival(ids[3], t0=11)
     _, p1 = inst.earliest_arrival(ids[3], t0=11 + PERIOD)
     assert all(p1[d] - p0[d] == PERIOD for d in ids if d != ids[3]), "period"
@@ -158,5 +163,5 @@ if __name__ == "__main__":
             for d in (ids[2], ids[5]):
                 assert inst_d.min_finish(lid, t, d) == brute(lid, t, d), \
                     (lid, t, d)
-    print(f"modenv self-checks OK: H={H}, anchors match r3, "
+    print(f"modenv self-checks OK: H={H}, anchors match, "
           "min_finish == brute force, periodicity holds")

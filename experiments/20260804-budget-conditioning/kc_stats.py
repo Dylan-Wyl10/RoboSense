@@ -16,7 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 out = {}
 all_ratio, all_zero, all_seq, all_solve = [], 0, [], []
 n_tot = 0
-for path in sorted(glob.glob(f"{HERE}/data_mod/*.jsonl")):
+for path in sorted(glob.glob(f"{HERE}/data_mod24/*.jsonl")):
     name = os.path.basename(path).replace(".jsonl", "")
     ratios, zeros, seqs, solves, errors = [], 0, [], [], 0
     for line in open(path):
@@ -48,8 +48,8 @@ out["ALL"] = dict(n=n_tot,
                   solve_mean=round(float(np.mean(all_solve)), 2),
                   solve_max=round(float(np.max(all_solve)), 1),
                   cap_hits=int(sum(s >= 60 for s in all_solve)))
-os.makedirs(f"{HERE}/results_mod", exist_ok=True)
-with open(f"{HERE}/results_mod/kc_stats.json", "w") as fh:
+os.makedirs(f"{HERE}/results_mod24", exist_ok=True)
+with open(f"{HERE}/results_mod24/kc_stats.json", "w") as fh:
     json.dump(out, fh, indent=1)
 for k, v in out.items():
     print(k, json.dumps(v))

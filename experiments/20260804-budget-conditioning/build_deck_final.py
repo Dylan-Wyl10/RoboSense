@@ -52,8 +52,8 @@ R = f"{HERE}/results"
 EQ = f"{R}/eq"
 EMU_IN = 914400
 
-AGG = json.load(open(f"{HERE}/results_mod/agg_3seed.json"))
-CURVE = json.load(open(f"{HERE}/results_mod/curve.json"))
+AGG = json.load(open(f"{HERE}/results_mod24/agg_3seed.json"))
+CURVE = json.load(open(f"{HERE}/results_mod24/curve.json"))
 
 INK, INK2 = "0B0B0B", "52514E"
 BLUE, ORANGE = "2A78D6", "EB6834"
@@ -295,8 +295,8 @@ bullets(s, 0.7, 1.6, 11.9, [
     (0, "One case (an 'operating day'): congestion δ ∈ {0,1}⁸⁰ per directed link · "
         "V vehicles · per-vehicle task (origin gate o, destination gate d, departure t₀, budget B)", False),
     (0, "Vehicles run SIMULTANEOUSLY on one timeline. Entering link i at time t occupies "
-        "space–time cells (i, t … t+c−1), with travel time c(i,t) = ((base(i)+t) mod 96)//4 "
-        "+ 1 + δᵢ — periodic congestion (period 96), bounded ≤ 24 + δᵢ", False),
+        "space–time cells (i, t … t+c−1), with travel time c(i,t) = (base(i)+t) mod 24 "
+        "+ 1 + δᵢ — periodic congestion (period 24), bounded ≤ 24 + δᵢ", False),
     (0, "Objective: maximise the fleet's sensing coverage (union of occupied cells — overlap "
         "counts once), pay for travel, respect each vehicle's own budget (next slide, "
         "spelled out)", True),
@@ -314,12 +314,12 @@ set_ph(s, 10, "Network & instances")
 pic(s, f"{R}/figA_network_mod.png", 9.4, 1.5, [
     (0, "Fixed bidirectional 4×4: 80 directed links, no U-turns · 8 gates · all 56 ordered ODs "
         "feasible. Link ids 1–80 (E 1–20 · W 21–40 · S 41–60 · N 61–80) = the model's token "
-        "ids; base(i) = min(id, reverse id) is each street's congestion PHASE — every street "
-        "cycles the same cost range 1–24, offset by base (at t = 0: E/W cheap, N/S mid-cycle)", False),
+        "ids; base(i) = min(id, reverse id) sets each street's congestion PHASE (base mod 24) — "
+        "every street cycles the same cost range 1–24; streets 24 ids apart share a phase", False),
     (0, "Heatmap = earliest arrival departing t₀ = 0 on the δ = 0 day — ONE frame of a "
-        "PERIODIC quantity (period 96; next two slides)", True),
+        "PERIODIC quantity (period 24; next two slides)", True),
     (0, "Network and OD set FIXED; per case: δ, V, and each vehicle's (o, d, t₀, B) · horizon "
-        "H = 135 (re-calibrated under mod-96, same worst-case rule; pre-mod value 338)", False),
+        "H = 128 (same worst-case rule; was 135 under mod-96, 338 pre-mod)", False),
 ], cap_size=11.5, cap_x=2.05, cap_w=10.6)
 
 # ------------------------------------- 5 time-dependence (animated, YIL-125 r1)
@@ -329,12 +329,13 @@ set_ph(s, 10, "Time-dependence")
 pic(s, f"{R}/figA_td_travel_mod.gif", 9.8, 1.45)
 bullets(s, 2.05, 5.75, 10.6, [
     (0, "The previous slide's heatmap is the t₀ = 0 frame of this loop: t₀ sweeps one FULL "
-        "period 0…95 in steps of 1 and the matrix returns to its start — bounded and periodic: "
-        "entry cost ≤ 24, every trip ≤ 84 steps at every t₀; G1→G2 cycles 2…43, G7→G3 "
-        "cycles 34…84", True),
-    (0, "Cost law (adopted 2026-08-05): c(i,t) = ((base(i)+t) mod 96)//4 + 1 + δᵢ. The wrap "
+        "congestion cycle 0…23 in steps of 1 and the matrix returns to its start — bounded "
+        "and periodic: entry cost ≤ 24, every trip ≤ 78 steps at every t₀; G1→G2 swings "
+        "4…46, G7→G3 swings 30…69", True),
+    (0, "Cost law (simplified 2026-08-06): c(i,t) = (base(i)+t) mod 24 + 1 + δᵢ — equal to the "
+        "earlier mod-96 form with the //4 removed: same amplitude, 4× faster clock. The wrap "
         "makes the cost non-FIFO, so these matrices come from an exact search over "
-        "(link, entry-time) states — the Step 0 slide says what this changes in the machinery", False),
+        "(link, entry-time) states — details on the Step 0 slide", False),
     (0, "Animated GIF — plays in slideshow mode; in print this page shows the t₀ = 0 frame", False),
 ], size=11.5)
 
@@ -348,10 +349,10 @@ bullets(s, 2.05, 5.55, 10.6, [
         "(the farm's sampler); δᵢ = 1 adds +1 to EVERY traversal of link i that day", True),
     (0, "An instance property shared by the whole fleet — not a vehicle attribute; the two "
         "directions of one street can differ (left: one-way congestion is visible)", False),
-    (0, "Effect at t₀ = 0 (right): this sampled day shifts the 56 ODs by −9 … +7 steps — under "
-        "mod-96, congestion can even make a trip FASTER (4/56 here): a +1 delay can push a "
-        "later link past its wrap into the cheap zone. The model sees δ per link token: "
-        "link_emb(i) + Proj(δᵢ) (encoder slide)", False),
+    (0, "Effect at t₀ = 0 (right): this sampled day shifts the 56 ODs by −20 … +17 steps — "
+        "congestion can even make a trip FASTER (18/56 here): a +1 delay can push a later "
+        "link past its wrap into the cheap zone (stronger under the faster 24-step cycle). "
+        "The model sees δ per link token: link_emb(i) + Proj(δᵢ) (encoder slide)", False),
 ], size=11.5)
 
 # ------------------------------------------ 5 change (a): objective before/after
@@ -450,7 +451,7 @@ s = clone(prs, CONTENT)
 set_ph(s, 11, "Change (a) — objective")
 set_ph(s, 10, "Switch vs dial — measured")
 pic(s, f"{R}/figS1_knob_vs_switch.png", 11.6, 1.5, [
-    (0, "One fixed instance (mod-96), one MILP, one solver. LEFT: α₂ swept, budgets fixed → min-time "
+    (0, "One fixed instance (mod-24), one MILP, one solver. LEFT: α₂ swept, budgets fixed → min-time "
         "plateau (cost = cov = 113) for α₂ ≤ 0.48, budget-saturated plateau (391) for α₂ ≥ 0.52; at "
         "exactly α₂ = α₁ = 0.5 every feasible solution ties — the theorem's knife-edge, measured. "
         "RIGHT: α frozen at 0.3/0.7, ρ swept 1 → 99 → monotone continuous response 113 → 391 cells, "
@@ -466,7 +467,7 @@ label(s, 0.75, 1.48, 11.9, "Before any budget can be set, we must know the faste
       "current network, under this case's congestion δ. One run per vehicle:",
       size=12.5, align=PP_ALIGN.LEFT, bold=True)
 codebox(s, 0.75, 2.14, 9.10, 2.75, [
-    ("EarliestArrival(o, t₀, δ):   # one run per vehicle · exact under mod-96", True),
+    ("EarliestArrival(o, t₀, δ):   # one run per vehicle · exact under mod-24", True),
     ("  push (t₀, l)  for every link l leaving gate o", False),
     ("  while queue not empty:", False),
     ("      (t, l) ← pop the SMALLEST entry time    # state = (link, entry time)", False),
@@ -487,14 +488,14 @@ bullets(s, 2.05, 5.15, 10.55, [
     (0, "Ordinary Dijkstra with two changes: a label is a TIME (today's congestion δ sits "
         "inside c), and there is one label per (link, entry-time) STATE, popped in time order — "
         "exact for any positive time-dependent cost, FIFO or not", True),
-    (0, "Why states are necessary: the mod-96 wrap breaks FIFO — entering a link one step later "
+    (0, "Why states are necessary: the mod-24 wrap breaks FIFO — entering a link one step later "
         "can mean exiting 22 steps earlier — so 'the first label per LINK is final' fails "
-        "(single-label TD-Dijkstra is wrong on 18 % of (OD, t₀) queries under this cost); "
+        "(single-label TD-Dijkstra is wrong on 28 % of (OD, t₀) queries under this cost); "
         "per-state dedup restores the classic invariant", True),
     (0, "One run = bounded states on 80 links → sub-millisecond; ~41 000 runs across the farm "
         "are negligible next to the MILP solves, and the mask's memoised state-searches sit "
-        "inside the per-case inference time. All numbers in this deck are the mod-96 benchmark "
-        "(H = 135, re-run 2026-08-06)", False),
+        "inside the per-case inference time. All numbers in this deck are the mod-24 benchmark "
+        "(H = 128, re-run 2026-08-06)", False),
 ], size=11.5)
 
 # ------------------------------------------------ 10 how B_v is set
@@ -518,11 +519,11 @@ bullets(s, 0.7, 3.12, 12.0, [
         "instance-specific, not a table lookup", False),
     (0, "Step 3 — Bᵥ = ⌈ρᵥ · τᵐⁱⁿᵥ⌉, floored at τᵐⁱⁿᵥ (a task is never born infeasible) and "
         "capped at H − t₀ᵥ (never beyond the coverage grid)", False),
-    (0, "Why a RATIO and not an absolute number: the same B = 50 is vacuous for a near OD "
-        "(τᵐⁱⁿ = 14) and infeasible for a far one (τᵐⁱⁿ = 61). ρ is comparable across all "
-        "ODs:  ρ = 1 ⇔ exactly the min-time trip;  ρ = 2 ⇔ twice the minimum time", True),
-    (0, "Worked example (the sweep instance, V = 3, τᵐⁱⁿ = [38, 61, 14]):  ρ = 1.5 for all "
-        "⇒  B = [57, 92, 21] — same slack semantics, very different absolute budgets", False),
+    (0, "Why a RATIO and not an absolute number: the same B = 30 is barely above the floor for "
+        "a near OD (τᵐⁱⁿ = 25) and infeasible for a far one (τᵐⁱⁿ = 45). ρ is comparable "
+        "across ODs:  ρ = 1 ⇔ exactly the min-time trip;  ρ = 2 ⇔ twice the minimum time", True),
+    (0, "Worked example (the sweep instance, V = 3, τᵐⁱⁿ = [26, 45, 25]):  ρ = 1.5 for all "
+        "⇒  B = [39, 68, 38] — same slack semantics, different absolute budgets", False),
     (0, "Bᵥ then enters BOTH sides of the pipeline: the MILP constraint (labels) and the "
         "model input (conditioning) + the decoder feasibility mask", True),
 ], size=12.5)

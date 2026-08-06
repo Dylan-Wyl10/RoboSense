@@ -68,12 +68,12 @@ def main():
         print(f"rho={rho:5} B={B} sumB={sum(B):5} | cost={cost:5} cov={cov:5} "
               f"overlap={overlap:4} | lens={lens} | obj={obj:.5f} | {dt:.1f}s")
 
-    with open(f"{OUT}/results_sweep_mod.csv", "w", newline="") as fh:
+    with open(f"{OUT}/results_sweep_mod24.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
         w.writeheader()
         for r in rows:
             w.writerow(r)
-    print(f"\nwrote {OUT}/results_sweep_mod.csv")
+    print(f"\nwrote {OUT}/results_sweep_mod24.csv")
 
 
 if __name__ == "__main__":

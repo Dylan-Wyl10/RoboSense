@@ -54,7 +54,7 @@ def main():
                          ms_per_case=round(float(ms.mean()), 1)))
     with open(f"{OUTD}/agg_3seed.json", "w") as fh:
         json.dump(agg, fh, indent=1)
-    with open(f"{os.path.dirname(OUTD)}/results_mod.csv", "w", newline="") as fh:
+    with open(f"{os.path.dirname(OUTD)}/results_mod24.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
         w.writeheader()
         for r in rows:

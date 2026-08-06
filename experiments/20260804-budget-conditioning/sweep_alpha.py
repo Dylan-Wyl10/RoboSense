@@ -37,12 +37,12 @@ def main():
                          solve_s=round(dt, 1)))
         print(f"a2={a2:4} cost={cost:5} cov={cov:5} lens="
               f"{[len(r) for r in routes]} obj={obj:.5f} {dt:.1f}s", flush=True)
-    with open(f"{OUT}/results_alpha_mod.csv", "w", newline="") as fh:
+    with open(f"{OUT}/results_alpha_mod24.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
         w.writeheader()
         for r in rows:
             w.writerow(r)
-    print("wrote results_alpha_mod.csv")
+    print("wrote results_alpha_mod24.csv")
 
 
 if __name__ == "__main__":

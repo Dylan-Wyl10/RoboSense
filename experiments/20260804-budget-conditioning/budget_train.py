@@ -37,13 +37,12 @@ from modenv import ModInstance as BiInstance, calibrate_horizon  # noqa: E402
 from budget_milp import objective_budget  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DATA = f"{HERE}/data_mod"
-OUTD = f"{HERE}/results_mod"
+DATA = f"{HERE}/data_mod24"
+OUTD = f"{HERE}/results_mod24"
 PAD, SEP, BOS, EOS = 0, 81, 82, 83
 VOCAB = 84
-MAX_LEN = 128                   # mod-96 farm: routes are longer (bounded
-                                # cheap links); pre-mod max was 72, mod
-                                # train shard already hits 82
+MAX_LEN = 128                   # bounded periodic costs -> longer routes
+                                # (pre-mod max 72; mod-96 farm hit 88)
 MAX_V = 8
 
 GRID = BiGrid(4, 4)
