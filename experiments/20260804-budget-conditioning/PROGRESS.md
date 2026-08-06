@@ -177,6 +177,31 @@ t0; animation step 5 -> 1; figures only, NO deck rebuild (deck untouched).
   * adoption = recalibrate H + refarm labels + retrain (cheap now); decision
     parked with user; bigrid.py NOT touched (subclass wrappers only).
 
+## 2026-08-05 latest — YIL-125 r3: MOD-96 COST ADOPTED (user decision "取mod就行")
+
+Environment cost law is now c(i,t) = ((base(i)+t) mod 96)//4 + 1 + delta_i.
+This round changed ONLY the deck pages that define the environment (user:
+"只需要改动的ppt页面"); labels/model/H/results slides are STILL the pre-mod
+benchmark — the Step-0 slide carries that transition note explicitly.
+- build_anim.py REWRITTEN for mod-96 deck figures (report stage unchanged):
+  figA_network_mod.png (slide 4: id/direction network + exact mod heatmap),
+  figA_td_travel_mod.gif (slide 5: full period t0 0..95 step 1, seamless),
+  figA_delta_day_mod.png (slide 6: DIVERGING increments — see fact below).
+  Old figA files remain on disk (pre-mod history), no longer rebuilt.
+- Deck pages changed: 3 (formula), 4 (figure+caption: base = congestion
+  PHASE now, "E/W structurally faster" is FALSE under mod — equal range,
+  phase-shifted), 5 (mod GIF + cycle numbers), 6 (delta effects), 11 (FIFO
+  bullet -> exact (link, entry-time) search + pre-mod-results marker).
+- FACTS (from build_anim.py checks): durations bounded <= 84 every t0;
+  G1->G2 cycles 2..43, G7->G3 cycles 34..84; t0=0 G7->G3 = 67.
+  Would-be H under mod (delta=1, t0=5, slack 1.6): 135 (was 338).
+  SAWTOOTH SURPRISE: on the seed-7 day increments are -9..+7 and 4/56 ODs
+  get FASTER under congestion (+1 delays push a later link past its wrap
+  into the cheap zone) — real property of the adopted cost, shown on slide 6.
+- NEXT (needs user go in YIL-113 or here): swap bigrid machinery to the
+  exact search (propose bigrid.py diff first per repo rules!), recalibrate
+  H (~135), refarm labels, retrain 3 seeds, refresh results slides.
+
 ## Next step on resume (in priority order)
 
 1. Multi-sample / non-greedy decoding (free accuracy, no retraining) — FM-MCVRP's NS trick.

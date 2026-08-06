@@ -17,6 +17,13 @@ Revision 2026-08-05 later (YIL-125 r1): slide-4 caption now states the heatmap
 is the (t0=0, delta=0) slice and explains the link-id numbers; two new slides
 after it — TD travel-time animation (figA_td_travel.gif, animates in slideshow)
 and the delta operating-day figure (figA_delta_day.png), both from build_anim.py.
+
+Revision 2026-08-05 latest (YIL-125 r3): mod-96 cost adopted (user decision).
+Env-defining pages flipped to the new law: slide 3 formula; slide 4 uses
+figA_network_mod.png; slide 5 uses figA_td_travel_mod.gif (full period, step 1);
+slide 6 uses figA_delta_day_mod.png (diverging: congestion can speed trips up).
+Step-0 slide carries the transition note: FIFO broken at the wrap -> exact
+(link, entry-time) search; labels/model/H still pre-mod until the re-run.
 """
 
 import copy
@@ -281,7 +288,8 @@ bullets(s, 0.7, 1.6, 11.9, [
     (0, "One case (an 'operating day'): congestion δ ∈ {0,1}⁸⁰ per directed link · "
         "V vehicles · per-vehicle task (origin gate o, destination gate d, departure t₀, budget B)", False),
     (0, "Vehicles run SIMULTANEOUSLY on one timeline. Entering link i at time t occupies "
-        "space–time cells (i, t … t+c−1), with travel time c(i,t) = (base(i)+t)//4 + 1 + δᵢ", False),
+        "space–time cells (i, t … t+c−1), with travel time c(i,t) = ((base(i)+t) mod 96)//4 "
+        "+ 1 + δᵢ — periodic congestion (period 96), bounded ≤ 24 + δᵢ", False),
     (0, "Objective: maximise the fleet's sensing coverage (union of occupied cells — overlap "
         "counts once), pay for travel, respect each vehicle's own budget (next slide, "
         "spelled out)", True),
@@ -296,31 +304,30 @@ bullets(s, 0.7, 1.6, 11.9, [
 s = clone(prs, CONTENT)
 set_ph(s, 11, "The problem")
 set_ph(s, 10, "Network & instances")
-pic(s, f"{R}/fig0_network.png", 9.4, 1.5, [
-    (0, "Fixed bidirectional 4×4: 80 directed links, no U-turns · 8 gates (4 corners + 4 edge "
-        "midpoints) · all 56 ordered OD pairs feasible · horizon H = 338. Link numbers = "
-        "directed link ids 1–80 (E 1–20 · W 21–40 · S 41–60 · N 61–80) — the model's token "
-        "ids; base(i) = min(id, reverse id) sets each street's base cost, so E/W streets are "
-        "structurally faster than N/S", False),
-    (0, "Heatmap = earliest arrival departing t₀ = 0 on the δ = 0 day — ONE slice of a "
-        "time-varying quantity (next two slides)", True),
-    (0, "The network and the OD set are FIXED; what varies per case is δ, V, and each vehicle's "
-        "(o, d, t₀, B)", False),
+pic(s, f"{R}/figA_network_mod.png", 9.4, 1.5, [
+    (0, "Fixed bidirectional 4×4: 80 directed links, no U-turns · 8 gates · all 56 ordered ODs "
+        "feasible. Link ids 1–80 (E 1–20 · W 21–40 · S 41–60 · N 61–80) = the model's token "
+        "ids; base(i) = min(id, reverse id) is each street's congestion PHASE — every street "
+        "cycles the same cost range 1–24, offset by base (at t = 0: E/W cheap, N/S mid-cycle)", False),
+    (0, "Heatmap = earliest arrival departing t₀ = 0 on the δ = 0 day — ONE frame of a "
+        "PERIODIC quantity (period 96; next two slides)", True),
+    (0, "Network and OD set FIXED; per case: δ, V, and each vehicle's (o, d, t₀, B) · H will be "
+        "re-calibrated with the label/model re-run (same rule gives ≈ 135; pre-mod value 338)", False),
 ], cap_size=11.5, cap_x=2.05, cap_w=10.6)
 
 # ------------------------------------- 5 time-dependence (animated, YIL-125 r1)
 s = clone(prs, CONTENT)
 set_ph(s, 11, "The problem")
 set_ph(s, 10, "Time-dependence")
-pic(s, f"{R}/figA_td_travel.gif", 9.8, 1.45)
+pic(s, f"{R}/figA_td_travel_mod.gif", 9.8, 1.45)
 bullets(s, 2.05, 5.75, 10.6, [
-    (0, "The previous slide's heatmap is ONE frame of this animation: departing t₀ = 0 on the "
-        "δ = 0 day. Re-running TD-Dijkstra at later departures: G1→G2 takes 2 / 47 / 92 and "
-        "G7→G3 takes 159 / 555 / 955 at t₀ = 0 / 80 / 160 (* = would arrive after H = 338)", True),
-    (0, "Why: entry cost c(i,t) = (base(i)+t)//4 + 1 + δᵢ rises with t (FIFO staircase, +1 every "
-        "4 steps) — so earliest arrival depends on departure time, and the pipeline always uses "
-        "the right one: Bᵥ at the vehicle's own t₀ᵥ, the decoder mask at the current decode "
-        "time", False),
+    (0, "The previous slide's heatmap is the t₀ = 0 frame of this loop: t₀ sweeps one FULL "
+        "period 0…95 in steps of 1 and the matrix returns to its start — bounded and periodic: "
+        "entry cost ≤ 24, every trip ≤ 84 steps at every t₀; G1→G2 cycles 2…43, G7→G3 "
+        "cycles 34…84", True),
+    (0, "Cost law (adopted 2026-08-05): c(i,t) = ((base(i)+t) mod 96)//4 + 1 + δᵢ. The wrap "
+        "makes the cost non-FIFO, so these matrices come from an exact search over "
+        "(link, entry-time) states — the Step 0 slide says what this changes in the machinery", False),
     (0, "Animated GIF — plays in slideshow mode; in print this page shows the t₀ = 0 frame", False),
 ], size=11.5)
 
@@ -328,15 +335,16 @@ bullets(s, 2.05, 5.75, 10.6, [
 s = clone(prs, CONTENT)
 set_ph(s, 11, "The problem")
 set_ph(s, 10, "Day-to-day: δ")
-pic(s, f"{R}/figA_delta_day.png", 9.6, 1.5)
+pic(s, f"{R}/figA_delta_day_mod.png", 9.6, 1.5)
 bullets(s, 2.05, 5.55, 10.6, [
     (0, "δ ∈ {0,1}⁸⁰: one bit per DIRECTED link, drawn i.i.d. Bernoulli(½) per operating day "
         "(the farm's sampler); δᵢ = 1 adds +1 to EVERY traversal of link i that day", True),
     (0, "An instance property shared by the whole fleet — not a vehicle attribute; the two "
         "directions of one street can differ (left: one-way congestion is visible)", False),
-    (0, "Effect at t₀ = 0 (right): this sampled day adds +0 … +19 steps across the 56 ODs. The "
-        "model sees δ in the encoder: each link token = link_emb(i) + Proj(δᵢ) (encoder "
-        "slide)", False),
+    (0, "Effect at t₀ = 0 (right): this sampled day shifts the 56 ODs by −9 … +7 steps — under "
+        "mod-96, congestion can even make a trip FASTER (4/56 here): a +1 delay can push a "
+        "later link past its wrap into the cheap zone. The model sees δ per link token: "
+        "link_emb(i) + Proj(δᵢ) (encoder slide)", False),
 ], size=11.5)
 
 # ------------------------------------------ 5 change (a): objective before/after
@@ -466,16 +474,17 @@ b1 = nbox(s, 10.10, 2.14, 2.70, 2.75, "Where it runs",
           "② decoder mask:\nmin_finish(l, t, d) —\nsame algorithm from one\nlink, memoised\n\n"
           "③ horizon calibration:\nonce, all 8 gates",
           fill=FILL_O, edge=ORANGE, tc=ORANGE, tsize=10.5, bsize=8.6)
-bullets(s, 0.7, 5.15, 12.1, [
-    (0, "It is ordinary Dijkstra with ONE change: a label is a time, not a distance, and "
-        "relaxing link l entered at time t costs c(l, t) — today's congestion δ sits inside c", True),
-    (0, "Why the greedy order stays correct: our costs are FIFO — t + c(l, t) never decreases "
-        "in t (entering later can never mean exiting earlier), so the first label popped for a "
-        "link is final, exactly the classic Dijkstra invariant", False),
-    (0, "One run touches at most 80 links → microseconds; ~41 000 runs across the whole farm "
-        "are negligible next to the 0.90 s MILP solves. The mask's memoised queries are part "
-        "of the 6–9 ms inference time", False),
-], size=12)
+bullets(s, 2.05, 5.15, 10.55, [
+    (0, "Ordinary Dijkstra with ONE change: a label is a time, not a distance; relaxing link l "
+        "entered at time t costs c(l, t) — today's congestion δ sits inside c", True),
+    (0, "Greedy popping is exact only for FIFO costs (t + c nondecreasing in t) — true for the "
+        "pre-mod cost that produced every number in this deck. The NEW mod-96 cost breaks FIFO "
+        "at the wrap, so this pass becomes an exact search over (link, entry-time) states — "
+        "same structure, still fast on 80 links", True),
+    (0, "One run ≤ 80 links → microseconds (~41 000 farm runs negligible; the mask's memoised "
+        "queries sit inside the 6–9 ms inference). Labels, model, H and all results slides are "
+        "still the pre-mod benchmark — the re-run under mod-96 is the next step", False),
+], size=11.5)
 
 # ------------------------------------------------ 10 how B_v is set
 s = clone(prs, CONTENT)
