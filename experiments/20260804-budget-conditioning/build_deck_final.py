@@ -31,6 +31,11 @@ farm boxes (2.1 s, 32 cap hits, ~33 min), 8-14 ms inference, near-exact rho=1
 curve wording, sweep captions re-measured (three plateaus incl. the alpha=0.5
 knife-edge), summary overlap ~87 %. Step-0 slide now documents the deployed
 exact state-search as current machinery.
+
+Revision 2026-08-06 later (YIL-125 r5): cost simplified to (base+t) mod 24
++ 1 + delta (user; //4 removed — same amplitude, 4x faster clock). H=128.
+Full re-run again: data_mod24/ + results_mod24/, all numbers refreshed;
+clearer slide-5 animation (24-frame cycle, plain-language titles).
 """
 
 import copy
@@ -394,8 +399,8 @@ label(s, 0.75, 2.62, 11.8, "Lemma (cell accounting).  Each time-step of travel "
       "occupies exactly one (link, time) cell, and the union counts every cell "
       "once. Hence", size=12.5, align=PP_ALIGN.LEFT)
 eq(s, "eq_lemma", 3.06, height=0.34)
-label(s, 0.75, 3.55, 11.8, "Measured on all 10 780 mod-96 optimal labels: median K/C "
-      "= 1.000; K = C exactly (zero overlap) in 86.8 % of labels (65–92 % per "
+label(s, 0.75, 3.55, 11.8, "Measured on all 10 780 mod-24 optimal labels: median K/C "
+      "= 1.000; K = C exactly (zero overlap) in 84.9 % of labels (62–93 % per "
       "shard — larger fleets overlap more). The zero-overlap regime is the "
       "TYPICAL one, not a corner case.", size=11,
       color=INK2, align=PP_ALIGN.LEFT)
@@ -452,9 +457,9 @@ set_ph(s, 11, "Change (a) — objective")
 set_ph(s, 10, "Switch vs dial — measured")
 pic(s, f"{R}/figS1_knob_vs_switch.png", 11.6, 1.5, [
     (0, "One fixed instance (mod-24), one MILP, one solver. LEFT: α₂ swept, budgets fixed → min-time "
-        "plateau (cost = cov = 113) for α₂ ≤ 0.48, budget-saturated plateau (391) for α₂ ≥ 0.52; at "
+        "plateau (cost = cov = 96) for α₂ ≤ 0.48, budget-saturated plateau (365) for α₂ ≥ 0.52; at "
         "exactly α₂ = α₁ = 0.5 every feasible solution ties — the theorem's knife-edge, measured. "
-        "RIGHT: α frozen at 0.3/0.7, ρ swept 1 → 99 → monotone continuous response 113 → 391 cells, "
+        "RIGHT: α frozen at 0.3/0.7, ρ swept 1 → 99 → monotone continuous response 96 → 365 cells, "
         "overlap 0 at every point, reduces to the full-horizon solution once Bᵥ caps at H − t₀", False),
 ])
 
@@ -603,10 +608,10 @@ bA = [
          "ρᵥ ~ anchors {1, 1.5, 2, 3}\nBᵥ = ⌈ρᵥ·τᵐⁱⁿᵥ⌉\n65 % heterogeneous fleets",
          fill=FILL_O, edge=ORANGE),
     nbox(s, xs[3], yA, w5, hA, "Gurobi MILP",
-         "time-expanded flow\nper-vehicle deadline t₀+B\nMIPGap 2 % · 2.1 s/case",
+         "time-expanded flow\nper-vehicle deadline t₀+B\nMIPGap 2 % · 1.2 s/case",
          fill=FILL_B, edge=BLUE, tc=BLUE),
     nbox(s, xs[4], yA, w5, hA, "Label set",
-         "10 780 (case, routes)\n0 errors · 32 hit 60 s cap\n~33 min · 15 workers"),
+         "10 780 (case, routes)\n0 errors · 7 hit 60 s cap\n~18 min · 15 workers"),
 ]
 for a, b in zip(bA, bA[1:]):
     elbow(s, a, b, 3, 1)
@@ -800,8 +805,8 @@ s = clone(prs, CONTENT)
 set_ph(s, 11, "Data")
 set_ph(s, 10, "Label set")
 bullets(s, 0.7, 1.65, 11.9, [
-    (0, "10 780 Gurobi labels · 0 errors · 2.1 s mean per case · 32 solves (0.3 %) hit the 60 s "
-        "cap — best incumbent kept, optimality not certified there · ~33 min on 15 workers, "
+    (0, "10 780 Gurobi labels · 0 errors · 1.2 s mean per case · 7 solves (0.06 %) hit the 60 s "
+        "cap — best incumbent kept, optimality not certified there · ~18 min on 15 workers, "
         "fully resumable", True),
     (0, "Shards:", True),
     (1, "train 8 000 · same-distribution test 800", False),
@@ -850,7 +855,7 @@ set_ph(s, 11, "Results")
 set_ph(s, 10, "Budget response curve")
 pic(s, f"{R}/figS2_response_curve.png", 9.0, 1.5, [
     (0, f"Monotone response reproduced — including at ρ = 1.25 / 1.75 / 4.0, absent from every training "
-        f"label. At ρ = 1 the model is near-exact (mean gap 0.1 %); tracking degrades as slack grows "
+        f"label. At ρ = 1 the model is near-exact (mean gap 0.4 %); tracking degrades as slack grows "
         f"(ρ = 4: {CURVE[-1]['model_cov']:.0f} vs {CURVE[-1]['gurobi_cov']:.0f} cells) — the limit "
         f"of greedy decoding", True),
 ])
@@ -869,7 +874,7 @@ bullets(s, 0.7, 1.7, 11.9, [
         "(right method, different problem)", False),
     (0, "Verification chain at every step: MILP ≡ flow decomposition ≡ simulator · budget MILP ≡ the "
         "full-horizon MILP at B ≥ H · per-case CSVs against Gurobi on every held-out layer", False),
-    (0, "Known and deliberately open: with uniform cell utility, overlap = 0 in ~87 % of optimal "
+    (0, "Known and deliberately open: with uniform cell utility, overlap = 0 in ~85 % of optimal "
         "solutions, so coverage ≈ cost. The budget controls HOW MUCH to roam; making WHICH cells a "
         "real decision needs heterogeneous utility wᵢ — the next modelling step, not a fix", False),
     (0, "Next levers, in order: multi-sample (non-greedy) decoding · wider ρ range for extrapolation "

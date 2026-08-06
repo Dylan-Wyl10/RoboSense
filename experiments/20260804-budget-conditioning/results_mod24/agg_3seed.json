@@ -1,0 +1,67 @@
+{
+ "L1_same": {
+  "label": "L1 same-distribution",
+  "n": 800,
+  "feasible": 800,
+  "feasible_all_seeds": true,
+  "gap_mean": 0.05352360944467512,
+  "gap_std": 0.0019863425165931184,
+  "rel_gap_mean": 0.1408585186026018,
+  "rel_gap_std": 0.005227473767700218,
+  "match_mean": 123.0,
+  "match_std": 5.887840577551898,
+  "ms_per_case": 9.799999999999999
+ },
+ "L2_odzero": {
+  "label": "L2 OD zero-shot",
+  "n": 400,
+  "feasible": 400,
+  "feasible_all_seeds": true,
+  "gap_mean": 0.050733814532243536,
+  "gap_std": 0.0022002246984605222,
+  "rel_gap_mean": 0.13279675852016104,
+  "rel_gap_std": 0.005759131472084776,
+  "match_mean": 53.666666666666664,
+  "match_std": 1.247219128924647,
+  "ms_per_case": 9.266666666666667
+ },
+ "L3_vextrap": {
+  "label": "L3 fleet extrapolation V in {5,8}",
+  "n": 400,
+  "feasible": 400,
+  "feasible_all_seeds": true,
+  "gap_mean": 0.06150949137428723,
+  "gap_std": 0.000499181430693495,
+  "rel_gap_mean": 0.16195796223670986,
+  "rel_gap_std": 0.0013143728796190367,
+  "match_mean": 32.333333333333336,
+  "match_std": 0.4714045207910317,
+  "ms_per_case": 14.233333333333334
+ },
+ "L4a_rhoint": {
+  "label": "L4a UNSEEN rho (interp 1.25/1.75)",
+  "n": 400,
+  "feasible": 400,
+  "feasible_all_seeds": true,
+  "gap_mean": 0.050122521511553296,
+  "gap_std": 0.0006018623461563059,
+  "rel_gap_mean": 0.1378858140372878,
+  "rel_gap_std": 0.0016557083928633843,
+  "match_mean": 39.333333333333336,
+  "match_std": 0.4714045207910317,
+  "ms_per_case": 8.1
+ },
+ "L4b_rhoext": {
+  "label": "L4b UNSEEN rho (extrap 4.0)",
+  "n": 300,
+  "feasible": 300,
+  "feasible_all_seeds": true,
+  "gap_mean": 0.06182491179703875,
+  "gap_std": 0.0012104674221705297,
+  "rel_gap_mean": 0.15703271437410235,
+  "rel_gap_std": 0.0030745370990398237,
+  "match_mean": 2.6666666666666665,
+  "match_std": 0.4714045207910317,
+  "ms_per_case": 13.366666666666667
+ }
+}

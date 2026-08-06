@@ -221,6 +221,20 @@ section for the numbers table. Mechanics for future sessions:
   pre-mod literals — check them whenever data changes).
 - Delivered to YIL-125: final pptx attached to the r4 comment.
 
+## 2026-08-06 later — YIL-125 r5: MOD-24 SIMPLIFICATION + full re-run v3
+
+User dropped the //4: c = (base+t) mod 24 + 1 + delta (equivalent amplitude,
+4x faster clock; see REPORT.md r5 section for all numbers). H=128.
+- modenv.PERIOD=24 is THE single source; build_anim now imports ModInstance
+  from modenv (no duplicate cost definitions anywhere).
+- Benchmark v3 paths: data_mod24/ (untracked) + results_mod24/ +
+  results_*_mod24.csv. v2 (mod-96) and v1 (pre-mod) both preserved.
+- Slide-5 animation redesigned for clarity (24-frame cycle, plain titles,
+  bigger annotations) — user asked for a clearer version + plain-language
+  explanation (delivered in the r5 comment).
+- Phase folding note: under mod-24, E/W vs N/S no longer split cleanly at
+  t=0 (base mod 24); slide-4 wording updated accordingly.
+
 ## Next step on resume (in priority order)
 
 1. Multi-sample / non-greedy decoding (free accuracy, no retraining) — FM-MCVRP's NS trick.

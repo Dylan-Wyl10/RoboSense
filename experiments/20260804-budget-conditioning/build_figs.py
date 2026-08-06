@@ -147,7 +147,7 @@ def fig_s2():
                  color=INK, fontsize=13, fontweight="bold", loc="left", pad=12)
     ytop = max(gur) * 1.35
     ax.text(1.02, ytop * 0.83, "$\\rho=1$: budget forces the min-time route\n"
-                               "→ model is near-exact (mean gap 0.1 %)",
+                               "→ model is near-exact (mean gap 0.4 %)",
             fontsize=10, color=INK2, va="top")
     ax.set_ylim(0, ytop)
     style(ax)

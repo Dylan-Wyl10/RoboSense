@@ -166,3 +166,26 @@ sawtooth oddity on record: a congested day can make 4/56 ODs FASTER
 **Verdict: adopt** (the mod-96 benchmark replaces pre-mod as the working
 baseline; pre-mod artifacts remain untouched in `data/`, `results/`,
 `results*.csv` and under tag `benchmark-v1-20260804`).
+
+---
+
+## 2026-08-06 later — mod-24 simplification (YIL-125 r5)
+
+**Decision (user):** drop the //4 — `c(i,t) = (base(i)+t) mod 24 + 1 + δᵢ`.
+Identity `((x mod 96)//4 == (x//4) mod 24` means the r4 law was already a
+mod-24 sawtooth on a 4×-slowed clock; the simplification keeps the amplitude
+(cost ≤ 24 + δ) and makes the congestion cycle 24 steps. H = 128 (was 135).
+Single-label TD-Dijkstra now wrong on 28.4 % of queries (was 18.1 %) — the
+exact state-search machinery from r4 absorbs this with zero changes.
+
+**Benchmark v3 (data_mod24/ + results_mod24/):** 10 780 labels, 0 errors,
+7 = 0.06 % cap hits, 1.17 s mean, ~18 min farm; max seq 100 (MAX_LEN 128
+holds); 3 seeds. 100 % feasible; rel gaps L1 14.1 · L2 13.3 · L3 16.2 ·
+L4a 13.8 · L4b 15.7 % — flatter still; L1 123/800 match-or-beat; 8–14 ms.
+Curve: ρ=1 mean gap 0.4 %, ρ=4 undershoot 383 vs 448. K/C median 1.000,
+zero-overlap 84.9 % (62–93 per shard). Sweeps: plateaus 96 / 337-tie / 365;
+dial 96 → 365. Sampled δ-day now shifts ODs −20…+17 with 18/56 FASTER
+(wrap-shortcut effect is stronger under the faster cycle — on the slide).
+
+**Verdict: adopt** (benchmark v3 = the working baseline; mod-96 v2 preserved
+in data_mod/ + results_mod/ + results_*_mod.csv, pre-mod v1 under the tag).
