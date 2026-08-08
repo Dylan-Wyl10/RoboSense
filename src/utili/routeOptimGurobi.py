@@ -311,13 +311,23 @@ class RouteOptimGurobi:
 
             t0 = time.time()
             route4all = []
+            skip_vehicles = set()
             for a in A:
                 # a filter indexed by a to indicate the feasible path for z
                 t1 = time.time()
-                max_route = min(2 ** (len(self.veh_od[a]["current_route"])), 512)
-                routes = self.find_paths(self.CTM_connection, self.veh_od[a]["from"], self.veh_od[a]["to"],
-                                         max_length=5*self.veh_od[a]["route_length"], mode='length', top_k=100, max_route=max_route)
-                print(f'veh {a} find {len(routes)} feasible route in {max_route} to cell {self.veh_od[a]["to"]} with budget {self.veh_od[a]["budget"]} '
+                is_nobgt = self.veh_od[a]["budget"] == 0
+                if is_nobgt:
+                    # budget=0: find all shortest paths via BFS, then keep only those of minimum length
+                    routes = self.find_paths(self.CTM_connection, self.veh_od[a]["from"], self.veh_od[a]["to"],
+                                             mode='topk', top_k=200)
+                    if routes:
+                        shortest_len = len(routes[0])
+                        routes = [r for r in routes if len(r) == shortest_len]
+                else:
+                    max_route = min(2 ** (len(self.veh_od[a]["current_route"])), 512)
+                    routes = self.find_paths(self.CTM_connection, self.veh_od[a]["from"], self.veh_od[a]["to"],
+                                             max_length=5*self.veh_od[a]["route_length"], mode='length', top_k=100, max_route=max_route)
+                print(f'veh {a} find {len(routes)} feasible route to cell {self.veh_od[a]["to"]} with budget {self.veh_od[a]["budget"]} '
                       f'and route length {self.veh_od[a]["route_length"]} need {time.time() - t1} seconds')
                 print(f'veh {a} edge pos: {self.veh_od[a]["edge_pos"]}, remin_edge: {self.veh_od[a]["remine_edge"]}, '
                       f'budget:{self.veh_od[a]["budget"]}, current route:{self.veh_od[a]["current_route"]}')
@@ -335,11 +345,18 @@ class RouteOptimGurobi:
                     with open("log.txt", "a") as f:
                         f.write(f'veh {self.veh_od[a]["name"]} is in cell {from_now} at {self.sumo_time} to cell{self.cellidx[self.veh_od[a]["to"]]}, '
                                 f'will be in new start cell {from_new}. the route length is {self.veh_od[a]["route_length"]} \n')
-                    # print(f'veh {a} is in new cell{self.cellidx[self.veh_od[a]['from']]} now')
-                    routes = self.find_paths(self.CTM_connection, self.cellidx.index(from_new), self.veh_od[a]["to"],
-                                             max_length=self.veh_od[a]["route_length"], mode='topk', top_k=100, max_route=max_route)
+                    if is_nobgt:
+                        routes = self.find_paths(self.CTM_connection, self.cellidx.index(from_new), self.veh_od[a]["to"],
+                                                 mode='topk', top_k=200)
+                        if routes:
+                            shortest_len = len(routes[0])
+                            routes = [r for r in routes if len(r) == shortest_len]
+                    else:
+                        max_route = min(2 ** (len(self.veh_od[a]["current_route"])), 512)
+                        routes = self.find_paths(self.CTM_connection, self.cellidx.index(from_new), self.veh_od[a]["to"],
+                                                 max_length=self.veh_od[a]["route_length"], mode='topk', top_k=100, max_route=max_route)
                     print(
-                        f'veh {a} find {len(routes)} new feasible route from cell {from_new} in {max_route} with budget {self.veh_od[a]["budget"]}'
+                        f'veh {a} find {len(routes)} new feasible route from cell {from_new} with budget {self.veh_od[a]["budget"]}'
                         f' and remine route {self.veh_od[a]["route_length"]},  need {time.time() - t1} seconds')
 
                 t1 = time.time()
@@ -358,7 +375,16 @@ class RouteOptimGurobi:
                         for tt in range(t, s):
                             w_keys.add((a, i, tt))
                 print(f'veh {a} extract x, w, z in {time.time() - t1} seconds')
-                # print('yes')
+                if (a, self.veh_od[a]['from'], 0) not in x_keys:
+                    skip_vehicles.add(a)
+                    with open("log.txt", "a") as f:
+                        f.write(f'[WARN] veh {a} ({self.veh_od[a]["name"]}) has no feasible arcs at time {self.sumo_time}. '
+                                f'from={self.cellidx[self.veh_od[a]["from"]]}, to={self.cellidx[self.veh_od[a]["to"]]}, '
+                                f'route_length={self.veh_od[a]["route_length"]}, remine_edge={self.veh_od[a]["remine_edge"]}. Skipping.\n')
+                    print(f'[WARN] veh {a} ({self.veh_od[a]["name"]}) skipped: no feasible arcs')
+            self.skip_vehicles = skip_vehicles
+            if skip_vehicles:
+                print(f'[WARN] {len(skip_vehicles)} vehicles skipped due to no feasible arcs: {skip_vehicles}')
             print(f'z_keys has been created within {time.time() - t0} seconds')
 
 
@@ -463,6 +489,8 @@ class RouteOptimGurobi:
 
         # 3**  od constraing
         for a in self.veh_od.keys():
+            if hasattr(self, 'skip_vehicles') and a in self.skip_vehicles:
+                continue
             model.addConstr(x[(a, self.veh_od[a]['from'], 0)] == 1, name='od_law')
 
         print(f"constraint 3 is completed at time {time.time() - t1}")
