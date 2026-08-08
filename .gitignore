@@ -60,3 +60,22 @@ sumo_cfg/5x5net/od_file_bgv.odtrips.xml
 sumo_cfg/5x5net/od_file_cav.odtrips.xml
 sumo_cfg/5x5net/netgrid_topology.json
 sumo_cfg/5x5net/od/od_mixed.rou.xml
+
+# SUMO raw simulation output (regenerable, hundreds of MB -- see DATA.md).
+# Aggregated `overall*.xml` and the flextable JSONs stay tracked; only the
+# per-vehicle / per-step dumps are excluded.
+result/**/summary*.xml
+result/**/tripinfo*.xml
+result/ctmResult/detector_out.xml
+sumo_cfg/*/summary_benchmark.xml
+sumo_cfg/*/tripinfo_benchmark.xml
+
+# Gurobi infeasibility dumps
+*.ilp
+
+# Neural-routing spike (tracked on the exp/fm-mcvrp-local branch, not on main)
+experiments/
+neural_route/
+
+# LaTeX working copies (managed outside this repo)
+partb_latex_check_*/
