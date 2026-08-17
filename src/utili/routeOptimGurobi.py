@@ -155,12 +155,16 @@ class RouteOptimGurobi:
             for vv in v:
                 connection[k - 1, vv - 1] = 1
 
+        # synthetic vehicle-number matrix for the toy net: n = c - 1 (range 0..5),
+        # consistent with the FD logic that more vehicles lead to longer travel time
+        N = C - 1.0
+
         # veh_od = {0: {'from': 1, 'to': 26, 'time': 0},
         #           1: {'from': 1, 'to': 26, 'time': 1},
         #           2: {'from': 1, 'to': 26, 'time': 2},
         #           3: {'from': 1, 'to': 26, 'time': 3}}
 
-        return connection, time_step, C
+        return connection, time_step, C, N
 
     def set_optm_input(self, veh_od, time_step):
         self.veh_od = veh_od
@@ -265,12 +269,13 @@ class RouteOptimGurobi:
 
         # Case_config = CaseStudyConfig()
         if small_net:
-            self.CTM_connection, time_step, self.C = self.get_small_net_param()
+            self.CTM_connection, time_step, self.C, self.N = self.get_small_net_param()
         else:
             self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix,
                                                               self.ctm_fd,
                                                               self.CTM_signalMatrix)
             time_step = self.K.shape[1]
+            self.N = self.CTM_numberMatrix
 
             # small network for case study
             # self.veh_od = Case_config.small_net_od
@@ -290,6 +295,10 @@ class RouteOptimGurobi:
 
         # load static parameters
         c = {(i, t): self.C[i, t] for i in I for t in T}
+        # n-weighted coverage (YIL-128): predicted number of vehicles n_i,t as
+        # constant coverage weights, so the objective rewards observed vehicles
+        # instead of covered cells. Model stays linear.
+        n = {(i, t): float(self.N[i, t]) for i in I for t in T}
         Pi = {(i, j): self.CTM_connection[i, j] for i in I for j in I}
 
         self.c = c  # for visulization pupers
@@ -426,7 +435,7 @@ class RouteOptimGurobi:
         model.setObjective(
             alpha1 * quicksum(
                 (c[key[1], key[2]] * x[key] for key in self.x_keys if (key[1], key[2]) in c)) / veh_num - alpha2 * quicksum(
-                y[ykey] for ykey in self.y_keys) / (self.CTM_connection.shape[0] * time_step), GRB.MINIMIZE)
+                n[ykey] * y[ykey] for ykey in self.y_keys) / (self.CTM_connection.shape[0] * time_step), GRB.MINIMIZE)
             # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
 
 
@@ -602,7 +611,7 @@ class RouteOptimGurobi:
         alpha1, alpha2, M, = param[0], param[1], param[2]
         self.veh = len(veh_od)
 
-        self.CTM_connection, self.time_step, self.C = self.get_small_net_param()
+        self.CTM_connection, self.time_step, self.C, self.N = self.get_small_net_param()
 
         self.link = self.CTM_connection.shape[0]
 
@@ -636,7 +645,7 @@ class RouteOptimGurobi:
 
         model.setObjective(
             alpha1 * quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) -
-            alpha2 * quicksum(y[i, t] for i in I for t in T) / (self.link * self.time_step),
+            alpha2 * quicksum(self.N[i, t] * y[i, t] for i in I for t in T) / (self.link * self.time_step),
             # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
             GRB.MINIMIZE
         )
