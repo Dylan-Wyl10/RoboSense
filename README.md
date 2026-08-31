@@ -22,9 +22,12 @@ Evaluated in SUMO on a 5x5 urban grid at robotaxi market penetration rates (MPR)
 performance and robotaxi average speed improve *together* — better coverage feeds
 better traffic state prediction, which feeds better routing.
 
-> **Status.** This repository accompanies a manuscript that is not yet published.
-> The code and the full case-study configuration are here; raw experiment output is
-> not distributed (see [Data](#data)).
+> **Paper.** [RoboSense: Leveraging Robotaxi Fleets as Drive-by Sensors for Urban
+> Traffic Monitoring](paper/TRC-26-03199.pdf) (PDF) — submitted to *Transportation
+> Research Part C*, manuscript TRC-26-03199, currently under review.
+>
+> **Status.** The code and the full case-study configuration are here; raw
+> experiment output is not distributed (see [Data](#data)).
 
 ---
 
@@ -264,8 +267,13 @@ See [`DATA.md`](DATA.md) for the exact tracked/untracked breakdown.
 
 ## Citation
 
-The manuscript is not yet published. Until it is, please cite the software entry in
-[`CITATION.cff`](CITATION.cff). Citation details will be updated here on publication.
+The manuscript is under review at *Transportation Research Part C* (TRC-26-03199);
+the submitted version is included here as
+[`paper/TRC-26-03199.pdf`](paper/TRC-26-03199.pdf).
+
+Until it appears, please cite the software entry in
+[`CITATION.cff`](CITATION.cff). Volume, year, and DOI will be added here on
+publication.
 
 ## License
 
