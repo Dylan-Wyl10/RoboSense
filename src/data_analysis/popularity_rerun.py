@@ -145,6 +145,8 @@ def make_config_for(setting: RunSetting) -> Config:
     cfg = Config()
     # alpha-2 is the second value in cfg.param tuple
     cfg.param = (1, setting.alpha, 999999)
+    # this script reproduces the cell-coverage results (paper Sec. 4.3)
+    cfg.coverage_objective = 'cell'
     cfg.budget = setting.budget
     cfg.case_str = setting.case_subdir
     cfg.senario_str = setting.senario_str
@@ -305,6 +307,7 @@ def run_one(setting: RunSetting, current_od_key_holder: list) -> dict:
         ctm_time_norm=cfg.ctm_time_normal, ctm_demand_mode=cfg.is_real_demand,
         optim_interval=cfg.opt_interval, saving_path=cfg.saving_path,
         GUImode=cfg.sumo_gui, route=cfg.is_route, bench_mode=cfg.is_bench,
+        coverage_objective=cfg.coverage_objective,
     )
     wall = time.time() - t0
 
@@ -357,6 +360,7 @@ def run_one_isolated(setting_kwargs: dict) -> dict:
             ctm_time_norm=cfg.ctm_time_normal, ctm_demand_mode=cfg.is_real_demand,
             optim_interval=cfg.opt_interval, saving_path=cfg.saving_path,
             GUImode=cfg.sumo_gui, route=cfg.is_route, bench_mode=cfg.is_bench,
+            coverage_objective=cfg.coverage_objective,
         )
         wall = time.time() - t0
         try:

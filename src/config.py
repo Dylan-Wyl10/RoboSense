@@ -44,6 +44,12 @@ class Config:
 
         # Optim settings config
         self.param = (1, 10000000.0, 999999)  # alpha-1, alpha-2, M
+        # coverage term of the MILP objective
+        #   'cell'          -> sum(y_i^t),           cell coverage (paper Sec. 4.3)
+        #   'vehicle_count' -> sum(n_i^t * y_i^t),   vehicle number weighted (paper Sec. 4.4)
+        # n_i^t is the CTM-predicted vehicle count, used as a constant coefficient,
+        # so the model stays an MILP with unchanged variables and constraints.
+        self.coverage_objective = 'cell'  # ['cell', 'vehicle_count']
         self.opt_interval = 100  # unite in second  999999if no optimal
         self.is_route = True  # whether route control is applied
 

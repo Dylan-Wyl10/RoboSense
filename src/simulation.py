@@ -127,7 +127,7 @@ class Simulation:
                 break
 
     def simCTM(self, config, param, ctm_fd, ctm_interval, ctm_time_opt, ctm_time_norm, ctm_demand_mode, optim_interval, saving_path,
-               GUImode=False, route=False, bench_mode=False):
+               GUImode=False, route=False, bench_mode=False, coverage_objective='cell'):
         if GUImode:
             traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
                          "--step-length={}".format(str(self.resolution))])
@@ -145,6 +145,7 @@ class Simulation:
 
         # optimization parameter
         self.param = param
+        self.coverage_objective = coverage_objective  # ['cell', 'vehicle_count']
 
         # saving path
         self.saving_path = saving_path
@@ -272,7 +273,8 @@ class Simulation:
                         print(f'number of cav being optimized is {len(self.cav_info)}')
                         self.Route_Optimizer = RouteOptimGurobi(CTM_FDParam=ctm_fd, veh_od=self.cav_info,
                                                                 max_time=CTM_maxtime, current_time=self.step//10, CTM_input=input, Load_mode='direct')
-                        self.Route_Optimizer.build_model(self.param, veh_num=len(self.cav_info), small_net=False)
+                        self.Route_Optimizer.build_model(self.param, veh_num=len(self.cav_info), small_net=False,
+                                                         coverage_objective=self.coverage_objective)
                         x, y, omg, objective_value = self.Route_Optimizer.solve_model(CtmDowngrade=False)
                     # c_tmp = self.cav_list[0]
                     # route1 = traci.vehicle.getRoute(c_tmp)

@@ -51,7 +51,7 @@ if __name__ == '__main__':
         sim.simCTM(config=cfg.sumo_cfg, param=cfg.param, ctm_fd=cfg.ctm_fd, ctm_interval=cfg.ctm_interval,
                    ctm_time_opt=cfg.ctm_time_opt, ctm_time_norm=cfg.ctm_time_normal, ctm_demand_mode=cfg.is_real_demand,
                    optim_interval=cfg.opt_interval, saving_path=cfg.saving_path, GUImode=cfg.sumo_gui, route=cfg.is_route,
-                   bench_mode=cfg.is_bench)
+                   bench_mode=cfg.is_bench, coverage_objective=cfg.coverage_objective)
 
         # score = pipe.evalCTM(file_gt='../src/ctm_gt.npy',
         #                      file_rec='../src/ctm_rec.npy',
