@@ -121,6 +121,36 @@ python main_ctm.py
 Both write to the `saving_dir` configured in `config.py`. For the 10% scenario
 use its `od_mixed.rou.xml` rather than `od.rou.xml`.
 
+## First-time setup: CTM ground truth
+
+The CTM runs in `dynamic` demand mode, which reads a per-scenario ground-truth
+occupancy array `bench/ctm_gt.npy`. These arrays are simulation output (~6 MB
+each) and are **not** distributed with the repository, so you generate them once
+before the first routing run. Without them you will see:
+
+```
+FileNotFoundError: .../result/ctmResult/logs/ctm_test1/<tag>/<case>/bench/ctm_gt.npy
+```
+
+A benchmark run is just the same simulation with routing switched off. In
+`src/config.py` set:
+
+```python
+self.is_real_demand = 'static'   # no ground truth needed to produce one
+self.is_bench       = True       # disable the routing optimization
+self.is_route       = False
+self.senario_str    = 'bench'    # writes into <case_str>/bench/
+self.case_str       = '<tag>/350_5400s_2percent_new_normVeh'   # per scenario
+```
+
+then `python main_ctm.py`, repeating for each scenario you intend to run
+(`2percent`, `5percent`, `10percent`, `10percent_nobgt`). Afterwards restore
+`is_real_demand = 'dynamic'`, `is_bench = False`, `is_route = True`.
+
+The batch runners expect these under the `1215test` tag and copy them into their
+own output tree (`provision_bench_gt()`); generate them there, or edit
+`BENCH_SRC_TAG` to point at your own.
+
 ## Reproducing the paper
 
 Two batch runners, one per objective formulation. Each pins its own
