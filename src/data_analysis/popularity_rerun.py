@@ -145,7 +145,8 @@ def make_config_for(setting: RunSetting) -> Config:
     cfg = Config()
     # alpha-2 is the second value in cfg.param tuple
     cfg.param = (1, setting.alpha, 999999)
-    # this script reproduces the cell-coverage results (paper Sec. 4.3)
+    # this script reproduces the cell-coverage results of "Grid Network
+    # Analysis" (paper Sec. 4.2)
     cfg.coverage_objective = 'cell'
     cfg.budget = setting.budget
     cfg.case_str = setting.case_subdir

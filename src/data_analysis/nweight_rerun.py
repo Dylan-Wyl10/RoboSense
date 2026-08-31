@@ -4,7 +4,8 @@ Batch runner for the n-weighted coverage objective experiment (YIL-128).
 Identical harness to popularity_rerun.py (phase-serial / case-parallel), but
 runs against the NEW MILP objective where the coverage term is
 sum(n_i,t * y_i,t) instead of sum(y_i,t) (variant A, constant |I|x|T|
-denominator). Runs Table 3 settings (30 normal + 10 no-budget, 40 cases).
+denominator). Sweeps the 13 alpha-2 values reported in the paper across the
+three MPRs, plus the no-budget variant (39 normal + 13 no-budget, 52 cases).
 
 Modes:
   --mode probe    Sequential, runs just the first setting (for resource probe).
@@ -75,7 +76,9 @@ OD_SOURCES = {
     '10percent':      (os.path.join(OD_BASE, 'flow350(35)_7200s_10percent_new'), True),
 }
 
-ALPHAS = [10, 100, 1000, 1500, 2000, 2500, 3000, 5000, 10000, 100000]
+# alpha-2 sweep reported in the paper's vehicle-number-weighted results table
+# (Sec. 4.3). These are exactly the 13 values tabulated there.
+ALPHAS = [10, 30, 60, 100, 200, 300, 500, 700, 1000, 1500, 2000, 2500, 3000]
 
 OUT_TAG = '20260817test_nweight'
 
@@ -148,7 +151,8 @@ def make_config_for(setting: RunSetting) -> Config:
     cfg = Config()
     # alpha-2 is the second value in cfg.param tuple
     cfg.param = (1, setting.alpha, 999999)
-    # this script reproduces the vehicle number weighted results (paper Sec. 4.4)
+    # this script reproduces "Vehicle Number Weighted Monitoring Objective"
+    # (paper Sec. 4.3)
     cfg.coverage_objective = 'vehicle_count'
     cfg.budget = setting.budget
     cfg.case_str = setting.case_subdir
@@ -472,7 +476,7 @@ def main():
     p.add_argument('--workers', type=int, default=12,
                    help='workers per phase (parallel mode only)')
     p.add_argument('--no-nobgt', action='store_true',
-                   help='skip no-budget runs (only 30 normal cases)')
+                   help='skip no-budget runs (only the 39 normal cases)')
     p.add_argument('--phases', type=str, default='all',
                    help='comma-separated subset: 2percent,5percent,10percent,10percent_nobgt')
     p.add_argument('--skip-existing', action='store_true',
