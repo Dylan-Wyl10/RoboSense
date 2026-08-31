@@ -18,9 +18,9 @@ authors:
     email: feng333@purdue.edu
     affiliation: "Lyles School of Civil and Construction Engineering, Purdue University"
 
-# The accompanying manuscript is not yet published. Journal, year, and DOI
-# will be filled in here once it appears; until then please cite the software
-# entry above.
+# The accompanying manuscript is under review and not yet published, so it is
+# recorded as `unpublished` with no volume, year, or DOI. Update this block once
+# it appears; until then please cite the software entry above.
 preferred-citation:
   type: unpublished
   title: "RoboSense: Leveraging Robotaxi Fleets as Drive-by Sensors for Urban Traffic Monitoring"
@@ -33,4 +33,7 @@ preferred-citation:
       given-names: Yiheng
       email: feng333@purdue.edu
       affiliation: "Lyles School of Civil and Construction Engineering, Purdue University"
-  notes: "Manuscript in preparation / under review."
+  notes: >-
+    Submitted to Transportation Research Part C, manuscript number
+    TRC-26-03199. Under review. The submitted version is included in this
+    repository as paper/TRC-26-03199.pdf.
