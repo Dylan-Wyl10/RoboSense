@@ -68,9 +68,18 @@ sumo_cfg/5x5net/od/flow*/*
 !sumo_cfg/5x5net/od/flow*/od_mixed.rou.xml
 !sumo_cfg/5x5net/od/flow*/turnRatios.add.xml
 
-# Scattered XML files (not tracked)
-sumo_cfg/5x5net/edge_output.add.xml
+# Scattered XML files (not tracked).
+# edge_output.add.xml IS tracked: case0ctm.sumocfg loads it as an additional
+# file, and only --mode parallel regenerates a per-worker copy, so single runs
+# on a fresh clone fail without it.
+# od_mixed.rou.xml stays ignored -- install_od_for() writes it from the tracked
+# per-MPR scenario under od/flow*/.
 sumo_cfg/5x5net/od_mixed.rou.xml
+
+# Per-worker scratch files from --mode parallel
+sumo_cfg/5x5net/edge_output_w_*.add.xml
+sumo_cfg/5x5net/simcfg/case0ctm_w_*.sumocfg
+result/tmpnet_w_*/
 sumo_cfg/5x5net/od_file_bgv.odtrips.xml
 sumo_cfg/5x5net/od_file_cav.odtrips.xml
 sumo_cfg/5x5net/netgrid_topology.json

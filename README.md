@@ -99,13 +99,27 @@ python -c "import gurobipy; gurobipy.Model('ok'); print('gurobi ok')"
 
 All scripts resolve paths relative to `src/`, so run them from there.
 
+The fastest way to confirm a working setup is one case of the batch runner. It
+installs the demand scenario, runs the simulation, and cleans up after itself:
+
 ```bash
 cd src
+python data_analysis/popularity_rerun.py --mode probe
+```
+
+To run `main_ctm.py` directly instead, first install one of the per-MPR demand
+scenarios, since the simulation config reads `od_mixed.rou.xml`:
+
+```bash
+cd sumo_cfg/5x5net
+cp "od/flow350(7)_7200s_2percent/od.rou.xml" od_mixed.rou.xml       # 2% MPR
+cp "od/flow350(7)_7200s_2percent/turnRatios.add.xml" turnRatios.add.xml
+cd ../../src
 python main_ctm.py
 ```
 
-This runs one simulation with the settings in `config.py` and writes to the
-`saving_dir` configured there.
+Both write to the `saving_dir` configured in `config.py`. For the 10% scenario
+use its `od_mixed.rou.xml` rather than `od.rou.xml`.
 
 ## Reproducing the paper
 
