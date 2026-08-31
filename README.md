@@ -99,6 +99,11 @@ python -c "import gurobipy; gurobipy.Model('ok'); print('gurobi ok')"
 
 All scripts resolve paths relative to `src/`, so run them from there.
 
+> **Before your first routing run** you need to generate the CTM ground truth
+> once — see [First-time setup](#first-time-setup-ctm-ground-truth). Without it
+> every routing run stops immediately with a `FileNotFoundError` on
+> `bench/ctm_gt.npy`.
+
 The fastest way to confirm a working setup is one case of the batch runner. It
 installs the demand scenario, runs the simulation, and cleans up after itself:
 
@@ -132,24 +137,59 @@ before the first routing run. Without them you will see:
 FileNotFoundError: .../result/ctmResult/logs/ctm_test1/<tag>/<case>/bench/ctm_gt.npy
 ```
 
-A benchmark run is just the same simulation with routing switched off. In
-`src/config.py` set:
+A benchmark run is just the same simulation with routing switched off, so it
+needs no ground truth to produce one.
 
-```python
-self.is_real_demand = 'static'   # no ground truth needed to produce one
-self.is_bench       = True       # disable the routing optimization
-self.is_route       = False
-self.senario_str    = 'bench'    # writes into <case_str>/bench/
-self.case_str       = '<tag>/350_5400s_2percent_new_normVeh'   # per scenario
+**Step 1 — install the demand scenario you are generating for.** From
+`sumo_cfg/5x5net/`, for the 2% case:
+
+```bash
+cp "od/flow350(7)_7200s_2percent/od.rou.xml" od_mixed.rou.xml
+cp "od/flow350(7)_7200s_2percent/turnRatios.add.xml" turnRatios.add.xml
 ```
 
-then `python main_ctm.py`, repeating for each scenario you intend to run
-(`2percent`, `5percent`, `10percent`, `10percent_nobgt`). Afterwards restore
-`is_real_demand = 'dynamic'`, `is_bench = False`, `is_route = True`.
+**Step 2 — switch `src/config.py` into benchmark mode.** The batch runners look
+for the ground truth under the `1215test` tag (`BENCH_SRC_TAG` in
+`nweight_rerun.py`), so write it there:
 
-The batch runners expect these under the `1215test` tag and copy them into their
-own output tree (`provision_bench_gt()`); generate them there, or edit
-`BENCH_SRC_TAG` to point at your own.
+```python
+self.is_real_demand = 'static'   # static demand needs no ground truth
+self.is_bench       = True       # disable the routing optimization
+self.is_route       = False
+self.test_str       = 'ctm_test1'
+self.case_str       = '1215test/350_5400s_2percent_new_normVeh'
+self.senario_str    = 'bench'    # writes <case_str>/bench/ctm_gt.npy
+```
+
+**Step 3 — run it.**
+
+```bash
+cd src && python main_ctm.py
+```
+
+This writes `result/ctmResult/logs/ctm_test1/1215test/350_5400s_2percent_new_normVeh/bench/ctm_gt.npy`,
+which is exactly where the routing runs look for it.
+
+**Step 4 — repeat** for each scenario you intend to run, changing both the OD
+files in step 1 and `case_str` in step 2:
+
+| Scenario | OD folder | `case_str` suffix |
+|---|---|---|
+| 2% | `flow350(7)_7200s_2percent` | `350_5400s_2percent_new_normVeh` |
+| 5% | `flow350(17)_7200s_5percent_new` | `350_5400s_5percent_new_normVeh` |
+| 10% | `flow350(35)_7200s_10percent_new` | `350_5400s_10percent_new_normVeh` |
+| 10%, no budget | `flow350(35)_7200s_10percent_new` | `350_5400s_10percent_nobgt_new_normVeh` |
+
+The 10% folder has an explicit `od_mixed.rou.xml`; use that instead of
+`od.rou.xml`. The no-budget case uses the same demand as 10%, so if you already
+generated that one you can simply copy its `ctm_gt.npy` across.
+
+**Step 5 — restore** `is_real_demand = 'dynamic'`, `is_bench = False`,
+`is_route = True` before doing any routing runs.
+
+You only need the scenarios you actually plan to run. `provision_bench_gt()` in
+the batch runners copies these from `1215test` into their own output tree and
+never overwrites an existing file.
 
 ## Reproducing the paper
 
