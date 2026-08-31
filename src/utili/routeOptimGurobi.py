@@ -262,8 +262,10 @@ class RouteOptimGurobi:
                 current_time += travel_time
         return arcs_with_time
 
-    def build_model(self, param, veh_num=2, small_net=True, parseZ=True):
+    def build_model(self, param, veh_num=2, small_net=True, parseZ=True, coverage_objective='cell'):
         print('start build model')
+        if coverage_objective not in ('cell', 'vehicle_count'):
+            raise ValueError(f"coverage_objective must be 'cell' or 'vehicle_count', got {coverage_objective!r}")
         # self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix, self.CTM_numberOutMatrix, self.ctm_fd,
         #                                                   self.CTM_signalMatrix)
 
@@ -295,10 +297,15 @@ class RouteOptimGurobi:
 
         # load static parameters
         c = {(i, t): self.C[i, t] for i in I for t in T}
-        # n-weighted coverage (YIL-128): predicted number of vehicles n_i,t as
-        # constant coverage weights, so the objective rewards observed vehicles
-        # instead of covered cells. Model stays linear.
-        n = {(i, t): float(self.N[i, t]) for i in I for t in T}
+        # coverage weights on y_i^t. 'cell' gives every covered cell weight 1
+        # (sum y_i^t); 'vehicle_count' uses the CTM-predicted vehicle number
+        # n_i,t as a constant coefficient (sum n_i^t * y_i^t), so the objective
+        # rewards observed vehicles instead of covered cells. Model stays linear
+        # either way.
+        if coverage_objective == 'vehicle_count':
+            n = {(i, t): float(self.N[i, t]) for i in I for t in T}
+        else:
+            n = {(i, t): 1.0 for i in I for t in T}
         Pi = {(i, j): self.CTM_connection[i, j] for i in I for j in I}
 
         self.c = c  # for visulization pupers
@@ -603,7 +610,9 @@ class RouteOptimGurobi:
 
 
     # this function is permanently abundoned, saving here for notes.
-    def build_model_smallexample(self, param, veh_od, alpha=0.5):  # this is temperoarily set as small
+    def build_model_smallexample(self, param, veh_od, alpha=0.5, coverage_objective='cell'):  # this is temperoarily set as small
+        if coverage_objective not in ('cell', 'vehicle_count'):
+            raise ValueError(f"coverage_objective must be 'cell' or 'vehicle_count', got {coverage_objective!r}")
         # self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix, self.CTM_numberOutMatrix, self.ctm_fd,
         #                                                   self.CTM_signalMatrix)
 
@@ -643,9 +652,11 @@ class RouteOptimGurobi:
         # the = model.addVars(I, I, A, vtype=GRB.INTEGER, name="theta")  # theta variable
         # eta = model.addVars(A, I, T, vtype=GRB.BINARY, name="eta")  # binary variable for arrive time constraint
 
+        # see build_model for the meaning of the two coverage weightings
+        n_w = (lambda i, t: float(self.N[i, t])) if coverage_objective == 'vehicle_count' else (lambda i, t: 1.0)
         model.setObjective(
             alpha1 * quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) -
-            alpha2 * quicksum(self.N[i, t] * y[i, t] for i in I for t in T) / (self.link * self.time_step),
+            alpha2 * quicksum(n_w(i, t) * y[i, t] for i in I for t in T) / (self.link * self.time_step),
             # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
             GRB.MINIMIZE
         )
