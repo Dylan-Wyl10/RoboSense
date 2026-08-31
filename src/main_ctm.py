@@ -8,6 +8,16 @@ Note!!!!: this is the test temporoal script for debugging (yilin, 20231129)
 import sys
 import os
 import argparse
+
+# Make both the project root and src/ importable (PyCharm-style), matching
+# src/data_analysis/*_rerun.py. utili/network.py imports `src.utili.ctm...`
+# absolutely, so the project root must be on sys.path or running this file
+# directly from src/ fails with ModuleNotFoundError: No module named 'src'.
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT_FOR_IMPORTS = os.path.dirname(SRC_DIR)
+sys.path.insert(0, SRC_DIR)
+sys.path.insert(0, PROJECT_ROOT_FOR_IMPORTS)
+
 from simulation import Simulation
 import argparse
 
