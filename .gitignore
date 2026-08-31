@@ -27,8 +27,11 @@ result/plot_ctm/
 result/plot_ctm.png
 src/utili/occupancy_3d.png
 
-# Experiment results (binary, too large for git)
-result/ctmResult/logs/
+# Experiment results (binary, too large for git).
+# The directories themselves are kept (via .gitkeep) because SUMO refuses to
+# start if its output directory does not exist -- a fresh clone must have them.
+result/ctmResult/logs/*
+!result/ctmResult/logs/.gitkeep
 result/middle_result0520/
 
 # Legacy result directories
@@ -41,7 +44,12 @@ result/5x5net/PR5 Testing
 result/5x5net/sumolog_tmp
 result/5x5net/sumologpr2
 result/5x5net/link_flow
-result/tmpnet
+result/tmpnet/*
+!result/tmpnet/CTMTEST
+result/tmpnet/CTMTEST/*
+!result/tmpnet/CTMTEST/sumolog_tmp
+result/tmpnet/CTMTEST/sumolog_tmp/*
+!result/tmpnet/CTMTEST/sumolog_tmp/.gitkeep
 
 # CTM test/calibration
 ctm_temtest
