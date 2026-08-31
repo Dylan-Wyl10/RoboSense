@@ -1,4 +1,5 @@
 """This file is for configuration for CTM-SUMO simulation"""
+import os
 
 class Config:
     def __init__(self):
@@ -34,18 +35,30 @@ class Config:
         # CAV routing parameter
         # this part is to determine the cav routing policies, includes: budget, max travel threshold, etc
         self.max_route = 12  # if cav has traveled more than this number of edges, dont plan this cav
-        self.budget = 0
+        # budget defaults to 0; the batch runner sets SIM_BUDGET per-subprocess
+        # to override (so 2% / 5% / 10% normal runs see budget=2 and 10%-no-budget
+        # sees budget=0 — necessary because simulation.py reads Config().budget
+        # via a fresh Config() instance inside its main loop).
+        self.budget = int(os.environ.get('SIM_BUDGET', '0'))
 
 
         # Optim settings config
-        self.param = (1, 2000, 999999)  # alpha-1, alpha-2, M
+        self.param = (1, 10000000.0, 999999)  # alpha-1, alpha-2, M
+        # coverage term of the MILP objective
+        #   'cell'          -> sum(y_i^t),         cell coverage, the Methodology
+        #                      formulation used in "Grid Network Analysis" (Sec. 4.2)
+        #   'vehicle_count' -> sum(n_i^t * y_i^t), the extension in "Vehicle Number
+        #                      Weighted Monitoring Objective" (Sec. 4.3)
+        # n_i^t is the CTM-predicted vehicle count, used as a constant coefficient,
+        # so the model stays an MILP with unchanged variables and constraints.
+        self.coverage_objective = 'cell'  # ['cell', 'vehicle_count']
         self.opt_interval = 100  # unite in second  999999if no optimal
         self.is_route = True  # whether route control is applied
 
         # saving info
         self.test_str = 'ctm_test1'  # test case string
         self.case_str = '1215test/350_5400s_10percent_nobgt_new_normVeh'
-        self.senario_str = '2000_cover'
+        self.senario_str = '1e7cover'
         self.saving_dir = f'../result/ctmResult/logs/{self.test_str}/{self.case_str}/{self.senario_str}'
         # self.occupation_matrix = '../result/ctmResult/logs'
 
@@ -56,6 +69,7 @@ class Config:
                             'ctm_demand_gt': f'../result/ctmResult/logs/{self.test_str}/{self.case_str}/bench/ctm_gt.npy',
                             'ctm': f'{self.saving_dir}',
                             'time_optim': f'{self.saving_dir}/time_optim.pkl',
+                            'cav_cell_events': f'{self.saving_dir}/cav_cell_events.pkl',
                             'num_cav': f'{self.saving_dir}/num_cav.pkl'}
 
         # pipeline mode

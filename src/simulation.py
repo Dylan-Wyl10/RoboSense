@@ -127,7 +127,7 @@ class Simulation:
                 break
 
     def simCTM(self, config, param, ctm_fd, ctm_interval, ctm_time_opt, ctm_time_norm, ctm_demand_mode, optim_interval, saving_path,
-               GUImode=False, route=False, bench_mode=False):
+               GUImode=False, route=False, bench_mode=False, coverage_objective='cell'):
         if GUImode:
             traci.start(["sumo-gui", "-c", config, "--lateral-resolution=0.1",
                          "--step-length={}".format(str(self.resolution))])
@@ -145,6 +145,7 @@ class Simulation:
 
         # optimization parameter
         self.param = param
+        self.coverage_objective = coverage_objective  # ['cell', 'vehicle_count']
 
         # saving path
         self.saving_path = saving_path
@@ -165,6 +166,10 @@ class Simulation:
         self.cell_occupation = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10) + 1), dtype=int)
         self.ctm_groundtruth = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10) + 1), dtype=int)
         self.ctm_recordings = np.zeros(shape=(len(self.cell_idx), self.MAXSTEP // (5 * 10) + 1), dtype=float)
+        # Per-CAV ordered cell-entry events for traversal-count segment popularity.
+        # cav_cell_events[cav_id] = [(cell_id_str, ctm_step), ...]; only logged on cell transitions.
+        self.cav_cell_events = {}
+        self.cav_last_cell = {}
 
         self.optim_time, self.num_of_cav = [], []
 
@@ -268,7 +273,8 @@ class Simulation:
                         print(f'number of cav being optimized is {len(self.cav_info)}')
                         self.Route_Optimizer = RouteOptimGurobi(CTM_FDParam=ctm_fd, veh_od=self.cav_info,
                                                                 max_time=CTM_maxtime, current_time=self.step//10, CTM_input=input, Load_mode='direct')
-                        self.Route_Optimizer.build_model(self.param, veh_num=len(self.cav_info), small_net=False)
+                        self.Route_Optimizer.build_model(self.param, veh_num=len(self.cav_info), small_net=False,
+                                                         coverage_objective=self.coverage_objective)
                         x, y, omg, objective_value = self.Route_Optimizer.solve_model(CtmDowngrade=False)
                     # c_tmp = self.cav_list[0]
                     # route1 = traci.vehicle.getRoute(c_tmp)
@@ -621,17 +627,27 @@ class Simulation:
 
                 # add budget for each cav
                 edge_num_rem = len(current_route) - edge_pos - 1  # remaining number of edge
-                """
-                budge logic 20250729
-                1. if remaining route  length is greater than 4, than give budget
-                2. if already travel route is greater than 10, no budget
-                """
-                if edge_num_rem >= 6:
-                    budget = 0
-                elif edge_pos >= 12:
+
+                # budget=0 fix: use shortest-path distance to prevent snowball effect
+                if Config().budget == 0:
+                    current_next_node = self.network.getNextNode(current_edge).split('_')[0]
+                    dest_node = self.network.getNextNode(current_route[-1]).split('_')[0]
+                    sp_remaining = self.network.getShortDistance(current_next_node, dest_node)
+                    if sp_remaining == 0:
+                        continue  # vehicle is on last edge, no routing needed
                     budget = 0
                 else:
-                    budget = Config().budget  # no budget:0, or budget:2
+                    """
+                    budge logic 20250729
+                    1. if remaining route  length is greater than 4, than give budget
+                    2. if already travel route is greater than 10, no budget
+                    """
+                    if edge_num_rem >= 6:
+                        budget = 0
+                    elif edge_pos >= 12:
+                        budget = 0
+                    else:
+                        budget = Config().budget  # no budget:0, or budget:2
 
                 """
                 0827 Add od-route trace function
@@ -646,7 +662,7 @@ class Simulation:
                     # 'route_length': (len(traci.vehicle.getRoute(cav_id)) - edge_pos + budget) * 5,
                     'remine_edge': edge_num_rem,
                     'edge_pos': edge_pos,
-                    'route_length': min(edge_num_rem + budget, 18 - edge_pos-1),  # set a fixed number of on max route
+                    'route_length': sp_remaining if Config().budget == 0 else min(edge_num_rem + budget, 18 - edge_pos-1),
                     # 'route_length': edge_num_rem + budget,
                     'current_route': current_route,
                     'current_edge': current_edge
@@ -1137,6 +1153,10 @@ class Simulation:
             update_table[cell_id] = self.getVehNumfromEdge(edge_idx, info[0], info[1], info[2])
             """20250601: update cell coverage table"""
             self.cell_occupation[self.cell_idx.index(cell_id), (self.step // (5 * 10))] += 1
+            # Record CAV cell-entry only on transitions (RLE-collapse consecutive same-cell samples).
+            if self.cav_last_cell.get(cav_id) != cell_id:
+                self.cav_cell_events.setdefault(cav_id, []).append((cell_id, self.step // (5 * 10)))
+                self.cav_last_cell[cav_id] = cell_id
             """20250620: update vehicle no changing zone"""
             """20250715: bug fixing: this could affect benchmark planning if not routing. is this still necessary???"""
             # if self.network.sumonet.getEdge(edge_idx).getLength() - traci.vehicle.getLanePosition(
@@ -1170,6 +1190,9 @@ class Simulation:
         # save trip info
         with open(self.saving_path['od_route'], "w") as j_file:
             json.dump(self.cav_tripInfo, j_file, indent=4)
+        # Save per-CAV cell-entry events for segment popularity computation.
+        with open(self.saving_path['cav_cell_events'], 'wb') as file:
+            pickle.dump(self.cav_cell_events, file)
 
 
     @staticmethod

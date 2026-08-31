@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "RoboSense"
+abstract: >-
+  Dynamic robotaxi routing framework that treats a centrally dispatched
+  robotaxi fleet as drive-by sensors for urban traffic monitoring, combining
+  a cell-transmission-model traffic state prediction with a rolling-horizon
+  MILP that trades off travel time against spatiotemporal monitoring coverage.
+type: software
+license: MIT
+authors:
+  - family-names: Wang
+    given-names: Yilin
+    email: wang4517@purdue.edu
+    affiliation: "Lyles School of Civil and Construction Engineering, Purdue University"
+  - family-names: Feng
+    given-names: Yiheng
+    email: feng333@purdue.edu
+    affiliation: "Lyles School of Civil and Construction Engineering, Purdue University"
+
+# The accompanying manuscript is not yet published. Journal, year, and DOI
+# will be filled in here once it appears; until then please cite the software
+# entry above.
+preferred-citation:
+  type: unpublished
+  title: "RoboSense: Leveraging Robotaxi Fleets as Drive-by Sensors for Urban Traffic Monitoring"
+  authors:
+    - family-names: Wang
+      given-names: Yilin
+      email: wang4517@purdue.edu
+      affiliation: "Lyles School of Civil and Construction Engineering, Purdue University"
+    - family-names: Feng
+      given-names: Yiheng
+      email: feng333@purdue.edu
+      affiliation: "Lyles School of Civil and Construction Engineering, Purdue University"
+  notes: "Manuscript in preparation / under review."

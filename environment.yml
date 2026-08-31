@@ -1,0 +1,29 @@
+# Conda environment for RoboSense.
+#
+#   conda env create -f environment.yml
+#   conda activate robosense
+#
+# Versions are the ones the paper's results were produced with. SUMO itself is
+# NOT installed here -- install it separately and set SUMO_HOME (see README).
+# Gurobi needs a license; see README for the academic / size-limited options.
+name: robosense
+channels:
+  - conda-forge
+  - gurobi
+dependencies:
+  - python=3.12
+  - numpy=1.26.4
+  - pandas=2.2.0
+  - scipy=1.12.0
+  - networkx=3.4.2
+  - matplotlib=3.9.0
+  - seaborn=0.13.2
+  - scikit-learn=1.4.0
+  - jupyter
+  - pip
+  - pip:
+      - gurobipy==11.0.3
+      # TraCI / sumolib ship with SUMO; these pins match the tested setup and
+      # can be dropped if you prefer the copies under $SUMO_HOME/tools.
+      - traci==1.19.0
+      - sumolib==1.19.0

@@ -1,0 +1,3 @@
+SUMO writes its scratch output here (summary/tripinfo/lane_data).
+The directory must exist before a run: SUMO will not create it and exits
+with an error if it is missing. Contents are ignored by git.

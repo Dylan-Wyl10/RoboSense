@@ -4,17 +4,17 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/simcfg/../5x5net.net.xml"/>
-        <route-files value="/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/simcfg/../od.rou.xml"/>
-        <additional-files value="/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/simcfg/../v_type.add.xml,/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/simcfg/ ../detectors.add.xml"/>
+        <net-file value="sumo_cfg/5x5net/simcfg/../5x5net.net.xml"/>
+        <route-files value="sumo_cfg/5x5net/simcfg/../od.rou.xml"/>
+        <additional-files value="sumo_cfg/5x5net/simcfg/../v_type.add.xml,sumo_cfg/5x5net/simcfg/ ../detectors.add.xml"/>
     </input>
 
     <output>
-        <summary-output value="/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog/summary_benchmark.xml"/>
-        <tripinfo-output value="/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog/tripinfo_benchmark.xml"/>
-        <edgedata-output value="/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/simcfg/../../../result/ctmResult/edge_data.xml"/>
-        <lanedata-output value="/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/simcfg/../../../result/ctmResult/lane_data.xml"/>
-        <statistic-output value="/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog/overall_benchmark.xml"/>
+        <summary-output value="sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog/summary_benchmark.xml"/>
+        <tripinfo-output value="sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog/tripinfo_benchmark.xml"/>
+        <edgedata-output value="sumo_cfg/5x5net/simcfg/../../../result/ctmResult/edge_data.xml"/>
+        <lanedata-output value="sumo_cfg/5x5net/simcfg/../../../result/ctmResult/lane_data.xml"/>
+        <statistic-output value="sumo_cfg/5x5net/simcfg/../../../result/5x5net/sumolog/overall_benchmark.xml"/>
     </output>
 
     <time>
@@ -44,7 +44,7 @@
     </report>
 
     <gui_only>
-        <gui-settings-file value="/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/simcfg/../toy_net.view.xml"/>
+        <gui-settings-file value="sumo_cfg/5x5net/simcfg/../toy_net.view.xml"/>
     </gui_only>
 
 </configuration>
