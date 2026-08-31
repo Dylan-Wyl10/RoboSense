@@ -4,11 +4,11 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/neteditConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/5x5net.net.xml"/>
+        <sumo-net-file value="sumo_cfg/5x5net/5x5net.net.xml"/>
     </input>
 
     <output>
-        <output-file value="/home/yilin/Research/Route_TSC_CART/sumo_cfg/5x5net/5x5net.net.xml"/>
+        <output-file value="sumo_cfg/5x5net/5x5net.net.xml"/>
     </output>
 
     <processing>
