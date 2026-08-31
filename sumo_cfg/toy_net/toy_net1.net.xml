@@ -4,11 +4,11 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/toy_net1.net.xml"/>
+        <sumo-net-file value="sumo_cfg/toy_net/toy_net1.net.xml"/>
     </input>
 
     <output>
-        <output-file value="/home/yihengfeng/YL_Research/Route_TSC_CART/src/sumo_cfg/toy_net/toy_net1.net.xml"/>
+        <output-file value="sumo_cfg/toy_net/toy_net1.net.xml"/>
     </output>
 
     <processing>

@@ -8,6 +8,16 @@ Note!!!!: this is the test temporoal script for debugging (yilin, 20231129)
 import sys
 import os
 import argparse
+
+# Make both the project root and src/ importable (PyCharm-style), matching
+# src/data_analysis/*_rerun.py. utili/network.py imports `src.utili.ctm...`
+# absolutely, so the project root must be on sys.path or running this file
+# directly from src/ fails with ModuleNotFoundError: No module named 'src'.
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT_FOR_IMPORTS = os.path.dirname(SRC_DIR)
+sys.path.insert(0, SRC_DIR)
+sys.path.insert(0, PROJECT_ROOT_FOR_IMPORTS)
+
 from simulation import Simulation
 import argparse
 
@@ -51,7 +61,7 @@ if __name__ == '__main__':
         sim.simCTM(config=cfg.sumo_cfg, param=cfg.param, ctm_fd=cfg.ctm_fd, ctm_interval=cfg.ctm_interval,
                    ctm_time_opt=cfg.ctm_time_opt, ctm_time_norm=cfg.ctm_time_normal, ctm_demand_mode=cfg.is_real_demand,
                    optim_interval=cfg.opt_interval, saving_path=cfg.saving_path, GUImode=cfg.sumo_gui, route=cfg.is_route,
-                   bench_mode=cfg.is_bench)
+                   bench_mode=cfg.is_bench, coverage_objective=cfg.coverage_objective)
 
         # score = pipe.evalCTM(file_gt='../src/ctm_gt.npy',
         #                      file_rec='../src/ctm_rec.npy',

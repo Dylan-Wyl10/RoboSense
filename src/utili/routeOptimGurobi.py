@@ -155,12 +155,16 @@ class RouteOptimGurobi:
             for vv in v:
                 connection[k - 1, vv - 1] = 1
 
+        # synthetic vehicle-number matrix for the toy net: n = c - 1 (range 0..5),
+        # consistent with the FD logic that more vehicles lead to longer travel time
+        N = C - 1.0
+
         # veh_od = {0: {'from': 1, 'to': 26, 'time': 0},
         #           1: {'from': 1, 'to': 26, 'time': 1},
         #           2: {'from': 1, 'to': 26, 'time': 2},
         #           3: {'from': 1, 'to': 26, 'time': 3}}
 
-        return connection, time_step, C
+        return connection, time_step, C, N
 
     def set_optm_input(self, veh_od, time_step):
         self.veh_od = veh_od
@@ -258,19 +262,22 @@ class RouteOptimGurobi:
                 current_time += travel_time
         return arcs_with_time
 
-    def build_model(self, param, veh_num=2, small_net=True, parseZ=True):
+    def build_model(self, param, veh_num=2, small_net=True, parseZ=True, coverage_objective='cell'):
         print('start build model')
+        if coverage_objective not in ('cell', 'vehicle_count'):
+            raise ValueError(f"coverage_objective must be 'cell' or 'vehicle_count', got {coverage_objective!r}")
         # self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix, self.CTM_numberOutMatrix, self.ctm_fd,
         #                                                   self.CTM_signalMatrix)
 
         # Case_config = CaseStudyConfig()
         if small_net:
-            self.CTM_connection, time_step, self.C = self.get_small_net_param()
+            self.CTM_connection, time_step, self.C, self.N = self.get_small_net_param()
         else:
             self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix,
                                                               self.ctm_fd,
                                                               self.CTM_signalMatrix)
             time_step = self.K.shape[1]
+            self.N = self.CTM_numberMatrix
 
             # small network for case study
             # self.veh_od = Case_config.small_net_od
@@ -290,6 +297,15 @@ class RouteOptimGurobi:
 
         # load static parameters
         c = {(i, t): self.C[i, t] for i in I for t in T}
+        # coverage weights on y_i^t. 'cell' gives every covered cell weight 1
+        # (sum y_i^t); 'vehicle_count' uses the CTM-predicted vehicle number
+        # n_i,t as a constant coefficient (sum n_i^t * y_i^t), so the objective
+        # rewards observed vehicles instead of covered cells. Model stays linear
+        # either way.
+        if coverage_objective == 'vehicle_count':
+            n = {(i, t): float(self.N[i, t]) for i in I for t in T}
+        else:
+            n = {(i, t): 1.0 for i in I for t in T}
         Pi = {(i, j): self.CTM_connection[i, j] for i in I for j in I}
 
         self.c = c  # for visulization pupers
@@ -311,13 +327,23 @@ class RouteOptimGurobi:
 
             t0 = time.time()
             route4all = []
+            skip_vehicles = set()
             for a in A:
                 # a filter indexed by a to indicate the feasible path for z
                 t1 = time.time()
-                max_route = min(2 ** (len(self.veh_od[a]["current_route"])), 512)
-                routes = self.find_paths(self.CTM_connection, self.veh_od[a]["from"], self.veh_od[a]["to"],
-                                         max_length=5*self.veh_od[a]["route_length"], mode='length', top_k=100, max_route=max_route)
-                print(f'veh {a} find {len(routes)} feasible route in {max_route} to cell {self.veh_od[a]["to"]} with budget {self.veh_od[a]["budget"]} '
+                is_nobgt = self.veh_od[a]["budget"] == 0
+                if is_nobgt:
+                    # budget=0: find all shortest paths via BFS, then keep only those of minimum length
+                    routes = self.find_paths(self.CTM_connection, self.veh_od[a]["from"], self.veh_od[a]["to"],
+                                             mode='topk', top_k=200)
+                    if routes:
+                        shortest_len = len(routes[0])
+                        routes = [r for r in routes if len(r) == shortest_len]
+                else:
+                    max_route = min(2 ** (len(self.veh_od[a]["current_route"])), 512)
+                    routes = self.find_paths(self.CTM_connection, self.veh_od[a]["from"], self.veh_od[a]["to"],
+                                             max_length=5*self.veh_od[a]["route_length"], mode='length', top_k=100, max_route=max_route)
+                print(f'veh {a} find {len(routes)} feasible route to cell {self.veh_od[a]["to"]} with budget {self.veh_od[a]["budget"]} '
                       f'and route length {self.veh_od[a]["route_length"]} need {time.time() - t1} seconds')
                 print(f'veh {a} edge pos: {self.veh_od[a]["edge_pos"]}, remin_edge: {self.veh_od[a]["remine_edge"]}, '
                       f'budget:{self.veh_od[a]["budget"]}, current route:{self.veh_od[a]["current_route"]}')
@@ -335,11 +361,18 @@ class RouteOptimGurobi:
                     with open("log.txt", "a") as f:
                         f.write(f'veh {self.veh_od[a]["name"]} is in cell {from_now} at {self.sumo_time} to cell{self.cellidx[self.veh_od[a]["to"]]}, '
                                 f'will be in new start cell {from_new}. the route length is {self.veh_od[a]["route_length"]} \n')
-                    # print(f'veh {a} is in new cell{self.cellidx[self.veh_od[a]['from']]} now')
-                    routes = self.find_paths(self.CTM_connection, self.cellidx.index(from_new), self.veh_od[a]["to"],
-                                             max_length=self.veh_od[a]["route_length"], mode='topk', top_k=100, max_route=max_route)
+                    if is_nobgt:
+                        routes = self.find_paths(self.CTM_connection, self.cellidx.index(from_new), self.veh_od[a]["to"],
+                                                 mode='topk', top_k=200)
+                        if routes:
+                            shortest_len = len(routes[0])
+                            routes = [r for r in routes if len(r) == shortest_len]
+                    else:
+                        max_route = min(2 ** (len(self.veh_od[a]["current_route"])), 512)
+                        routes = self.find_paths(self.CTM_connection, self.cellidx.index(from_new), self.veh_od[a]["to"],
+                                                 max_length=self.veh_od[a]["route_length"], mode='topk', top_k=100, max_route=max_route)
                     print(
-                        f'veh {a} find {len(routes)} new feasible route from cell {from_new} in {max_route} with budget {self.veh_od[a]["budget"]}'
+                        f'veh {a} find {len(routes)} new feasible route from cell {from_new} with budget {self.veh_od[a]["budget"]}'
                         f' and remine route {self.veh_od[a]["route_length"]},  need {time.time() - t1} seconds')
 
                 t1 = time.time()
@@ -358,7 +391,16 @@ class RouteOptimGurobi:
                         for tt in range(t, s):
                             w_keys.add((a, i, tt))
                 print(f'veh {a} extract x, w, z in {time.time() - t1} seconds')
-                # print('yes')
+                if (a, self.veh_od[a]['from'], 0) not in x_keys:
+                    skip_vehicles.add(a)
+                    with open("log.txt", "a") as f:
+                        f.write(f'[WARN] veh {a} ({self.veh_od[a]["name"]}) has no feasible arcs at time {self.sumo_time}. '
+                                f'from={self.cellidx[self.veh_od[a]["from"]]}, to={self.cellidx[self.veh_od[a]["to"]]}, '
+                                f'route_length={self.veh_od[a]["route_length"]}, remine_edge={self.veh_od[a]["remine_edge"]}. Skipping.\n')
+                    print(f'[WARN] veh {a} ({self.veh_od[a]["name"]}) skipped: no feasible arcs')
+            self.skip_vehicles = skip_vehicles
+            if skip_vehicles:
+                print(f'[WARN] {len(skip_vehicles)} vehicles skipped due to no feasible arcs: {skip_vehicles}')
             print(f'z_keys has been created within {time.time() - t0} seconds')
 
 
@@ -400,7 +442,7 @@ class RouteOptimGurobi:
         model.setObjective(
             alpha1 * quicksum(
                 (c[key[1], key[2]] * x[key] for key in self.x_keys if (key[1], key[2]) in c)) / veh_num - alpha2 * quicksum(
-                y[ykey] for ykey in self.y_keys) / (self.CTM_connection.shape[0] * time_step), GRB.MINIMIZE)
+                n[ykey] * y[ykey] for ykey in self.y_keys) / (self.CTM_connection.shape[0] * time_step), GRB.MINIMIZE)
             # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
 
 
@@ -463,6 +505,8 @@ class RouteOptimGurobi:
 
         # 3**  od constraing
         for a in self.veh_od.keys():
+            if hasattr(self, 'skip_vehicles') and a in self.skip_vehicles:
+                continue
             model.addConstr(x[(a, self.veh_od[a]['from'], 0)] == 1, name='od_law')
 
         print(f"constraint 3 is completed at time {time.time() - t1}")
@@ -566,7 +610,9 @@ class RouteOptimGurobi:
 
 
     # this function is permanently abundoned, saving here for notes.
-    def build_model_smallexample(self, param, veh_od, alpha=0.5):  # this is temperoarily set as small
+    def build_model_smallexample(self, param, veh_od, alpha=0.5, coverage_objective='cell'):  # this is temperoarily set as small
+        if coverage_objective not in ('cell', 'vehicle_count'):
+            raise ValueError(f"coverage_objective must be 'cell' or 'vehicle_count', got {coverage_objective!r}")
         # self.K, self.Q, self.V, self.C = self.get_costCTM(self.CTM_numberMatrix, self.CTM_numberOutMatrix, self.ctm_fd,
         #                                                   self.CTM_signalMatrix)
 
@@ -574,7 +620,7 @@ class RouteOptimGurobi:
         alpha1, alpha2, M, = param[0], param[1], param[2]
         self.veh = len(veh_od)
 
-        self.CTM_connection, self.time_step, self.C = self.get_small_net_param()
+        self.CTM_connection, self.time_step, self.C, self.N = self.get_small_net_param()
 
         self.link = self.CTM_connection.shape[0]
 
@@ -606,9 +652,11 @@ class RouteOptimGurobi:
         # the = model.addVars(I, I, A, vtype=GRB.INTEGER, name="theta")  # theta variable
         # eta = model.addVars(A, I, T, vtype=GRB.BINARY, name="eta")  # binary variable for arrive time constraint
 
+        # see build_model for the meaning of the two coverage weightings
+        n_w = (lambda i, t: float(self.N[i, t])) if coverage_objective == 'vehicle_count' else (lambda i, t: 1.0)
         model.setObjective(
             alpha1 * quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A) -
-            alpha2 * quicksum(y[i, t] for i in I for t in T) / (self.link * self.time_step),
+            alpha2 * quicksum(n_w(i, t) * y[i, t] for i in I for t in T) / (self.link * self.time_step),
             # quicksum(quicksum(c[i, t] * x[a, i, t] for i in I for t in T if (i, t) in c) for a in A),
             GRB.MINIMIZE
         )
