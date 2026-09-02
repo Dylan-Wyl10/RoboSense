@@ -2,31 +2,177 @@
 
 **Leveraging robotaxi fleets as drive-by sensors for urban traffic monitoring.**
 
-Robotaxis are dispatched to carry passengers, but a centrally controlled fleet can
-do a second job at the same time: while driving, it collects traffic data. RoboSense
-is a dynamic routing framework that makes that second job an explicit objective —
+> 📄 **Paper:** [RoboSense: Leveraging Robotaxi Fleets as Drive-by Sensors for Urban
+> Traffic Monitoring](paper/TRC-26-03199.pdf) — submitted to *Transportation Research
+> Part C* (TRC-26-03199), under review.
+> Yilin Wang, Yiheng Feng · Purdue University
+
+Robotaxis are dispatched to carry passengers. But a centrally controlled fleet can do
+a second job at the same time: while driving, it *sees* traffic. RoboSense is a
+dynamic routing framework that turns that side effect into an explicit objective —
 routes are chosen to trade off passenger travel time against how much of the network
 the fleet observes, in space and in time.
 
-The framework has three parts:
+This repository contains the full implementation, the case-study configuration, and
+the submitted manuscript.
 
-1. **A cell-based network representation** aligned with what a vehicle can actually
-   sense as it drives.
-2. **A cell-level monitoring metric** that quantifies spatiotemporal fleet coverage.
-3. **A rolling-horizon MILP** that jointly minimizes time-dependent travel time and
-   maximizes monitoring performance, on top of a Cell Transmission Model (CTM) that
-   predicts the time-varying traffic state.
-
-Evaluated in SUMO on a 5x5 urban grid at robotaxi market penetration rates (MPR) of
-2%, 5%, and 10%. A notable finding: with well-chosen objective weights, monitoring
-performance and robotaxi average speed improve *together* — better coverage feeds
-better traffic state prediction, which feeds better routing.
-
-> **Status.** This repository accompanies a manuscript that is not yet published.
-> The code and the full case-study configuration are here; raw experiment output is
-> not distributed (see [Data](#data)).
+**Contents** · [The idea](#the-idea) · [How it works](#how-it-works) ·
+[The objective](#the-objective) · [Case study](#case-study) · [Results](#results) ·
+[Install](#installation) · [Reproduce the paper](#reproducing-the-paper)
 
 ---
+
+# The idea
+
+## Routing a fleet for what it can see
+
+A fleet routed purely on travel time collapses onto the same fast corridors. Every
+vehicle traverses the same links at the same time, so the data it collects is
+redundant — a lot of vehicles, very little of the network.
+
+Route the same fleet with monitoring in the objective and it spreads out. Total
+travel time goes up somewhat, but the fleet now observes a much larger slice of the
+network.
+
+| Routing on travel time alone | Routing that also values monitoring |
+|---|---|
+| <img src="docs/img/fig1a-routing-traveltime.png" width="100%"> | <img src="docs/img/fig1b-routing-monitoring.png" width="100%"> |
+
+*Four vehicles, same origins and destinations. Left: all take the same shortest path.
+Right: routes diversify to cover more of the network.*
+
+## Where drive-by sensing sits
+
+Traffic monitoring data comes in three flavours, and they trade off differently in
+space and time:
+
+![Data modalities in traffic monitoring](docs/img/fig2-data-modalities.png)
+
+- **Fixed-location sensors** (loops, cameras) — temporally continuous, spatially sparse.
+- **Probe vehicles** — spatiotemporally continuous, but only for the probe itself.
+- **Perception sensors on CAVs / robotaxis** — capture *many* surrounding vehicles at
+  once, forming a cooperative perception environment.
+
+That third mode is why a robotaxi fleet is interesting: because each vehicle observes
+its neighbours rather than just itself, useful network coverage arrives at a far lower
+market penetration rate than probe-vehicle approaches need. And unlike privately owned
+vehicles, a robotaxi fleet is *centrally dispatched* — so its routes can actually be
+coordinated.
+
+# How it works
+
+![Overview of the routing for traffic monitoring framework](docs/img/fig3-framework.png)
+
+Three components run at different time resolutions and feed each other:
+
+| Component | Resolution | Role |
+|---|---|---|
+| **SUMO simulation** | 0.1 s | Microscopic traffic; background vehicles + robotaxis |
+| **Cell Transmission Model** | 5 s | Estimates *and predicts* cell-level traffic state |
+| **Dynamic Vehicle Routing** | 100 s | MILP over a rolling horizon; emits new routes |
+
+**Cell-based network representation.** Every link is split into cells sized to match
+a robotaxi's detection range (80 m). One representation serves three purposes at once:
+it defines what counts as *observed* (a cell with a robotaxi in it), it is the
+discretization the CTM runs on, and it is the unit the monitoring metric counts.
+
+**Traffic state prediction.** The CTM runs alongside SUMO, correcting itself with
+robotaxi observations and historical turning ratios, and runs *ahead* of it to predict
+cell densities over the planning horizon. Those predictions become the time-dependent
+travel costs the routing model optimizes against.
+
+**Dynamic routing.** A MILP picks routes for every robotaxi over the horizon, then a
+rolling-horizon scheme re-solves as conditions change. Better coverage improves the
+state prediction, which improves the next routing decision — the loop closes.
+
+# The objective
+
+Both formulations minimize the same expression. They differ only in how a covered
+cell is weighted:
+
+```
+min   (α₁/|A|) · Σₐ Σᵢ,ₜ cᵢᵗ · xᵢ,ₜᵃ   −   α₂ · COVERAGE / (|I|·|T|)
+      └────────── total travel time ──────────┘   └──── monitoring ────┘
+```
+
+| `coverage_objective` | COVERAGE | Behaviour |
+|---|---|---|
+| `'cell'` | `Σᵢ,ₜ yᵢᵗ` | Every covered cell counts once — rewards spreading out |
+| `'vehicle_count'` | `Σᵢ,ₜ nᵢᵗ · yᵢᵗ` | Cells weighted by predicted vehicle count — rewards observing *vehicles* |
+
+`yᵢᵗ` is binary: is cell `i` observed at step `t`. `nᵢᵗ` is the CTM-predicted vehicle
+count, which enters as a **constant** coefficient — so the vehicle-weighted variant is
+still an MILP with identical variables and constraints.
+
+`α₂` is the dial. Raising it buys coverage at the cost of travel time.
+
+## What the objective actually does
+
+The clearest way to see it is a toy network with four robotaxis, plotting which cell
+is occupied at which time step:
+
+| `α₁:α₂ = 1:0` — travel time only | `α₁:α₂ = 1:10⁶` — monitoring emphasized |
+|---|---|
+| <img src="docs/img/fig5a-coverage-traveltime.png" width="100%"> | <img src="docs/img/fig5b-coverage-monitoring.png" width="100%"> |
+
+*Rows are cells, columns are time steps; shading is how many vehicles are in that cell.
+Left: the four vehicles stack onto identical cells at identical times — dark bands,
+mostly empty grid. Right: they fan out across distinct cells, filling far more of the
+space-time grid with the same four vehicles.*
+
+# Case study
+
+![5x5 urban network for SUMO and CTM representation](docs/img/fig4-grid-network.png)
+
+| | |
+|---|---|
+| Network | 5×5 grid — 40 bidirectional two-lane links, 25 four-approach intersections |
+| Geometry | 400 m between intersections; 20 entry/exit links of 240 m |
+| Signals | Fixed-time plans at every intersection |
+| Robotaxi MPR | 2%, 5%, 10% |
+| Simulation | 5400 s in SUMO, with a fixed-time signal plan and calibrated CTM |
+| Weights | `α₂` swept across three orders of magnitude |
+
+# Results
+
+![Robotaxi average travel time and coverage vs the routing strategy parameter](docs/img/fig6-tt-coverage.png)
+
+*Solid lines with filled markers: average robotaxi travel time (left axis). Dashed
+lines with hollow markers: network coverage (right axis). Blue/red/green = 2%/5%/10% MPR.*
+
+**Coverage responds to the weight.** Across every MPR, pushing `α₂` up moves coverage
+up. Including spatiotemporal coverage in the objective does what it is meant to do.
+
+**Penetration rate dominates.** 10% MPR reaches roughly 19% network coverage; 2% MPR
+plateaus near 5%. More sensors beat cleverer routing — but at a *fixed* fleet size,
+routing still buys a substantial improvement for free.
+
+**The win-win.** The paper's most interesting finding is that the trade-off is not
+strictly monotonic. In the authors' words:
+
+> Interestingly, with appropriate weights between the two objectives, monitoring
+> performance and robotaxi average speed can be improved simultaneously. This suggests
+> better network monitoring leads to more accurate traffic state prediction and
+> improved mobility.
+
+That matters commercially: if better sensing also makes the fleet *faster*, a robotaxi
+operator has a reason to opt in rather than being regulated into it.
+
+## Weighting cells by how many vehicles are in them
+
+Covering an empty cell and covering a congested one count the same under `'cell'`.
+The vehicle-weighted objective fixes that:
+
+![Travel time and fleet coverage under the vehicle weighted objective](docs/img/fig7-weighted-tt-coverage.png)
+
+Routes are pulled toward congested cells, which raises *vehicle* coverage across all
+MPRs — the fleet observes more actual vehicles for the same fleet size. Travel time
+becomes more dispersed than under the original objective, because robotaxis are now
+deliberately routed into slower, busier links.
+
+---
+
+# Using the code
 
 ## Repository layout
 
@@ -50,6 +196,8 @@ sumo_cfg/
     od/flow*/               # per-MPR demand scenarios (2% / 5% / 10%)
   toy_net/                  # small network used for the illustrative example
 analysis/                   # result analysis and plotting
+docs/img/                   # figures used in this README
+paper/                      # the submitted manuscript
 result/                     # aggregated results only -- see Data
 ```
 
@@ -231,27 +379,8 @@ Everything is in `src/config.py`. The settings that matter most:
 | `sumo_maxtime` | simulation horizon |
 | `is_route` | `False` disables routing control (benchmark runs) |
 
-### The two objectives
-
-Both minimize the same expression, differing only in how the coverage term is
-weighted:
-
-```
-min  (alpha_1/|A|) * sum_a sum_{i,t} c_i^t x_{i,t}^a  -  alpha_2 * COVERAGE / (|I|*|T|)
-```
-
-- `coverage_objective = 'cell'` → `COVERAGE = sum_{i,t} y_i^t`. Every covered cell
-  counts once. This is the formulation in the Methodology section.
-- `coverage_objective = 'vehicle_count'` → `COVERAGE = sum_{i,t} n_i^t * y_i^t`,
-  where `n_i^t` is the CTM-predicted vehicle count in cell `i` at step `t`. Covering
-  a busy cell is worth more than covering an empty one, so the fleet is pulled toward
-  congested links.
-
-Because `n_i^t` comes from the CTM and enters as a **constant** coefficient on the
-existing binary `y_i^t`, the model stays an MILP — same variables, same constraints.
-
-Raising `alpha_2` buys coverage at the cost of travel time. The paper sweeps
-`alpha_2` from 10 to 3000.
+See [The objective](#the-objective) above for what the two `coverage_objective`
+settings mean.
 
 ## Data
 
@@ -264,8 +393,13 @@ See [`DATA.md`](DATA.md) for the exact tracked/untracked breakdown.
 
 ## Citation
 
-The manuscript is not yet published. Until it is, please cite the software entry in
-[`CITATION.cff`](CITATION.cff). Citation details will be updated here on publication.
+The manuscript is under review at *Transportation Research Part C* (TRC-26-03199);
+the submitted version is included here as
+[`paper/TRC-26-03199.pdf`](paper/TRC-26-03199.pdf).
+
+Until it appears, please cite the software entry in
+[`CITATION.cff`](CITATION.cff). Volume, year, and DOI will be added here on
+publication.
 
 ## License
 
@@ -273,6 +407,9 @@ MIT — see [`LICENSE`](LICENSE).
 
 Note that the dependencies carry their own terms: SUMO is EPL-2.0, and **Gurobi is
 commercial software requiring a separate license**. Neither is redistributed here.
+
+Figures in this README are from the submitted manuscript and are covered by the same
+license as the rest of the repository.
 
 ## Authors
 
