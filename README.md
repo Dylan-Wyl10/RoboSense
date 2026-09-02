@@ -3,8 +3,7 @@
 **Leveraging robotaxi fleets as drive-by sensors for urban traffic monitoring.**
 
 > 📄 **Paper:** [RoboSense: Leveraging Robotaxi Fleets as Drive-by Sensors for Urban
-> Traffic Monitoring](paper/RoboSense-preprint.pdf) — submitted to *Transportation
-> Research Part C* (TRC-26-03199), under review.
+> Traffic Monitoring (PDF)](paper/RoboSense-preprint.pdf)
 > Yilin Wang, Yiheng Feng · Purdue University
 
 Robotaxis are dispatched to carry passengers. But a centrally controlled fleet can do
@@ -87,26 +86,26 @@ state prediction, which improves the next routing decision — the loop closes.
 
 # The formulation
 
-The urban network is modeled as a directed graph $G(I, E)$: each cell $i \in I$ is a
-node and each connection $(i,j) \in E$ a directed edge. Time is discretized, and the
-routing model plans over a horizon of $T$ steps. Everything below is Sec. 3.3 of the
+The urban network is modeled as a directed graph $`G(I, E)`$: each cell $`i \in I`$ is a
+node and each connection $`(i,j) \in E`$ a directed edge. Time is discretized, and the
+routing model plans over a horizon of $`T`$ steps. Everything below is Sec. 3.3 of the
 paper; equation numbers refer to it.
 
 ## Notation
 
 | Symbol | Meaning |
 |---|---|
-| $A$, $I$, $E$ | sets of robotaxis, cells, and directed cell connections |
-| $T$ | planning horizon (set of time steps) |
-| $x_{i,t}^{a}$ | binary variable — 1 if robotaxi $a$ enters cell $i$ at time $t$ |
-| $z_{i,j,t,s}^{a}$ | binary variable — 1 if robotaxi $a$ enters cell $i$ at time $t$ and leaves at time $s$, heading to cell $j$ |
-| $\omega_{i,t}^{a}$ | binary variable — 1 if robotaxi $a$ occupies cell $i$ at time $t$ |
-| $y_{i}^{t}$ | binary variable — 1 if cell $i$ is occupied by any robotaxi at time $t$ |
-| $c_{i}^{t}$ | parameter — time-dependent travel time of cell $i$ for a robotaxi entering at time $t$ |
-| $\Pi_{i,j}$ | binary parameter — 1 if cell $i$ is connected to cell $j$, $(i,j) \in E$ |
-| $o(a)$, $d(a)$ | origin and destination cells of robotaxi $a$ |
-| $\alpha_1$, $\alpha_2$ | objective weights for travel time and coverage |
-| $M$ | a sufficiently big number |
+| $`A`$, $`I`$, $`E`$ | sets of robotaxis, cells, and directed cell connections |
+| $`T`$ | planning horizon (set of time steps) |
+| $`x_{i,t}^{a}`$ | binary variable — 1 if robotaxi $`a`$ enters cell $`i`$ at time $`t`$ |
+| $`z_{i,j,t,s}^{a}`$ | binary variable — 1 if robotaxi $`a`$ enters cell $`i`$ at time $`t`$ and leaves at time $`s`$, heading to cell $`j`$ |
+| $`\omega_{i,t}^{a}`$ | binary variable — 1 if robotaxi $`a`$ occupies cell $`i`$ at time $`t`$ |
+| $`y_{i}^{t}`$ | binary variable — 1 if cell $`i`$ is occupied by any robotaxi at time $`t`$ |
+| $`c_{i}^{t}`$ | parameter — time-dependent travel time of cell $`i`$ for a robotaxi entering at time $`t`$ |
+| $`\Pi_{i,j}`$ | binary parameter — 1 if cell $`i`$ is connected to cell $`j`$, $`(i,j) \in E`$ |
+| $`o(a)`$, $`d(a)`$ | origin and destination cells of robotaxi $`a`$ |
+| $`\alpha_1`$, $`\alpha_2`$ | objective weights for travel time and coverage |
+| $`M`$ | a sufficiently big number |
 
 ## Objective function
 
@@ -119,36 +118,36 @@ $$
 $$
 
 The first term sums the traverse times of every cell on every robotaxi's route; the
-second counts how much of the cell–time grid the fleet observes. $\lvert I \rvert$ and
-$\lvert T \rvert$ are constants, so the normalization does not affect the optimum —
-the ratio $\alpha_1 : \alpha_2$ is what sets the trade-off.
+second counts how much of the cell–time grid the fleet observes. $`\lvert I \rvert`$ and
+$`\lvert T \rvert`$ are constants, so the normalization does not affect the optimum —
+the ratio $`\alpha_1 : \alpha_2`$ is what sets the trade-off.
 
 ## Constraints
 
 The paper states these as Eqs. (5)–(24); the model **P1** is Eq. (4) subject to
 Eqs. (5)–(11), (16)–(21), and (23)–(24). In words, four groups:
 
-- **Route consistency ($x$–$z$ connection, Eqs. 5–6).** A robotaxi entering cell $i$
-  at time $t$ commits to exactly one combination of departure time and downstream
-  cell, and only a cell actually connected to $i$ ($\Pi_{i,j} = 1$) can be chosen.
-- **Network flow (Eqs. 7–11).** Flow conservation chains the $z$ variables into a
-  time-continuous feasible path for each robotaxi; every trip starts at $o(a)$ at
-  $t = 0$ and reaches $d(a)$; a robotaxi cannot enter more than one cell at the same
+- **Route consistency ($`x`$–$`z`$ connection, Eqs. 5–6).** A robotaxi entering cell $`i`$
+  at time $`t`$ commits to exactly one combination of departure time and downstream
+  cell, and only a cell actually connected to $`i`$ ($`\Pi_{i,j} = 1`$) can be chosen.
+- **Network flow (Eqs. 7–11).** Flow conservation chains the $`z`$ variables into a
+  time-continuous feasible path for each robotaxi; every trip starts at $`o(a)`$ at
+  $`t = 0`$ and reaches $`d(a)`$; a robotaxi cannot enter more than one cell at the same
   time; each cell is visited at most once per robotaxi (no subtours).
-- **Vehicle-level occupation ($x$–$\omega$, Eqs. 12–21).** If robotaxi $a$ enters
-  cell $i$ at time $t$, then $\omega_{i,t}^{a}$ is 1 from $t$ through
-  $t + c_{i}^{t} - 1$ and 0 otherwise — occupancy lasts exactly as long as the cell's
-  travel time. Stated conditionally in Eqs. (12)–(15) and linearized with big-$M$ in
+- **Vehicle-level occupation ($`x`$–$`\omega`$, Eqs. 12–21).** If robotaxi $`a`$ enters
+  cell $`i`$ at time $`t`$, then $`\omega_{i,t}^{a}`$ is 1 from $`t`$ through
+  $`t + c_{i}^{t} - 1`$ and 0 otherwise — occupancy lasts exactly as long as the cell's
+  travel time. Stated conditionally in Eqs. (12)–(15) and linearized with big-$`M`$ in
   Eqs. (16)–(21).
-- **Cell-level occupation ($\omega$–$y$, Eqs. 22–24).** $y_{i}^{t} = 1$ exactly when
-  at least one robotaxi occupies cell $i$ at time $t$, again big-$M$ linearized. The
+- **Cell-level occupation ($`\omega`$–$`y`$, Eqs. 22–24).** $`y_{i}^{t} = 1`$ exactly when
+  at least one robotaxi occupies cell $`i`$ at time $`t`$, again big-$`M`$ linearized. The
   paper assumes a perfect detection model: every vehicle in an occupied cell is
   observed.
 
-Two model inputs are worth knowing about. The cell travel time $c_{i}^{t}$ is not
+Two model inputs are worth knowing about. The cell travel time $`c_{i}^{t}`$ is not
 exogenous — it is derived from CTM-predicted densities through a trapezoidal
 fundamental diagram (Eqs. 25–26), which is how prediction quality feeds back into
-routing. And an arc-elimination rule (Eq. 27) removes time-infeasible $z$ arcs in
+routing. And an arc-elimination rule (Eq. 27) removes time-infeasible $`z`$ arcs in
 advance, so the binary-variable count grows linearly with fleet size, cell
 connections, and horizon.
 
@@ -159,16 +158,16 @@ The released code exposes both coverage terms from the paper behind one switch
 
 | `coverage_objective` | Coverage term | Behaviour |
 |---|---|---|
-| `'cell'` | $\sum_{i,t} y_{i}^{t}$ | every covered cell counts once — the base formulation above (Sec. 3.3) |
-| `'vehicle_count'` | $\sum_{i,t} n_{i}^{t} \, y_{i}^{t}$ | cells weighted by predicted vehicle count — the Sec. 4.3 extension |
+| `'cell'` | $`\sum_{i,t} y_{i}^{t}`$ | every covered cell counts once — the base formulation above (Sec. 3.3) |
+| `'vehicle_count'` | $`\sum_{i,t} n_{i}^{t} \, y_{i}^{t}`$ | cells weighted by predicted vehicle count — the Sec. 4.3 extension |
 
-The extension replaces $\sum y_{i}^{t}$ with $\sum n_{i}^{t} y_{i}^{t}$ in Eq. (4),
-where $n_{i}^{t}$ — the number of vehicles in cell $i$ at time step $t$ — is
+The extension replaces $`\sum y_{i}^{t}`$ with $`\sum n_{i}^{t} y_{i}^{t}`$ in Eq. (4),
+where $`n_{i}^{t}`$ — the number of vehicles in cell $`i`$ at time step $`t`$ — is
 calculated by the CTM and enters as a **constant** coefficient, so the model remains
 an MILP with unchanged variables and constraints. Covering a busy cell is now worth
 more than covering an empty one, which pulls routes toward congested links.
 
-$\alpha_2$ is the dial. Raising it buys coverage at the cost of travel time.
+$`\alpha_2`$ is the dial. Raising it buys coverage at the cost of travel time.
 
 ## What the objective actually does
 
@@ -457,13 +456,9 @@ See [`DATA.md`](DATA.md) for the exact tracked/untracked breakdown.
 
 ## Citation
 
-The manuscript is under review at *Transportation Research Part C* (TRC-26-03199);
-the preprint is included here as
-[`paper/RoboSense-preprint.pdf`](paper/RoboSense-preprint.pdf).
-
-Until it appears, please cite the software entry in
-[`CITATION.cff`](CITATION.cff). Volume, year, and DOI will be added here on
-publication.
+The paper is included as
+[`paper/RoboSense-preprint.pdf`](paper/RoboSense-preprint.pdf); please cite via
+[`CITATION.cff`](CITATION.cff).
 
 ## License
 
