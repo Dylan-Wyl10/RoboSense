@@ -171,17 +171,27 @@ $`\alpha_2`$ is the dial. Raising it buys coverage at the cost of travel time.
 
 ## What the objective actually does
 
-The clearest way to see it is a toy network with four robotaxis, plotting which cell
-is occupied at which time step:
+Four robotaxis on a toy network, all travelling from cell 25 (orange, top left) to
+cell 26 (orange, bottom right). Route them twice with different weights and compare
+row by row — blue cells are the route each vehicle takes:
 
-| `α₁:α₂ = 1:0` — travel time only | `α₁:α₂ = 1:10⁶` — monitoring emphasized |
-|---|---|
-| <img src="docs/img/fig5a-coverage-traveltime.png" width="100%"> | <img src="docs/img/fig5b-coverage-monitoring.png" width="100%"> |
+**`α₁:α₂ = 1:0` — travel time only.** All four vehicles pick the identical shortest
+path:
 
-*Rows are cells, columns are time steps; shading is how many vehicles are in that cell.
-Left: the four vehicles stack onto identical cells at identical times — dark bands,
-mostly empty grid. Right: they fan out across distinct cells, filling far more of the
-space-time grid with the same four vehicles.*
+| Vehicle 1 | Vehicle 2 | Vehicle 3 | Vehicle 4 |
+|---|---|---|---|
+| <img src="docs/img/fig5-toynet-route-shared.png" width="100%"> | <img src="docs/img/fig5-toynet-route-shared.png" width="100%"> | <img src="docs/img/fig5-toynet-route-shared.png" width="100%"> | <img src="docs/img/fig5-toynet-route-shared.png" width="100%"> |
+
+**`α₁:α₂ = 1:10⁶` — monitoring emphasized.** The four routes spread across the
+network:
+
+| Vehicle 1 | Vehicle 2 | Vehicle 3 | Vehicle 4 |
+|---|---|---|---|
+| <img src="docs/img/fig5-toynet-route-v1.png" width="100%"> | <img src="docs/img/fig5-toynet-route-v2.png" width="100%"> | <img src="docs/img/fig5-toynet-route-v3.png" width="100%"> | <img src="docs/img/fig5-toynet-route-v4.png" width="100%"> |
+
+*Top row: same cells, same times — four vehicles delivering redundant observations.
+Bottom row: the same four vehicles cover far more of the network, at the cost of some
+extra travel time.*
 
 # Case study
 
