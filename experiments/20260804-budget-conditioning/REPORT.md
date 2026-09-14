@@ -1,0 +1,191 @@
+# Budget conditioning (option (a)) — replacing the α weight with a per-vehicle budget
+
+**Issue:** YIL-113 · **Branch:** `exp/fm-mcvrp-local` · **Date:** 2026-08-04
+**Scope:** adapt to our instances (not a paper reproduction) — the literature anchor is
+attribute conditioning as used by RouteFinder / MTPOMO, applied to a budget attribute.
+**Verdict: ADOPT.** Budget conditioning replaces α as the controllable parameter, the
+model learns a continuous budget semantics, and the whole pipeline is cheaper to run.
+
+---
+
+## 1. Why this was done
+
+The 2026-08-03 analysis established that in
+
+```
+min ( α₁·Σcost − α₂·Σ y[i,τ] ) / (V·H)
+```
+
+the two terms are marginally 1:1 coupled (one extra step buys at most one fresh cell),
+so `Δobj = (α₁ − α₂)/(V·H)`. The sign flips at `α₂/α₁ = 1` **independently of the
+normalizer** — confirmed separately that both terms already lie in (0,1] before α, with
+max exactly 1.000 across all 6100 old labels. α is therefore a **regime switch**, not a
+dial, and the real limit on coverage is the horizon `H`.
+
+The user's decision (2026-08-04): pursue **(a) per-vehicle budget only**; defer
+**(b) heterogeneous cell utility wᵢ** — stay in the "any cell is as good as any other"
+regime for now.
+
+## 2. What was implemented
+
+| File (all NEW; `neural_route/` untouched) | Role |
+|---|---|
+| `budget_milp.py` | per-vehicle-budget MILP + `budgets_from_slack` + `objective_budget` |
+| `budget_datagen.py` | parallel Gurobi label farm with ρ sampling, 7 modes |
+| `budget_train.py` | budget-conditioned model, training, 5-layer eval, response curve |
+| `aggregate.py` | 3-seed aggregation → `results.csv`, `results/agg_3seed.json` |
+| `sweep_alpha.py` / `sweep_budget.py` | the two controlled sweeps on one fixed instance |
+| `build_figs.py` / `build_method_figs.py` | result figures / method figures |
+| `build_deck_final.py` | the consolidated deck (15 slides, self-contained) |
+| `run_farm.sh` / `run_pipeline.sh` | resumable farm; end-to-end pipeline |
+
+**Formulation.** Vehicle *v* gets budget `Bᵥ` and a hard deadline `t0ᵥ + Bᵥ`. Objective
+unchanged; normalizer `V·H → Σᵥ Bᵥ`, which preserves the required bound
+(`cov ≤ cost ≤ Σᵥ Bᵥ`, so both terms stay in (0,1] before α). Commodity key
+`(o,d,t0) → (o,d,t0,B)`; the time-expanded DAG is pruned at `min(H, t0+B)`; the
+coverage grid stays on `[0,H)`.
+
+**Slack-ratio parameterization.** `Bᵥ = ⌈ρᵥ · τᵐⁱⁿ(oᵥ,dᵥ,t0ᵥ)⌉`. An absolute budget is
+not comparable across ODs (vacuous for near pairs, infeasible for far ones); ρ is, and ρ
+is what the model is conditioned on.
+
+**Model deltas (two lines of substance).**
+1. Task token `Emb_o + Emb_d + Proj(t0)` → `+ Proj([ρᵥ, Bᵥ/H])` (+0.3 k params).
+2. Decoder mask threshold `min_finish(j,t,d) ≤ H` → `≤ t0ᵥ + Bᵥ`.
+
+The second is why budgets generalize: the budget has a **hard mechanical channel** into
+decoding, not only a soft preference implied by labels. An unseen budget still yields a
+feasible route by construction.
+
+**Not implemented (deliberate):** heterogeneous wᵢ (deferred by the user); multi-sample /
+non-greedy decoding; data-volume slope; the 5×5 real network.
+
+## 3. Verification before scaling
+
+- **Reduction check.** At `Bᵥ ≥ H` the budget MILP returns the previous full-horizon
+  solution **link-for-link** (cost 999 / cov 999 / lengths [10,12,10]). It is a strict
+  generalization, not a different problem.
+- **Decomposition check.** Every solve asserts flow-decomposed objective == Gurobi's
+  `ObjVal` to 1e-6 and re-validates every per-vehicle deadline (`objective_budget`).
+- **Controlled sweeps, one fixed instance (V=3, seed 7), MIPGap 0.5%:**
+
+| control | values swept | distinct solutions | behaviour |
+|---|---|---|---|
+| α₂ (budget = H) | 13 (0.10 → 0.90) | **2** | 172 cells for α₂ ≤ 0.48, 999 for α₂ ≥ 0.52 — step |
+| ρ (α = 0.3/0.7) | 10 (1.0 → 6.0) | **10** | 172 → 200 → 231 → 287 → 314 → 407 → 450 → 497 → 626 → 999 — smooth, monotone |
+
+## 4. Label farm
+
+10 780 labels, **0 errors, 0 hit the 60 s cap** (previous farm: 5.1 % capped, so its
+V=8 references were loose). Mean solve **0.90 s** vs 26 s before — tight budgets prune
+the DAG, so the farm got ~30× cheaper. ~17 min wall-clock on 15 workers.
+
+`train 8000 · test 800 · zeroshot 400 · vextrap 400 · rhointerp 400 · rhoextrap 300 ·
+curve 60 instances × 8 ρ`. Trained ρ anchors {1.0, 1.5, 2.0, 3.0}; **held out** {1.25,
+1.75} (interpolation) and {4.0} (extrapolation). 65 % of fleets heterogeneous (per-vehicle
+ρ), 35 % homogeneous.
+
+## 5. Results — 3 seeds × 60 epochs, 1.04 M params, ~4 min/seed on one RTX 3090
+
+| layer | n | feasible | mean gap | rel. gap (mean ± std) | match-or-beat |
+|---|---|---|---|---|---|
+| L1 same-distribution | 800 | **800/800** | 0.0336 ± 0.0012 | **9.2 % ± 0.3** | 274 / 800 |
+| L2 OD zero-shot | 400 | **400/400** | 0.0857 ± 0.0026 | 24.0 % ± 0.7 | 60 / 400 |
+| L3 fleet extrap. V∈{5,8} | 400 | **400/400** | 0.0548 ± 0.0026 | 15.2 % ± 0.7 | 52 / 400 |
+| **L4a UNSEEN budget (interp)** | 400 | **400/400** | 0.0602 ± 0.0001 | 16.7 % ± 0.0 | 31 / 400 |
+| **L4b UNSEEN budget (extrap ρ=4)** | 300 | **300/300** | 0.1064 ± 0.0014 | 27.8 % ± 0.4 | 0 / 300 |
+
+2 300 unseen cases, **100 % feasible everywhere**, 6–9 ms per case.
+
+**Response curve** (60 fixed instances re-solved at every ρ, `results/curve.json`):
+mean coverage tracks Gurobi's monotone ramp across the whole range, including at the
+three ρ values that appear in no training label. At ρ = 1 the budget forces the
+min-time route and the model is **exactly optimal, 60/60, gap 0.0**; the undershoot
+grows with slack (ρ = 4: 514 vs 708 cells).
+
+## 6. Gap analysis / honest caveats
+
+- **L4b is the weakest layer, as expected.** ρ = 4 sits outside the trained range
+  [1, 3]; interpolation (L4a, 16.7 %) is much healthier than extrapolation (27.8 %).
+  Cheapest fix: widen the training ρ range — not a modelling change.
+- **The undershoot is a decoding limit, not a feasibility one.** Greedy decoding commits
+  early; multi-sample decoding is the untried lever and costs no training.
+- **The degeneracy from the previous round is unchanged and known:** with uniform utility,
+  overlap = 0 in ~92 % of labels, so coverage ≈ cost. The budget controls *how much* to
+  roam; *which* cells to prefer would need wᵢ. Deferred by decision, not by oversight.
+- Single machine, single GPU; no cross-network transfer claim is made.
+
+## 7. Verdict and next step
+
+**ADOPT.** The controllable parameter is now physical (shift length / energy), continuous,
+verified to generalize to unseen values, and it moves the benchmark into the
+Orienteering / Team-Orienteering family that the routing foundation-model literature
+actually transfers to. Labelling also got ~30× cheaper, which unblocks scale.
+
+Next, in order: (1) multi-sample decoding — free accuracy at inference; (2) widen the ρ
+range to repair L4b; (3) data-volume slope on the now-cheap farm; (4) then wᵢ, when the
+user wants "which cells" to become a real decision.
+
+---
+
+## 2026-08-06 — mod-96 re-run (YIL-125 r4): the environment's cost law changed
+
+**Decision (user, YIL-125):** `c(i,t) = ((base(i)+t) mod 96)//4 + 1 + δᵢ` —
+periodic congestion, bounded ≤ 24 + δᵢ. The wrap breaks FIFO, so all
+earliest-arrival machinery moved to an exact time-expanded (link, entry-time)
+search (`modenv.py`; `neural_route/` untouched; single-label TD-Dijkstra is
+wrong on 18.1 % of (OD, t₀) queries under this cost).
+
+**New benchmark (everything re-derived):** H = 135 (was 338) · 10 780 labels
+in `data_mod/` (0 errors, 32 = 0.3 % hit the 60 s cap — best incumbent kept,
+2.08 s mean) · MAX_LEN 84 → 128 (mod routes are longer; farm max seq 88) ·
+3 seeds retrained (~4 min/seed, 1.04 M params unchanged).
+
+| layer | n | feasible | rel. gap % (mean ± std) | match-or-beat |
+|---|---|---|---|---|
+| L1 same-dist | 800 | 800/800 | 12.7 ± 0.4 | 162/800 |
+| L2 OD zero-shot | 400 | 400/400 | 16.1 ± 1.3 | 64 |
+| L3 V ∈ {5,8} | 400 | 400/400 | 16.7 ± 0.5 | 36 |
+| L4a ρ interp | 400 | 400/400 | 15.1 ± 0.4 | 27 |
+| L4b ρ extrap 4.0 | 300 | 300/300 | 18.0 ± 0.5 | 4 |
+
+100 % feasible everywhere · 8–14 ms/case · response curve: near-exact at
+ρ = 1 (mean gap 0.1 %), monotone tracking incl. unseen ρ, undershoot at
+ρ = 4 (339 vs 409 cells). NOT comparable to the pre-mod table (different
+cost law, H, labels). Gap profile flattened: zero-shot/extrapolation layers
+improved, L1 slightly worse.
+
+**Environment facts established on the way** (all measured, in the deck):
+zero-overlap regime persists (median K/C = 1.000, 86.8 % of labels exact;
+65–92 % per shard — larger fleets overlap more) · α-sweep now shows the
+theorem's knife-edge measured AT α₂ = 0.5 (three plateaus 113 / 330-tie /
+391) · budget sweep stays a clean monotone dial (113 → 391, overlap 0) ·
+sawtooth oddity on record: a congested day can make 4/56 ODs FASTER
+(delay pushes a later link past its wrap into the cheap zone).
+
+**Verdict: adopt** (the mod-96 benchmark replaces pre-mod as the working
+baseline; pre-mod artifacts remain untouched in `data/`, `results/`,
+`results*.csv` and under tag `benchmark-v1-20260804`).
+
+---
+
+## 2026-08-06 later — mod-24 simplification (YIL-125 r5)
+
+**Decision (user):** drop the //4 — `c(i,t) = (base(i)+t) mod 24 + 1 + δᵢ`.
+Identity `((x mod 96)//4 == (x//4) mod 24` means the r4 law was already a
+mod-24 sawtooth on a 4×-slowed clock; the simplification keeps the amplitude
+(cost ≤ 24 + δ) and makes the congestion cycle 24 steps. H = 128 (was 135).
+Single-label TD-Dijkstra now wrong on 28.4 % of queries (was 18.1 %) — the
+exact state-search machinery from r4 absorbs this with zero changes.
+
+**Benchmark v3 (data_mod24/ + results_mod24/):** 10 780 labels, 0 errors,
+7 = 0.06 % cap hits, 1.17 s mean, ~18 min farm; max seq 100 (MAX_LEN 128
+holds); 3 seeds. 100 % feasible; rel gaps L1 14.1 · L2 13.3 · L3 16.2 ·
+L4a 13.8 · L4b 15.7 % — flatter still; L1 123/800 match-or-beat; 8–14 ms.
+Curve: ρ=1 mean gap 0.4 %, ρ=4 undershoot 383 vs 448. K/C median 1.000,
+zero-overlap 84.9 % (62–93 per shard). Sweeps: plateaus 96 / 337-tie / 365;
+dial 96 → 365. Sampled δ-day now shifts ODs −20…+17 with 18/56 FASTER
+(wrap-shortcut effect is stronger under the faster cycle — on the slide).
+
+**Verdict: adopt** (benchmark v3 = the working baseline; mod-96 v2 preserved
+in data_mod/ + results_mod/ + results_*_mod.csv, pre-mod v1 under the tag).

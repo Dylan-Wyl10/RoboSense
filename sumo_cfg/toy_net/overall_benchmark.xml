@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-10-10 16:38:36 by Eclipse SUMO sumo Version 1.18.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="sumo_cfg/toy_net/toy_net1.net.xml"/>
+        <route-files value="sumo_cfg/toy_net/od.rou.xml"/>
+        <additional-files value="sumo_cfg/toy_net/v_type.add.xml"/>
+    </input>
+
+    <output>
+        <summary-output value="sumo_cfg/toy_net/summary_benchmark.xml"/>
+        <tripinfo-output value="sumo_cfg/toy_net/tripinfo_benchmark.xml"/>
+        <statistic-output value="sumo_cfg/toy_net/overall_benchmark.xml"/>
+    </output>
+
+    <time>
+        <begin value="0"/>
+        <end value="36000"/>
+        <step-length value="0.1"/>
+    </time>
+
+    <processing>
+        <lateral-resolution value="0.1"/>
+        <route-steps value="200"/>
+        <no-internal-links value="False"/>
+        <ignore-route-errors value="true"/>
+        <time-to-teleport value="200"/>
+        <time-to-teleport.highways value="0"/>
+        <eager-insert value="False"/>
+    </processing>
+
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <traci_server>
+        <remote-port value="58559"/>
+    </traci_server>
+
+    <gui_only>
+        <gui-settings-file value="sumo_cfg/toy_net/toy_net.view.xml"/>
+    </gui_only>
+
+</configuration>
+-->
+
+<statistics xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/statistic_file.xsd">
+</statistics>

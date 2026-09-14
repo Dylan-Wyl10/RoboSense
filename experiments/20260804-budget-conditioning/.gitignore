@@ -1,0 +1,3 @@
+data/
+results/*.pt
+__pycache__/

@@ -1,0 +1,6 @@
+layer,description,n,feasible_min_over_seeds,gap_mean,gap_std,rel_gap_pct_mean,rel_gap_pct_std,match_or_better_mean,ms_per_case
+L1_same,L1 same-distribution,800,800,0.03358,0.00117,9.2,0.32,274.3,7.1
+L2_odzero,L2 OD zero-shot,400,400,0.08574,0.00257,23.96,0.72,59.7,6.7
+L3_vextrap,"L3 fleet extrapolation V in {5,8}",400,400,0.05484,0.00256,15.25,0.71,52.3,9.4
+L4a_rhoint,L4a UNSEEN rho (interp 1.25/1.75),400,400,0.06025,0.00015,16.66,0.04,30.7,5.8
+L4b_rhoext,L4b UNSEEN rho (extrap 4.0),300,300,0.10637,0.00143,27.8,0.37,0.0,8.3

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-10-18 04:33:04 by Eclipse SUMO sumo Version 1.18.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="sumo_cfg/toy_net/toy_net1.net.xml"/>
+        <route-files value="sumo_cfg/toy_net/od.rou.xml"/>
+        <additional-files value="sumo_cfg/toy_net/v_type.add.xml"/>
+    </input>
+
+    <output>
+        <summary-output value="sumo_cfg/toy_net/../../../result/sumolog/summary500.xml"/>
+        <tripinfo-output value="sumo_cfg/toy_net/../../../result/sumolog/tripinfo500.xml"/>
+        <statistic-output value="sumo_cfg/toy_net/../../../result/sumolog/overall500.xml"/>
+    </output>
+
+    <time>
+        <begin value="0"/>
+        <end value="3600"/>
+        <step-length value="0.1"/>
+    </time>
+
+    <processing>
+        <lateral-resolution value="0.1"/>
+        <route-steps value="200"/>
+        <no-internal-links value="False"/>
+        <ignore-route-errors value="true"/>
+        <time-to-teleport value="200"/>
+        <time-to-teleport.highways value="0"/>
+        <eager-insert value="False"/>
+    </processing>
+
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <traci_server>
+        <remote-port value="46191"/>
+    </traci_server>
+
+    <gui_only>
+        <gui-settings-file value="sumo_cfg/toy_net/toy_net.view.xml"/>
+    </gui_only>
+
+</configuration>
+-->
+
+<statistics xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/statistic_file.xsd">
+    <performance clockBegin="1697617984.03" clockEnd="1697758315.49" clockDuration="140331.46" traciDuration="138185.87" realTimeFactor="0.04" vehicleUpdatesPerSecond="581.90" personUpdatesPerSecond="0.00" begin="0.00" end="6041.20" duration="6041.20"/>
+    <vehicles loaded="8400" inserted="8400" running="10" waiting="0"/>
+    <teleports total="30" jam="10" yield="6" wrongLane="14"/>
+    <safety collisions="0" emergencyStops="2" emergencyBraking="3"/>
+    <persons loaded="0" running="0" jammed="0"/>
+    <personTeleports total="0" abortWait="0" wrongDest="0"/>
+    <vehicleTripStatistics count="8390" routeLength="3625.13" speed="4.04" duration="968.84" waitingTime="548.38" timeLoss="705.13" departDelay="0.04" departDelayWaiting="-1.00" totalTravelTime="8128596.70" totalDepartDelay="379.19"/>
+    <pedestrianStatistics number="0" routeLength="0.00" duration="0.00" timeLoss="0.00"/>
+    <rideStatistics number="0"/>
+    <transportStatistics number="0"/>
+</statistics>

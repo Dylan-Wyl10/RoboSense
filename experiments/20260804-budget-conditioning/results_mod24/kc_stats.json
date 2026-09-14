@@ -1,0 +1,74 @@
+{
+ "curve_seed60000": {
+  "n": 480,
+  "errors": 0,
+  "kc_median": 1.0,
+  "zero_overlap_pct": 81.7,
+  "max_seq": 92,
+  "solve_mean": 1.89,
+  "solve_max": 40.8
+ },
+ "rhoextrap_seed50000": {
+  "n": 300,
+  "errors": 0,
+  "kc_median": 1.0,
+  "zero_overlap_pct": 92.7,
+  "max_seq": 94,
+  "solve_mean": 10.4,
+  "solve_max": 62.4
+ },
+ "rhointerp_seed40000": {
+  "n": 400,
+  "errors": 0,
+  "kc_median": 1.0,
+  "zero_overlap_pct": 85.0,
+  "max_seq": 74,
+  "solve_mean": 0.25,
+  "solve_max": 0.9
+ },
+ "test_seed10000": {
+  "n": 800,
+  "errors": 0,
+  "kc_median": 1.0,
+  "zero_overlap_pct": 83.6,
+  "max_seq": 84,
+  "solve_mean": 0.76,
+  "solve_max": 18.1
+ },
+ "train_seed0": {
+  "n": 8000,
+  "errors": 0,
+  "kc_median": 1.0,
+  "zero_overlap_pct": 86.2,
+  "max_seq": 92,
+  "solve_mean": 0.83,
+  "solve_max": 39.3
+ },
+ "vextrap_seed30000": {
+  "n": 400,
+  "errors": 0,
+  "kc_median": 1.0,
+  "zero_overlap_pct": 62.0,
+  "max_seq": 100,
+  "solve_mean": 2.11,
+  "solve_max": 32.9
+ },
+ "zeroshot_seed20000": {
+  "n": 400,
+  "errors": 0,
+  "kc_median": 1.0,
+  "zero_overlap_pct": 83.2,
+  "max_seq": 64,
+  "solve_mean": 0.95,
+  "solve_max": 9.5
+ },
+ "ALL": {
+  "n": 10780,
+  "kc_median": 1.0,
+  "zero_overlap_pct": 84.9,
+  "max_seq": 100,
+  "solve_mean": 1.17,
+  "solve_max": 62.4,
+  "cap_hits": 7
+ }
+}

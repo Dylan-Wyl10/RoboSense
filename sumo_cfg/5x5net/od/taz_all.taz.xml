@@ -1,0 +1,40 @@
+<addtional>
+    <tazs>
+        <taz id="AA_in" edges="E101 E102"/>
+        <taz id="AA_out" edges="-E101 -E102"/>
+        <taz id="AB_in" edges="E103"/>
+        <taz id="AB_out" edges="-E103"/>
+        <taz id="AC_in" edges="E104"/>
+        <taz id="AC_out" edges="-E104"/>
+        <taz id="AD_in" edges="E105"/>
+        <taz id="AD_out" edges="-E105"/>
+        <taz id="AE_in" edges="E106 E107"/>
+        <taz id="AE_out" edges="-E106 -E107"/>
+
+        <taz id="BE_in" edges="E108"/>
+        <taz id="BE_out" edges="-E108"/>
+        <taz id="CE_in" edges="E109"/>
+        <taz id="CE_out" edges="-E109"/>
+        <taz id="DE_in" edges="E110"/>
+        <taz id="DE_out" edges="-E110"/>
+        <taz id="EE_in" edges="E111 E112"/>
+        <taz id="EE_out" edges="-E111 -E112"/>
+
+        <taz id="ED_in" edges="E113"/>
+        <taz id="ED_out" edges="-E113"/>
+        <taz id="EC_in" edges="E114"/>
+        <taz id="EC_out" edges="-E114"/>
+        <taz id="EB_in" edges="E115"/>
+        <taz id="EB_out" edges="-E115"/>
+        <taz id="EA_in" edges="E116 E117"/>
+        <taz id="EA_out" edges="-E116 -E117"/>
+
+        <taz id="DA_in" edges="E118"/>
+        <taz id="DA_out" edges="-E118"/>
+        <taz id="CA_in" edges="E119"/>
+        <taz id="CA_out" edges="-E119"/>
+        <taz id="BA_in" edges="E120"/>
+        <taz id="BA_out" edges="-E120"/>
+
+    </tazs>
+</addtional>
