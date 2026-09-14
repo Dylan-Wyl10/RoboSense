@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-11-26 18:33:32 by Eclipse SUMO duarouter Version 1.18.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/duarouterConfiguration.xsd">
+
+    <input>
+        <net-file value="049/../../5x5net.net.xml"/>
+        <additional-files value="049/../../v_type.add.xml"/>
+        <route-files value="049/../048/od_file_bgv.odtrips_048.rou.alt.xml"/>
+        <weight-files value="049/../048/dump_900.xml"/>
+    </input>
+
+    <output>
+        <output-file value="049/od_file_bgv.odtrips_049.rou.xml"/>
+        <vtype-output value="049/../dummy.xml"/>
+        <exit-times value="False"/>
+    </output>
+
+    <processing>
+        <max-alternatives value="5"/>
+        <with-taz value="False"/>
+        <routing-algorithm value="dijkstra"/>
+        <weights.expand value="true"/>
+        <gawron.beta value="0.9"/>
+        <gawron.a value="0.5"/>
+        <keep-all-routes value="False"/>
+        <logit.beta value="0.15"/>
+        <logit.gamma value="1.0"/>
+    </processing>
+
+    <time>
+        <begin value="0"/>
+    </time>
+
+    <report>
+        <verbose value="False"/>
+        <no-warnings value="False"/>
+        <ignore-errors value="False"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <random_number>
+        <random value="False"/>
+    </random_number>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vehicle id="cav1" type="cav" depart="2.83" departLane="free" departSpeed="max" fromTaz="BE_in" toTaz="DA_out">
+        <route edges="E108 E38 -E12 -E11 -E10 E27 -E13 -E118"/>
+    </vehicle>
+    <vehicle id="bgv2458" type="bgv" depart="3.69" departLane="free" departSpeed="max" fromTaz="AC_in" toTaz="EC_out">
+        <route edges="E104 E29 E30 E31 E32 -E114"/>
+    </vehicle>
+    <vehicle id="bgv8638" type="bgv" depart="4.11" departLane="free" departSpeed="max" fromTaz="EA_in" toTaz="AE_out">
+        <route edges="E116 E17 -E28 E14 E15 -E35 -E34 -E33 E4 -E106"/>
+    </vehicle>
+    <vehicle id="bgv9074" type="bgv" depart="4.89" departLane="free" departSpeed="max" fromTaz="EA_in" toTaz="AE_out">
+        <route edges="E116 E17 E18 E19 E20 -E40 -E39 -E38 -E37 -E106"/>
+    </vehicle>
+    <vehicle id="bgv12876" type="bgv" depart="5.29" departLane="free" departSpeed="max" fromTaz="EE_in" toTaz="AA_out">
+        <route edges="E111 -E20 -E19 -E32 -E14 -E27 -E26 -E25 -E1 -E101"/>
+    </vehicle>
+    <vehicle id="bgv8957" type="bgv" depart="5.38" departLane="free" departSpeed="max" fromTaz="EA_in" toTaz="AE_out">
+        <route edges="E116 E17 -E28 E14 E15 -E35 -E34 -E33 E4 -E107"/>
+    </vehicle>
+    <vehicle id="bgv7424" type="bgv" depart="5.67" departLane="free" departSpeed="max" fromTaz="DA_in" toTaz="BE_out">
+        <route edges="E118 -E23 -E22 E5 E6 E7 E8 -E108"/>
+    </vehicle>
+    <vehicle id="bgv12162" type="bgv" depart="6.13" departLane="free" departSpeed="max" fromTaz="EE_in" toTaz="AA_out">
+        <route edges="E112 -E20 -E36 -E15 -E14 -E27 -E9 -E22 -E21 -E101"/>
+    </vehicle>
+    <vehicle id="bgv6972" type="bgv" depart="6.33" departLane="free" departSpeed="max" fromTaz="CE_in" toTaz="CA_out">
+        <route edges="E109 -E12 -E11 -E10 -E9 -E119"/>
+    </vehicle>
+    <vehicle id="bgv9471" type="bgv" depart="7.48" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 -E28 E14 E15 -E35 -E34 -E33 -E105"/>
+    </vehicle>
+    <vehicle id="bgv7150" type="bgv" depart="7.77" departLane="free" departSpeed="max" fromTaz="CE_in" toTaz="CA_out">
+        <route edges="E109 -E12 -E11 -E10 -E9 -E119"/>
+    </vehicle>
+    <vehicle id="bgv4137" type="bgv" depart="8.70" departLane="free" departSpeed="max" fromTaz="BA_in" toTaz="DE_out">
+        <route edges="E120 E5 E6 E7 E8 E38 E39 -E110"/>
+    </vehicle>
+    <vehicle id="bgv3601" type="bgv" depart="8.99" departLane="free" departSpeed="max" fromTaz="AE_in" toTaz="EA_out">
+        <route edges="E107 -E4 -E3 -E2 E25 -E5 E22 E23 E24 -E117"/>
+    </vehicle>
+    <vehicle id="bgv10209" type="bgv" depart="9.14" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 E18 -E32 -E31 -E30 E7 -E33 -E105"/>
+    </vehicle>
+    <vehicle id="bgv7083" type="bgv" depart="9.39" departLane="free" departSpeed="max" fromTaz="CE_in" toTaz="CA_out">
+        <route edges="E109 -E12 -E11 -E10 -E9 -E119"/>
+    </vehicle>
+    <vehicle id="bgv12143" type="bgv" depart="9.91" departLane="free" departSpeed="max" fromTaz="EE_in" toTaz="AA_out">
+        <route edges="E111 -E20 -E36 -E15 -E14 -E27 -E9 -E22 -E21 -E102"/>
+    </vehicle>
+    <vehicle id="bgv1732" type="bgv" depart="10.16" departLane="free" departSpeed="max" fromTaz="AB_in" toTaz="ED_out">
+        <route edges="E103 E2 E29 E7 E34 E35 E36 -E113"/>
+    </vehicle>
+    <vehicle id="bgv2246" type="bgv" depart="10.87" departLane="free" departSpeed="max" fromTaz="AC_in" toTaz="EC_out">
+        <route edges="E104 E29 E30 E31 E32 -E114"/>
+    </vehicle>
+    <vehicle id="bgv6499" type="bgv" depart="11.86" departLane="free" departSpeed="max" fromTaz="CA_in" toTaz="CE_out">
+        <route edges="E119 E9 E10 E11 E12 -E109"/>
+    </vehicle>
+    <vehicle id="bgv8821" type="bgv" depart="12.00" departLane="free" departSpeed="max" fromTaz="EA_in" toTaz="AE_out">
+        <route edges="E117 -E24 -E23 -E22 E5 E6 E7 -E33 E4 -E106"/>
+    </vehicle>
+    <vehicle id="bgv9101" type="bgv" depart="14.75" departLane="free" departSpeed="max" fromTaz="EA_in" toTaz="AE_out">
+        <route edges="E117 E17 E18 E19 -E36 -E35 -E34 E8 -E37 -E107"/>
+    </vehicle>
+    <vehicle id="bgv11000" type="bgv" depart="15.36" departLane="free" departSpeed="max" fromTaz="EC_in" toTaz="AC_out">
+        <route edges="E114 -E32 -E31 -E30 -E29 -E104"/>
+    </vehicle>
+    <vehicle id="bgv8430" type="bgv" depart="18.10" departLane="free" departSpeed="max" fromTaz="DE_in" toTaz="BA_out">
+        <route edges="E110 -E16 -E35 -E11 -E10 -E26 -E5 -E120"/>
+    </vehicle>
+    <vehicle id="bgv11305" type="bgv" depart="18.13" departLane="free" departSpeed="max" fromTaz="ED_in" toTaz="AB_out">
+        <route edges="E113 -E19 -E32 -E14 -E27 -E26 -E25 -E103"/>
+    </vehicle>
+    <vehicle id="bgv2789" type="bgv" depart="18.38" departLane="free" departSpeed="max" fromTaz="AD_in" toTaz="EB_out">
+        <route edges="E105 E33 -E7 -E6 E26 E27 E28 -E115"/>
+    </vehicle>
+    <vehicle id="bgv4633" type="bgv" depart="18.64" departLane="free" departSpeed="max" fromTaz="BA_in" toTaz="DE_out">
+        <route edges="E120 E5 E6 E7 E8 E38 E39 -E110"/>
+    </vehicle>
+    <vehicle id="bgv11004" type="bgv" depart="18.93" departLane="free" departSpeed="max" fromTaz="EC_in" toTaz="AC_out">
+        <route edges="E114 -E32 -E31 -E30 -E29 -E104"/>
+    </vehicle>
+    <vehicle id="bgv12029" type="bgv" depart="19.61" departLane="free" departSpeed="max" fromTaz="EE_in" toTaz="AA_out">
+        <route edges="E111 -E40 -E39 -E38 -E37 -E4 -E3 -E2 -E1 -E101"/>
+    </vehicle>
+    <vehicle id="bgv4907" type="bgv" depart="19.62" departLane="free" departSpeed="max" fromTaz="BE_in" toTaz="DA_out">
+        <route edges="E108 E38 -E12 -E11 -E10 E27 -E13 -E118"/>
+    </vehicle>
+    <vehicle id="bgv12513" type="bgv" depart="19.99" departLane="free" departSpeed="max" fromTaz="EE_in" toTaz="AA_out">
+        <route edges="E112 -E20 -E19 -E18 -E17 -E24 -E23 -E22 -E21 -E101"/>
+    </vehicle>
+    <vehicle id="bgv12710" type="bgv" depart="20.99" departLane="free" departSpeed="max" fromTaz="EE_in" toTaz="AA_out">
+        <route edges="E112 -E40 -E39 -E38 -E8 -E7 -E6 -E5 -E21 -E102"/>
+    </vehicle>
+    <vehicle id="bgv11166" type="bgv" depart="21.29" departLane="free" departSpeed="max" fromTaz="EC_in" toTaz="AC_out">
+        <route edges="E114 -E32 -E31 -E30 -E29 -E104"/>
+    </vehicle>
+    <vehicle id="bgv1596" type="bgv" depart="21.76" departLane="free" departSpeed="max" fromTaz="AB_in" toTaz="ED_out">
+        <route edges="E103 E2 E29 E30 E31 E15 E36 -E113"/>
+    </vehicle>
+    <vehicle id="bgv7623" type="bgv" depart="23.02" departLane="free" departSpeed="max" fromTaz="DA_in" toTaz="BE_out">
+        <route edges="E118 -E23 E9 E10 E11 -E34 E8 -E108"/>
+    </vehicle>
+    <vehicle id="bgv9681" type="bgv" depart="23.21" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 E18 E19 -E36 -E35 -E34 -E33 -E105"/>
+    </vehicle>
+    <vehicle id="bgv2700" type="bgv" depart="23.34" departLane="free" departSpeed="max" fromTaz="AD_in" toTaz="EB_out">
+        <route edges="E105 -E3 -E2 E25 E26 E27 E28 -E115"/>
+    </vehicle>
+    <vehicle id="bgv1142" type="bgv" depart="23.89" departLane="free" departSpeed="max" fromTaz="AA_in" toTaz="EE_out">
+        <route edges="E101 E1 E2 E3 E4 E37 E38 E39 E40 -E111"/>
+    </vehicle>
+    <vehicle id="bgv12532" type="bgv" depart="24.38" departLane="free" departSpeed="max" fromTaz="EE_in" toTaz="AA_out">
+        <route edges="E112 -E40 -E39 -E38 -E8 -E7 -E6 -E5 -E21 -E102"/>
+    </vehicle>
+    <vehicle id="bgv1425" type="bgv" depart="24.44" departLane="free" departSpeed="max" fromTaz="AB_in" toTaz="ED_out">
+        <route edges="E103 E25 E26 E27 E28 E18 E19 -E113"/>
+    </vehicle>
+    <vehicle id="bgv10374" type="bgv" depart="24.79" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 -E28 -E27 -E26 -E25 E2 E3 -E105"/>
+    </vehicle>
+    <vehicle id="bgv623" type="bgv" depart="24.98" departLane="free" departSpeed="max" fromTaz="AA_in" toTaz="EE_out">
+        <route edges="E102 E21 E22 E23 E24 E17 E18 E19 E20 -E112"/>
+    </vehicle>
+    <vehicle id="bgv9416" type="bgv" depart="24.99" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 -E28 E14 E15 -E35 -E34 -E33 -E105"/>
+    </vehicle>
+    <vehicle id="bgv1770" type="bgv" depart="25.86" departLane="free" departSpeed="max" fromTaz="AB_in" toTaz="ED_out">
+        <route edges="E103 E25 E26 E27 E28 E18 E19 -E113"/>
+    </vehicle>
+    <vehicle id="bgv6386" type="bgv" depart="27.62" departLane="free" departSpeed="max" fromTaz="CA_in" toTaz="CE_out">
+        <route edges="E119 E9 E10 E11 E12 -E109"/>
+    </vehicle>
+    <vehicle id="bgv8665" type="bgv" depart="27.79" departLane="free" departSpeed="max" fromTaz="EA_in" toTaz="AE_out">
+        <route edges="E116 E17 E18 E19 E20 -E40 -E39 -E38 -E37 -E107"/>
+    </vehicle>
+    <vehicle id="bgv7685" type="bgv" depart="28.23" departLane="free" departSpeed="max" fromTaz="DA_in" toTaz="BE_out">
+        <route edges="E118 E13 E14 E15 -E35 -E34 E8 -E108"/>
+    </vehicle>
+    <vehicle id="bgv3967" type="bgv" depart="28.73" departLane="free" departSpeed="max" fromTaz="AE_in" toTaz="EA_out">
+        <route edges="E106 E37 -E8 E34 E35 -E15 -E14 -E13 E24 -E116"/>
+    </vehicle>
+    <vehicle id="bgv5407" type="bgv" depart="29.39" departLane="free" departSpeed="max" fromTaz="BE_in" toTaz="DA_out">
+        <route edges="E108 E38 -E12 -E11 -E10 -E9 E23 -E118"/>
+    </vehicle>
+    <vehicle id="bgv8827" type="bgv" depart="29.57" departLane="free" departSpeed="max" fromTaz="EA_in" toTaz="AE_out">
+        <route edges="E117 E17 -E28 E14 E15 -E35 -E34 -E33 E4 -E106"/>
+    </vehicle>
+    <vehicle id="bgv3551" type="bgv" depart="29.89" departLane="free" departSpeed="max" fromTaz="AE_in" toTaz="EA_out">
+        <route edges="E106 E37 E38 E39 E40 -E20 -E19 -E18 -E17 -E116"/>
+    </vehicle>
+    <vehicle id="bgv1973" type="bgv" depart="30.26" departLane="free" departSpeed="max" fromTaz="AB_in" toTaz="ED_out">
+        <route edges="E103 E25 E26 E27 E14 E15 E36 -E113"/>
+    </vehicle>
+    <vehicle id="bgv10062" type="bgv" depart="30.87" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 -E28 -E27 -E26 -E25 E2 E3 -E105"/>
+    </vehicle>
+    <vehicle id="bgv11655" type="bgv" depart="31.65" departLane="free" departSpeed="max" fromTaz="ED_in" toTaz="AB_out">
+        <route edges="E113 -E19 -E32 -E31 -E10 -E26 -E25 -E103"/>
+    </vehicle>
+    <vehicle id="bgv8527" type="bgv" depart="33.57" departLane="free" departSpeed="max" fromTaz="DE_in" toTaz="BA_out">
+        <route edges="E110 -E16 -E15 -E14 -E13 -E23 -E22 -E120"/>
+    </vehicle>
+    <vehicle id="bgv1747" type="bgv" depart="35.00" departLane="free" departSpeed="max" fromTaz="AB_in" toTaz="ED_out">
+        <route edges="E103 E2 E29 E7 E34 E35 E36 -E113"/>
+    </vehicle>
+    <vehicle id="bgv12214" type="bgv" depart="35.04" departLane="free" departSpeed="max" fromTaz="EE_in" toTaz="AA_out">
+        <route edges="E112 -E40 -E39 -E38 -E8 -E7 -E6 -E5 -E21 -E101"/>
+    </vehicle>
+    <vehicle id="bgv1267" type="bgv" depart="35.56" departLane="free" departSpeed="max" fromTaz="AA_in" toTaz="EE_out">
+        <route edges="E101 E21 E22 E23 E24 E17 E18 E19 E20 -E112"/>
+    </vehicle>
+    <vehicle id="bgv4850" type="bgv" depart="35.81" departLane="free" departSpeed="max" fromTaz="BE_in" toTaz="DA_out">
+        <route edges="E108 E38 E39 -E16 -E15 -E14 -E13 -E118"/>
+    </vehicle>
+    <vehicle id="bgv8835" type="bgv" depart="36.32" departLane="free" departSpeed="max" fromTaz="EA_in" toTaz="AE_out">
+        <route edges="E116 E17 E18 E19 E20 -E40 -E39 -E38 -E37 -E107"/>
+    </vehicle>
+    <vehicle id="bgv817" type="bgv" depart="36.64" departLane="free" departSpeed="max" fromTaz="AA_in" toTaz="EE_out">
+        <route edges="E101 E21 E22 E23 E24 E17 E18 E19 E20 -E111"/>
+    </vehicle>
+    <vehicle id="bgv2970" type="bgv" depart="37.59" departLane="free" departSpeed="max" fromTaz="AD_in" toTaz="EB_out">
+        <route edges="E105 E33 E34 E35 E36 -E19 -E18 -E115"/>
+    </vehicle>
+    <vehicle id="bgv517" type="bgv" depart="37.74" departLane="free" departSpeed="max" fromTaz="AA_in" toTaz="EE_out">
+        <route edges="E102 E1 E25 E26 E27 E14 E15 E36 E20 -E112"/>
+    </vehicle>
+    <vehicle id="cav2" type="cav" depart="37.74" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 E18 -E32 -E31 -E30 E7 -E33 -E105"/>
+    </vehicle>
+    <vehicle id="bgv11629" type="bgv" depart="40.34" departLane="free" departSpeed="max" fromTaz="ED_in" toTaz="AB_out">
+        <route edges="E113 -E36 -E35 -E34 -E33 -E3 -E2 -E103"/>
+    </vehicle>
+    <vehicle id="bgv10091" type="bgv" depart="41.07" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 E18 E19 -E36 -E35 -E34 -E33 -E105"/>
+    </vehicle>
+    <vehicle id="bgv11807" type="bgv" depart="41.83" departLane="free" departSpeed="max" fromTaz="ED_in" toTaz="AB_out">
+        <route edges="E113 -E19 -E18 -E28 -E27 -E26 -E25 -E103"/>
+    </vehicle>
+    <vehicle id="bgv10203" type="bgv" depart="41.95" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 -E28 -E27 -E26 -E25 E2 E3 -E105"/>
+    </vehicle>
+    <vehicle id="bgv5556" type="bgv" depart="42.04" departLane="free" departSpeed="max" fromTaz="BE_in" toTaz="DA_out">
+        <route edges="E108 -E8 E34 E35 -E15 -E14 -E13 -E118"/>
+    </vehicle>
+    <vehicle id="bgv3365" type="bgv" depart="42.24" departLane="free" departSpeed="max" fromTaz="AE_in" toTaz="EA_out">
+        <route edges="E107 -E4 -E3 -E2 E25 -E5 E22 E23 E24 -E116"/>
+    </vehicle>
+    <vehicle id="bgv3678" type="bgv" depart="42.53" departLane="free" departSpeed="max" fromTaz="AE_in" toTaz="EA_out">
+        <route edges="E107 E37 -E8 -E7 -E6 -E5 E22 E23 E24 -E116"/>
+    </vehicle>
+    <vehicle id="bgv4728" type="bgv" depart="43.31" departLane="free" departSpeed="max" fromTaz="BE_in" toTaz="DA_out">
+        <route edges="E108 -E8 -E7 -E6 -E5 E22 E23 -E118"/>
+    </vehicle>
+    <vehicle id="bgv7990" type="bgv" depart="43.53" departLane="free" departSpeed="max" fromTaz="DE_in" toTaz="BA_out">
+        <route edges="E110 -E39 -E38 -E8 -E7 -E6 -E5 -E120"/>
+    </vehicle>
+    <vehicle id="bgv6344" type="bgv" depart="44.44" departLane="free" departSpeed="max" fromTaz="CA_in" toTaz="CE_out">
+        <route edges="E119 E9 E10 E11 E12 -E109"/>
+    </vehicle>
+    <vehicle id="bgv10094" type="bgv" depart="44.96" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 E18 E19 -E36 -E35 -E34 -E33 -E105"/>
+    </vehicle>
+    <vehicle id="bgv2758" type="bgv" depart="45.59" departLane="free" departSpeed="max" fromTaz="AD_in" toTaz="EB_out">
+        <route edges="E105 E33 E34 E35 -E15 -E14 E28 -E115"/>
+    </vehicle>
+    <vehicle id="bgv9191" type="bgv" depart="45.68" departLane="free" departSpeed="max" fromTaz="EA_in" toTaz="AE_out">
+        <route edges="E117 -E24 -E23 -E22 -E21 E1 E2 E3 E4 -E106"/>
+    </vehicle>
+    <vehicle id="bgv10824" type="bgv" depart="46.04" departLane="free" departSpeed="max" fromTaz="EC_in" toTaz="AC_out">
+        <route edges="E114 -E32 -E31 -E30 -E29 -E104"/>
+    </vehicle>
+    <vehicle id="bgv4699" type="bgv" depart="46.74" departLane="free" departSpeed="max" fromTaz="BE_in" toTaz="DA_out">
+        <route edges="E108 -E8 -E7 -E6 -E5 E22 E23 -E118"/>
+    </vehicle>
+    <vehicle id="bgv98" type="bgv" depart="47.01" departLane="free" departSpeed="max" fromTaz="AA_in" toTaz="EE_out">
+        <route edges="E102 E1 E25 E26 E27 E28 E18 E19 E20 -E112"/>
+    </vehicle>
+    <vehicle id="bgv33333" type="bgv" depart="47.01" departLane="free" departSpeed="max" fromTaz="AB_in" toTaz="ED_out">
+        <route edges="E103 E25 E26 E27 E28 E18 E19 -E113"/>
+    </vehicle>
+    <vehicle id="bgv2270" type="bgv" depart="47.47" departLane="free" departSpeed="max" fromTaz="AC_in" toTaz="EC_out">
+        <route edges="E104 E29 E30 E31 E32 -E114"/>
+    </vehicle>
+    <vehicle id="bgv12676" type="bgv" depart="48.96" departLane="free" departSpeed="max" fromTaz="EE_in" toTaz="AA_out">
+        <route edges="E111 -E40 -E39 -E38 -E37 -E4 -E3 -E2 -E1 -E102"/>
+    </vehicle>
+    <vehicle id="bgv2379" type="bgv" depart="49.06" departLane="free" departSpeed="max" fromTaz="AC_in" toTaz="EC_out">
+        <route edges="E104 E29 E30 E31 E32 -E114"/>
+    </vehicle>
+    <vehicle id="bgv10523" type="bgv" depart="50.76" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 E18 -E32 -E31 -E30 E7 -E33 -E105"/>
+    </vehicle>
+    <vehicle id="bgv1500" type="bgv" depart="51.68" departLane="free" departSpeed="max" fromTaz="AB_in" toTaz="ED_out">
+        <route edges="E103 E25 E6 E7 E34 E35 E36 -E113"/>
+    </vehicle>
+    <vehicle id="bgv11124" type="bgv" depart="51.99" departLane="free" departSpeed="max" fromTaz="EC_in" toTaz="AC_out">
+        <route edges="E114 -E32 -E31 -E30 -E29 -E104"/>
+    </vehicle>
+    <vehicle id="bgv3113" type="bgv" depart="52.03" departLane="free" departSpeed="max" fromTaz="AD_in" toTaz="EB_out">
+        <route edges="E105 E33 E34 E35 E36 -E19 -E18 -E115"/>
+    </vehicle>
+    <vehicle id="bgv3145" type="bgv" depart="52.62" departLane="free" departSpeed="max" fromTaz="AD_in" toTaz="EB_out">
+        <route edges="E105 E33 -E7 E30 E31 E32 -E18 -E115"/>
+    </vehicle>
+    <vehicle id="bgv9554" type="bgv" depart="53.57" departLane="free" departSpeed="max" fromTaz="EB_in" toTaz="AD_out">
+        <route edges="E115 E18 E19 -E36 -E35 -E34 -E33 -E105"/>
+    </vehicle>
+    <vehicle id="bgv590" type="bgv" depart="53.69" departLane="free" departSpeed="max" fromTaz="AA_in" toTaz="EE_out">
+        <route edges="E102 E1 E25 E26 E27 E14 E15 E36 E20 -E112"/>
+    </vehicle>
+    <vehicle id="bgv44444" type="bgv" depart="53.69" departLane="free" departSpeed="max" fromTaz="EC_in" toTaz="AC_out">
+        <route edges="E114 -E32 -E31 -E30 -E29 -E104"/>
+    </vehicle>
+    <vehicle id="bgv11494" type="bgv" depart="53.95" departLane="free" departSpeed="max" fromTaz="ED_in" toTaz="AB_out">
+        <route edges="E113 -E19 -E18 -E28 -E27 -E26 -E25 -E103"/>
+    </vehicle>
+    <vehicle id="bgv11708" type="bgv" depart="54.12" departLane="free" departSpeed="max" fromTaz="ED_in" toTaz="AB_out">
+        <route edges="E113 -E36 -E15 -E14 -E27 -E26 -E25 -E103"/>
+    </vehicle>
+    <vehicle id="bgv3939" type="bgv" depart="55.11" departLane="free" departSpeed="max" fromTaz="AE_in" toTaz="EA_out">
+        <route edges="E106 E37 E38 E39 E40 -E20 -E19 -E18 -E17 -E117"/>
+    </vehicle>
+    <vehicle id="bgv4936" type="bgv" depart="55.54" departLane="free" departSpeed="max" fromTaz="BE_in" toTaz="DA_out">
+        <route edges="E108 E38 -E12 -E11 -E10 -E9 E23 -E118"/>
+    </vehicle>
+</routes>

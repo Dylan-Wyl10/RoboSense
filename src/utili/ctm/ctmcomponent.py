@@ -1,0 +1,1092 @@
+"""
+Date: Nov 1, 2023,
+Author: Yilin Wang
+Note: this script restores the components that build up CTM model
+"""
+import time
+
+import pandas as pd
+import numpy as np
+import re
+from datetime import datetime
+import threading
+import queue
+import socket
+import copy
+
+
+class Cell(object):
+    idcase = {}
+
+    def __init__(self, cellid, linkid, zoneid, time_interval=6, n=0, qmax=1800, kjam=220, vf=16, w=3.2,
+                 length=0.1, updated=False, arr_rate=0, dis_rate=2160):
+        # self.kjam = kjam
+        self.njam = kjam * length
+        self.cellid = cellid  # local address
+        self.linkid = linkid  # link layer address
+        self.zoneid = zoneid  # zone layer address
+        self.cell_fullid = self.getCompleteAddress()
+        self.vf = vf  # Time interval = length / vf
+        self.w = w
+        self.cfrom = []
+        self.cto = []
+        self.type = 'norm'  # defaultly set cell type = norm
+        # # identify the type of the cell
+        # if len(self.cto) == 2 and len(self.cfrom) == 1:
+        #     self.type = 'div'  # diverge
+        # elif len(self.cto) == 1 and len(self.cfrom) == 2:
+        #     self.type = 'merg'  # merge
+        self.n = n  # number of vehicle at time interval t
+        self.oldn = n # number of vehicle at time interval t-1
+        self.qmax = qmax
+        self.length = length
+        self.updated = updated
+        # self.updated_tmp = {'inflow': False,
+        #                     'outflow': False,
+        #                     'density': False}
+        self.arr_rate = arr_rate  # arrival rate
+        self.dis_rate = dis_rate  # departure rate
+        self.time_sec = time_interval
+        self.time_hour = time_interval / 3600
+        self.inflow = 0
+        self.outflow = 0
+        self.y_in = 0
+        self.y_out = 0
+        self.connection_counts_his = []
+        self.connection_counts_now = []
+        self.pk = 0.5  # probability from first cells, default 0.5
+        # self.psk = 0.5  # probability from side stream cells, default 0.5
+        # self.ramp_flag = ramp_flag  # define if the current cell is main road. [0:main, 1:side]
+        self.observe_flag = False  # observation flag, default false, when obsever at time , update density.
+        self.sig_flag = 1  # signal flag, usually for diverge cell. default value=1 (green)
+        if Cell.idcase.get(self.getCompleteAddress()) == None:
+            Cell.idcase.setdefault(self.getCompleteAddress(), self)
+        else:
+            raise Exception("This id has been used by other cell")
+        self.updatevalue = 0
+
+    def resetValue(self):
+        # this function reset all the cells to the value where it is initalized.
+        # the remains the same
+        self.inflow = 0
+        self.outflow = 0
+        self.n = 0
+        self.oldn = 0
+
+    def setParm(self, qmax, w):
+        if self.cellid == "C1" or self.cellid == "C2" or self.cellid == "C6" or self.cellid == "C7":
+            self.qmax = qmax
+            self.w = w
+        elif self.cellid == "C3" or self.cellid == "C4" or self.cellid == "C5" or self.cellid == "C40":
+            self.qmax = 2*qmax
+            self.w = w
+
+    def addConnection(self, sink):  # self ahead, sink back
+        if len(sink.cfrom) == 2 or len(self.cto) == 2:
+            raise Exception("Cannot add more connection to cell %s and cell %s" % (
+                self.getCompleteAddress(), sink.getCompleteAddress()))
+
+        if (len(self.cto) and len(sink.cfrom)) and (len(sink.cto) == 2 or len(self.cfrom) == 2):
+            raise Exception("Invaild cell connection! A cell cannot connect to merge and diverge cell simultaneously")
+
+        self.cto.append(sink)  # An instance of cell class is stored, in order to use cto and cfrom as pointer.
+        sink.cfrom.append(self)
+
+    # this function is only used for merge and diverge function.
+    # 20240306: we have some hardcoding
+    # isTo is a flag to determine whether we should add the counts on: -1:to cell, 0:both, 1:from cell
+    def addConnectionCounts(self, sink, count):
+        if len(sink.cfrom) == 2 or len(self.cto) == 2:
+            raise Exception("Cannot add more connection to cell %s and cell %s" % (
+                self.getCompleteAddress(), sink.getCompleteAddress()))
+
+        if (len(self.cto) and len(sink.cfrom)) and (len(sink.cto) == 2 or len(self.cfrom) == 2):
+            raise Exception("Invaild cell connection! A cell cannot connect to merge and diverge cell simultaneously")
+
+        self.cto.append(sink)  # An instance of cell class is stored, in order to use cto and cfrom as pointer.
+        sink.cfrom.append(self)
+
+        self.connection_counts_his.append(count)
+        sink.connection_counts_his.append(count)
+
+    def deleteConnection(self, sink):
+        if sink not in self.cto:
+            raise Exception(
+                "Cell %s is not connected with cell %s" % (self.getCompleteAddress(), sink.getCompleteAddress()))
+
+        self.cto.remove(sink)
+        sink.cfrom.remove(self)
+
+    def getCell(cid):
+        return Cell.idcase[cid]
+
+    def getFirstCell(linkid):
+        newDict = {}
+        for key in Cell.idcase:
+            if Cell.idcase[key].linkid == linkid:
+                newDict[key] = Cell.idcase[key]
+
+        return newDict[min(newDict.keys())]
+
+    def getAllCellsInSameLink(linkid):
+        result_list = []
+        for key in Cell.idcase:
+            if Cell.idcase[key].linkid == linkid:
+                result_list.append(Cell.idcase[key])
+
+        return result_list
+
+    def getLastCell(linkid):
+        newDict = {}
+        for key in Cell.idcase:
+            if Cell.idcase[key].linkid == linkid:
+                cell_num = int(re.split(r'\D', Cell.idcase[key].cellid)[1])
+                newDict[cell_num] = Cell.idcase[key]
+
+        return newDict[max(newDict.keys())]
+
+    def deleteCell(cid):
+        poped = Cell.idcase.pop(cid)
+        for elem in poped.cto:
+            poped.deleteConnection(elem)
+        del poped
+
+    def getCompleteAddress(self):
+        return "%s.%s.%s" % (self.zoneid, self.linkid, self.cellid)
+
+    def updateRatio(self):
+        # defaultly, pk shows the first ratio, defaultly the first one is from the left
+        if self.connection_counts_now:
+            if sum(self.connection_counts_now) == 0:
+                self.pk = 0.5
+            else:
+                self.pk = self.connection_counts_now[0] / sum(self.connection_counts_now)
+        # print('link {} cell {} pk is {}'.format(self.linkid, self.cellid, self.pk))
+
+    def updateConnection(self):
+        """
+        Notes:
+            1. This function is for updating dynamic diverging ratio for cells in link
+            2. Defaultly, the divering connection counts are [left, right].
+            3. In link, c6 is on left and through, c7 is for right and through, in detail, c6[ll, ltr] c7[rth, rr]
+        """
+        # ==============================this is old logic=========================
+        # if self.cellid == 'C7' or self.cellid == 'C6':
+        #     cto1 = self.cto[0]
+        #     cto2 = self.cto[1]
+        #     cto1.connection_counts_now[0] = self.sig_flag * cto1.connection_counts_his[0]
+        #     cto2.connection_counts_now[1] = self.sig_flag * cto2.connection_counts_his[1]
+        #     self.connection_counts_now[0] = self.sig_flag * self.connection_counts_his[0]
+        #     self.connection_counts_now[1] = self.sig_flag * self.connection_counts_his[1]
+        # 20240809 update: add compromise mechanism
+        if self.cellid == 'C6':
+            c_ll, c_lth = self.cto
+            c_from = self.cfrom[0]  # upstream cell
+            llN = self.connection_counts_his[0]  # total number of turning left, this will not change over time
+            thrN = c_from.cto[0].connection_counts_his[1] + c_from.cto[1].connection_counts_his[0]  # total number of through
+            num_c6, num_c7 = self.oldn, c_from.cto[1].oldn  # current number
+            cap_c6, cap_c7 = self.njam, c_from.cto[1].njam
+            lthN = thrN * (cap_c6 - num_c6) / (cap_c6 + cap_c7 - num_c6 - num_c7)
+            self.connection_counts_now = [llN, lthN]
+
+        elif self.cellid == 'C7':
+            c_rth, c_rr = self.cto
+            c_from = self.cfrom[0]  # upstream cell
+            rrN = self.connection_counts_his[1]
+            thrN = c_from.cto[0].connection_counts_his[1] + c_from.cto[1].connection_counts_his[0]  # total number of through
+            num_c6, num_c7 = c_from.cto[0].oldn, self.oldn
+            cap_c6, cap_c7 = c_from.cto[0].njam, self.njam
+            rthN = thrN * (cap_c7 - num_c7) / (cap_c6 + cap_c7 - num_c6 - num_c7)
+            self.connection_counts_now = [rthN, rrN]
+
+        elif self.cellid == 'C5':  # link diverge cell
+            c6_left, c7_right = self.cto
+            leftN = c6_left.connection_counts_his[0]  # total number of turning left
+            rightN = c7_right.connection_counts_his[1]  # total number of turning right
+            thr = c6_left.connection_counts_his[1] + c7_right.connection_counts_his[0]
+            num_c6, num_c7 = c6_left.oldn, c7_right.oldn
+            cap_c6, cap_c7 = c6_left.njam, c7_right.njam
+            a1 = thr * (cap_c6 - num_c6) / (cap_c6 + cap_c7 - num_c6 - num_c7)
+            a2 = thr * (cap_c7 - num_c7) / (cap_c6 + cap_c7 - num_c6 - num_c7)
+            # if a1 != a2:
+            #     print('l;ololo')
+            self.connection_counts_now = [leftN + a1, rightN + a2]  # defaultly, left turn is C6, right lane is C7
+
+    def initialCellType(self):
+        if len(self.cto) == 2 and len(self.cfrom) == 2:
+            raise Exception("Invaild cell connection! A cell cannot connect to merge and diverge cell simultaneously")
+        if len(self.cto) == 2 and len(self.cfrom) == 1:
+            if self.cellid == "C5":
+                self.type = 'div_link'  # diverge cell for link
+            else:
+                self.type = 'div_inte'  # diverge cell
+            self.div_num = [0, 0]
+        elif len(self.cto) == 1 and len(self.cfrom) == 2:
+            self.type = 'merge'  # merge cell
+            self.merge_num = [0, 0]
+        elif len(self.cto) == 1 and len(self.cfrom) == 1:
+            self.type = 'norm'
+
+    def updateInOutFlow(self):
+        # 20250727 update:
+        # 1. this funciton only calculate the inflow and outflow from its own condition
+        # 2. in updating, self.n will be the current n(t)
+
+        # self.oldn = self.n
+
+        if sum(self.connection_counts_now) == 0:
+            self.pk = 0.5
+        else:
+            self.pk = self.connection_counts_now[0] / sum(self.connection_counts_now)
+        # if self.updated:
+        #     print(f'cell {self.cell_fullid} is called but has been updated')
+        """ div_inte: intersection diverge cell, follow the first-in-first-out principle"""
+        """ div_link: link diverge cell, follow the the fully filled principle"""
+        if self.type == 'div_inte':  # diverge logic for intersection cells
+            ptnc = self.pk  # Propotion towards to next normal cell
+            ptdc = 1 - self.pk  # Propotion towards to diverge cell
+
+            div_c1, div_c2 = self.cto
+            self.div_num = {}
+
+            self.d_rn1 = max(0, np.min([div_c1.qmax * div_c1.time_hour, div_c1.w * (div_c1.njam - div_c1.n)/div_c1.vf]))  # Receive ability of next normal cell
+            self.d_rn2 = max(0, np.min([div_c2.qmax * div_c2.time_hour, div_c2.w * (div_c2.njam - div_c2.n)/div_c2.vf]))
+            self.sbk = np.min([self.qmax * self.time_hour, self.n])
+
+            if ptnc == 0:
+                self.div_num[div_c1.cell_fullid] = 0
+                self.div_num[div_c2.cell_fullid] = np.min([self.sbk, self.d_rn2]) * self.sig_flag
+            elif ptdc == 0:
+                self.div_num[div_c1.cell_fullid] = np.min([self.sbk, self.d_rn1]) * self.sig_flag
+                self.div_num[div_c2.cell_fullid] = 0
+            else:
+                self.div_num[div_c1.cell_fullid] = ptnc * np.min([self.sbk, self.d_rn1 / ptnc, self.d_rn2 / ptdc]) * self.sig_flag
+                self.div_num[div_c2.cell_fullid] = ptdc * np.min([self.sbk, self.d_rn1 / ptnc, self.d_rn2 / ptdc]) * self.sig_flag
+            # div_c1.updated['inflow'] = True
+            # div_c2.updated['inflow'] = True
+            # the following cell cannot be last empty cell
+
+            self.inflow = max(0, np.min([self.qmax * self.time_hour, (self.w/self.vf) * (self.njam - self.n)]))
+            self.outflow = self.div_num[div_c1.cell_fullid] + self.div_num[div_c2.cell_fullid]
+            # ==============================================20250727 update ===========================================
+            # if len(self.cfrom):
+            #     if not self.cfrom[0].updated:
+            #         self.cfrom[0].updateDensity()
+            #
+            #     if self.cfrom[0].type == 'div':
+            #         if self.cellid == self.cfrom[0].cto[0].cellid:
+            #             self.inflow = self.cfrom[0].div_num[0]
+            #         elif self.cellid == self.cfrom[0].cto[1].cellid:
+            #             self.inflow = self.cfrom[0].div_num[1]
+            #     else:
+            #         # self.inflow = np.min([self.qmax, self.cfrom[0].oldk * self.vf,
+            #         #                       self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
+            #         self.inflow = self.cfrom[0].outflow
+            # else:
+            #     self.inflow = np.min(
+            #         [self.qmax, self.arr_rate, self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
+            # self.outflow = sum(self.div_num)
+            # self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
+            # ========================================================================================================
+
+        if self.type == 'div_link':  # diverge logic for link diverge cells
+            # self.oldn = self.n
+            ptnc = self.pk  # Propotion towards to next normal cell, pck
+            ptdc = 1 - self.pk  # Propotion towards to diverge cell, pek
+
+            div_c1, div_c2 = self.cto
+            self.div_num = {}
+
+            self.d_rn1 = max(0, np.min([div_c1.qmax * div_c1.time_hour, div_c1.w * (div_c1.njam - div_c1.n)/div_c1.vf]))  # R_CK
+            self.d_rn2 = max(0, np.min([div_c2.qmax * div_c2.time_hour, div_c2.w * (div_c2.njam - div_c2.n)/div_c2.vf]))  # R_EK
+            self.sbk = np.min([self.qmax * self.time_hour, self.n])
+
+            if ptnc == 0:
+                self.div_num[div_c1.cell_fullid] = 0
+                self.div_num[div_c2.cell_fullid] = np.min([self.sbk, self.d_rn2])
+            elif ptdc == 0:
+                self.div_num[div_c1.cell_fullid] = np.min([self.sbk, self.d_rn1])
+                self.div_num[div_c2.cell_fullid] = 0
+            else:
+                self.div_num[div_c1.cell_fullid] = np.min([self.d_rn1, self.sbk * ptnc])
+                self.div_num[div_c2.cell_fullid] = np.min([self.d_rn2, self.sbk * ptdc])
+
+            self.inflow = max(0, np.min([self.qmax * self.time_hour, (self.w/self.vf) * (self.njam - self.n)]))
+            self.outflow = self.div_num[div_c1.cell_fullid] + self.div_num[div_c2.cell_fullid]
+            # ==============================================20250727 update ===========================================
+            # if len(self.cfrom):
+            #     if not self.cfrom[0].updated:
+            #         self.cfrom[0].updateDensity()
+            #
+            #     if self.cfrom[0].type == 'div':
+            #         if self.cellid == self.cfrom[0].cto[0].cellid:
+            #             self.inflow = self.cfrom[0].div_num[0]
+            #         elif self.cellid == self.cfrom[0].cto[1].cellid:
+            #             self.inflow = self.cfrom[0].div_num[1]
+            #     else:
+            #         # self.inflow = np.min([self.qmax, self.cfrom[0].oldk * self.vf,
+            #         #                       self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
+            #         self.inflow = self.cfrom[0].outflow
+            # else:
+            #     self.inflow = np.min(
+            #         [self.qmax, self.arr_rate, self.w * (self.kjam - self.oldk)]) * self.time_hour / self.length
+            # self.outflow = sum(self.div_num)
+            # self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
+            # ========================================================================================================
+
+        elif self.type == 'merge':  # Merge at here, we need to update density among this cell and two other upstream cells.
+            # self.oldn = self.n
+            pk = self.pk  # probability from upstream left cell
+            pck = 1 - self.pk  # probability from upstream right cell
+
+            self.rek = max(0, np.min([self.qmax * self.time_hour, (self.w/self.vf) * (self.njam - self.n)]))
+            meg_c1, meg_c2 = self.cfrom  # first cell left, second cell right
+
+            self.sbk = np.min([meg_c1.qmax * meg_c1.time_hour, meg_c1.n*meg_c1.sig_flag])
+            self.sck = np.min([meg_c2.qmax * meg_c2.time_hour, meg_c2.n*meg_c2.sig_flag])
+            self.scktmpnum = [meg_c2.qmax, meg_c2.time_hour, meg_c2.n, meg_c2.sig_flag]
+
+            # =========================================20250727 update===============================================
+            # if not meg_c1.updated:
+            #     meg_c1.updateDensity()
+            # if len(meg_c1.cto) == 2:  # multiple downstream cells
+            #     sbk = meg_c1.div_num[0] if self.cell_fullid == meg_c1.cto[0].cell_fullid else meg_c1.div_num[1]
+            # else:
+            #     sbk = np.min([meg_c1.qmax, meg_c1.vf * meg_c1.oldk]) * meg_c1.time_hour / meg_c1.length
+            #
+            # if meg_c2.type == 'div':  # if prov cell is diverge cell.
+            #     if meg_c2.updated:
+            #         sck = meg_c2.div_num[1]
+            #     else:
+            #         meg_c2.updateDensity()
+            #         sck = meg_c2.div_num[1]
+            # else:
+            #     sck = np.min([meg_c2.qmax, meg_c2.vf * meg_c2.oldk]) * meg_c2.time_hour / meg_c2.length
+            # ===============================================================================================
+
+            self.merge_num = {}
+
+            if self.sbk + self.sck >= self.rek:
+                self.merge_num[meg_c1.cell_fullid] = np.median([pk * self.rek, self.sbk, self.rek - self.sck])
+                self.merge_num[meg_c2.cell_fullid] = np.median([pck * self.rek, self.sck, self.rek - self.sbk])
+            else:
+                self.merge_num[meg_c1.cell_fullid] = self.sbk
+                self.merge_num[meg_c2.cell_fullid] = self.sck
+
+            # if len(self.cto):
+            #     if self.cto[0].type == 'merge':
+            #         if not self.cto[0].updated:
+            #             self.cto[0].updateDensity()
+            #         if self.cellid == self.cto[0].cfrom[0].cellid:
+            #             self.outflow = self.cto[0].merge_num[0]
+            #         elif self.cellid == self.cto[0].cfrom[1].cellid:
+            #             self.outflow = self.cto[0].merge_num[1]
+            #     else:
+            #         self.outflow = np.min([self.cto[0].qmax, self.oldk * self.vf, self.cto[0].w * (
+            #                 self.cto[0].kjam - self.cto[0].oldk)]) * self.time_hour / self.length
+            # else:
+            #     self.outflow = np.min([self.oldk * self.vf, self.dis_rate]) * self.time_hour / self.length
+
+            self.inflow = self.merge_num[meg_c1.cell_fullid] + self.merge_num[meg_c2.cell_fullid]
+            self.outflow = np.min([self.n, self.qmax * self.time_hour])
+            # self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
+            # self.updated = True
+
+        elif self.type == 'norm':  # Normal cell
+
+            # self.oldn = self.n
+            if len(self.cfrom) == 0:  # source cell
+                self.inflow = max(0, np.min([self.qmax * self.time_hour, self.arr_rate * self.time_hour,
+                                      (self.w/self.vf)*(self.njam - self.n)]))
+                self.outflow = max(0, np.min([self.cto[0].qmax * self.time_hour, self.n, (self.cto[0].w/self.cto[0].vf) * (
+                        self.cto[0].njam - self.cto[0].n)]))
+
+            elif len(self.cto) == 0:  # sink cell
+
+                self.inflow = max(0, np.min([self.qmax * self.time_hour, self.cfrom[0].n,
+                                      (self.w/self.vf) * (self.njam - self.n)]))
+                self.outflow = max(0, np.min([self.n, self.dis_rate*self.time_hour]))
+
+            else:
+                self.inflow = max(0, np.min([self.qmax * self.time_hour, self.cfrom[0].n,
+                                      (self.w / self.vf) * (self.njam - self.n)]))
+
+                self.outflow = max(0, np.min(
+                    [self.cto[0].qmax * self.time_hour, self.n, (self.cto[0].w / self.cto[0].vf) * (
+                            self.cto[0].njam - self.cto[0].n)]))
+
+            # self.k = np.max([self.oldk + np.max([0, self.inflow]) - np.max([0, self.outflow]), 0])
+            # self.updated = True
+            # print(f'cell {self.cell_fullid} is updated')
+
+    def updateDensity(self):
+        #allocate the inbound and outbound flow\
+        self.oldn = self.n  # save it for current time step
+        if len(self.cfrom) > 1:  # merge cell
+            mc1, mc2 = self.cfrom  # cell object for merging
+            if self.cellid =='C3':  # merge + merge - >norm
+                merge1 = np.min([self.merge_num[mc1.cell_fullid], mc1.outflow])
+                merge2 = np.min([self.merge_num[mc2.cell_fullid], mc2.outflow])
+                self.y_out = np.min([self.outflow, self.cto[0].inflow])
+            elif self.cellid =='C1' or self.cellid == 'C2':  #div+div -> merge
+                # print(type(self.merge_num[mc1.cell_fullid]), type(mc1.div_num[self.cell_fullid]))
+                # print(mc1.cell_fullid, self.cell_fullid)
+                merge1 = np.min([self.merge_num[mc1.cell_fullid], mc1.div_num[self.cell_fullid]])
+                merge2 = np.min([self.merge_num[mc2.cell_fullid], mc2.div_num[self.cell_fullid]])
+                self.y_out = np.min([self.outflow, self.cto[0].merge_num[self.cell_fullid]])
+            self.y_in = merge1 + merge2
+
+        elif len(self.cto) > 1:  # div cell
+            div1, div2 = self.cto
+            if self.cellid == "C5":
+                dive1 = np.min([self.div_num[div1.cell_fullid], div1.inflow])  # min(sbk*p56, R6)
+                dive2 = np.min([self.div_num[div2.cell_fullid], div2.inflow])
+                self.y_in = np.min([self.inflow, self.cfrom[0].outflow])
+            elif self.cellid == "C6" or self.cellid == "C7":
+                dive1 = np.min([self.div_num[div1.cell_fullid], div1.merge_num[self.cell_fullid]])
+                dive2 = np.min([self.div_num[div2.cell_fullid], div2.merge_num[self.cell_fullid]])
+                self.y_in = np.min([self.inflow, self.cfrom[0].div_num[self.cell_fullid]])
+            self.y_out = dive1 + dive2
+
+        else:
+            if self.cellid == "C4":
+                self.y_in = np.min([self.inflow, self.cfrom[0].outflow])
+                self.y_out = np.min([self.outflow, self.cto[0].inflow])
+            elif len(self.cfrom) == 0: # source cell
+                self.y_in = self.inflow
+                self.y_out = np.min([self.outflow, self.cto[0].inflow])
+            elif len(self.cto) == 0:
+                self.y_in = np.min([self.inflow, self.cfrom[0].outflow])
+                self.y_out = self.outflow
+
+        self.n = np.max([self.oldn + np.max([0, self.y_in]) - np.max([0, self.y_out]), 0])  # this n is the number for next step
+
+    def switchConnection(self):  # this is a function for initialization
+        if len(self.cto) == 2 and len(self.cfrom) == 2:
+            raise Exception("Invaild cell connection! A cell cannot connect to merge and diverge cell simultaneously")
+        if len(self.cto) == 2:
+            self.cto[0], self.cto[1] = self.cto[1], self.cto[0]
+            self.connection_counts_his[0], self.connection_counts_his[1] = self.connection_counts_his[1], \
+                self.connection_counts_his[0]
+        if len(self.cfrom) == 2:
+            self.cfrom[0], self.cfrom[1] = self.cfrom[1], self.cfrom[0]
+            self.connection_counts_his[0], self.connection_counts_his[1] = self.connection_counts_his[1], \
+                self.connection_counts_his[0]
+
+    def checkConnection(self):  # this is to check if the deverge cell connect to correct merge cell
+        if len(self.cto) == 2 and len(self.cfrom) == 2:
+            raise Exception("Invaild cell connection! A cell cannot connect to merge and diverge cell simultaneously")
+        if len(self.cto) == 2:
+            cto1, cto2 = self.cto[0], self.cto[1]
+            if (self.connection_counts_his[0] != cto1.connection_counts_his[0] and self.connection_counts_his[0] ==
+                    cto1.connection_counts_his[1]):
+                # print('correct connection for first cell{}'.format(self.cellid))
+                cto1.cfrom[0], cto1.cfrom[1] = cto1.cfrom[1], cto1.cfrom[0]
+                cto1.connection_counts_his[0], cto1.connection_counts_his[1] = cto1.connection_counts_his[1], \
+                    cto1.connection_counts_his[0]
+
+            if (self.connection_counts_his[1] != cto2.connection_counts_his[1] and self.connection_counts_his[1] ==
+                    cto2.connection_counts_his[0]):
+                # print('correct connection for second cell{}'.format(self.cellid))
+                cto2.cfrom[0], cto2.cfrom[1] = cto2.cfrom[1], cto2.cfrom[0]
+                cto2.connection_counts_his[0], cto2.connection_counts_his[1] = cto2.connection_counts_his[1], \
+                    cto2.connection_counts_his[0]
+
+    def get_state(self):
+        return {
+            'n': self.n,
+            'oldk': self.oldn,
+            'inflow': self.y_in,
+            'outflow': self.y_out,
+            'updated': self.updated,
+            'pk': self.pk,
+            'connection_counts_now': list(self.connection_counts_now),
+            'sig_flag': self.sig_flag,
+        }
+
+    # get current
+    def get_state_num(self, cell_len=0.08):
+        return self.n
+
+    def load_state(self, state):
+        self.n = state['n']
+        self.oldn = state['oldk']
+        self.inflow = state['inflow']
+        self.outflow = state['outflow']
+        self.updated = state['updated']
+        self.pk = state['pk']
+        self.connection_counts_now = list(state['connection_counts_now'])
+        self.sig_flag = state['sig_flag']
+
+
+def getCrossProduct(va, vb):
+    return va[0] * vb[1] - va[1] * vb[0]
+
+
+def getEuclideanDis(x1, x2, y1, y2):
+    return np.sqrt(np.power(x2 - x1, 2) + np.power(y2 - y1, 2))
+
+
+def changeLinkJamDensity(linkid, kjam):
+    cell_list = Cell.getAllCellsInSameLink()
+    for cell in cell_list:
+        cell.kjam = kjam
+
+
+def changeSpecificCellJamDensity(cid, kjam):
+    Cell.getCell(cid).kjam = kjam
+
+
+def changeLinkQmax(linkid, qmax):
+    cell_list = Cell.getAllCellsInSameLink()
+    for cell in cell_list:
+        cell.qmax = qmax
+
+
+def changeSpecificCellQmax(cid, qmax):
+    Cell.getCell(cid).qmax = qmax
+
+
+def changeLinkDemand(linkid, demand):
+    Cell.getFirstCell(linkid).arr_rate = demand
+
+
+def quicklyCreateCells(number, linkid, vf=60, kjam=220):
+    cells = []
+    for i in range(number):
+        cells.append(Cell('C' + str(i), linkid, 'A0', vf=vf, kjam=kjam, arr_rate=0, dis_rate=1800))
+
+    for index in range(len(cells)):
+        if index < len(cells) - 1:
+            cells[index].addConnection(cells[index + 1])
+
+    return cells
+
+
+# creat cells for a given link
+def linkCreateCells(CTM_param, linkid, link_type='normal', max_laneFlow=1800):
+    """
+    number: total number of cells in one link
+    Note that for 202402version, the tepology for the cells in link is fixed
+    """
+    #
+    # CTM_param = {
+    #     'v_f': 55.18,
+    #     'k_jam': 133,
+    #     'q_max': 1977,
+    #     'w': 20.35
+    # }
+
+    v_f = CTM_param['v_f']
+    k_jam = CTM_param['k_jam']
+    q_max = CTM_param['q_max']
+    w = CTM_param['w']
+
+    cells = []
+    flow_one = v_f
+    flow_two = 2 * v_f
+    if link_type == 'normal':  # normal line 400m, 7 cells
+        cells.append(Cell('C' + str(1), linkid, 'A0', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w,
+                          arr_rate=0,
+                          dis_rate=flow_one))
+        cells.append(Cell('C' + str(2), linkid, 'A0', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w,
+                          arr_rate=0,
+                          dis_rate=flow_one))
+        cells.append(
+            Cell('C' + str(3), linkid, 'A0', time_interval=5, vf=v_f, kjam=2 * k_jam, qmax=2 * q_max, length=0.08, w=w,
+                 arr_rate=0,
+                 dis_rate=flow_two))
+        cells.append(
+            Cell('C' + str(4), linkid, 'A0', time_interval=5, vf=v_f, kjam=2 * k_jam, qmax=2 * q_max, length=0.08, w=w,
+                 arr_rate=0,
+                 dis_rate=flow_two))
+        cells.append(
+            Cell('C' + str(5), linkid, 'A0', time_interval=5, vf=v_f, kjam=2 * k_jam, qmax=2 * q_max, length=0.08, w=w,
+                 arr_rate=0,
+                 dis_rate=flow_two))
+        cells.append(Cell('C' + str(6), linkid, 'A0', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w,
+                          arr_rate=0,
+                          dis_rate=flow_one))
+        cells.append(Cell('C' + str(7), linkid, 'A0', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w,
+                          arr_rate=0,
+                          dis_rate=flow_one))
+
+        # add connection
+        cells[0].addConnection(cells[2])  # 1-3
+        cells[1].addConnection(cells[2])  # 2-3
+        cells[2].addConnection(cells[3])  # 3-4
+        cells[3].addConnection(cells[4])  # 4-5
+        cells[4].addConnection(cells[5])  # 5-6
+        cells[4].addConnection(cells[6])  # 5-7
+
+    elif link_type == 'entry':  # entry line 240m, 4 cells
+
+        # sink cell, id C0
+        cells.append(
+            Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=v_f, kjam=99999, qmax=2 * q_max, length=0.08, w=w,
+                 arr_rate=0,
+                 dis_rate=flow_two))
+        cells.append(
+            Cell('C' + str(40), linkid, 'A1', time_interval=5, vf=v_f, kjam=2 * k_jam, qmax=2 * q_max, length=0.08, w=w,
+                 arr_rate=0,
+                 dis_rate=flow_two))
+        cells.append(
+            Cell('C' + str(5), linkid, 'A1', time_interval=5, vf=v_f, kjam=2 * k_jam, qmax=2 * q_max, length=0.08, w=w,
+                 arr_rate=0,
+                 dis_rate=flow_two))
+        cells.append(Cell('C' + str(6), linkid, 'A1', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w,
+                          arr_rate=0,
+                          dis_rate=flow_one))
+        cells.append(Cell('C' + str(7), linkid, 'A1', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w,
+                          arr_rate=0,
+                          dis_rate=flow_one))
+
+        cells[0].addConnection(cells[1])  # dummy-4
+        cells[1].addConnection(cells[2])  # 4-5
+        cells[2].addConnection(cells[3])  # 5-6
+        cells[2].addConnection(cells[4])  # 5-7
+
+    elif link_type == 'exit':  # entry line 240m, 4 cells
+        cells.append(
+            Cell('C' + str(1), linkid, 'A1', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w,
+                 arr_rate=0,
+                 dis_rate=flow_one))
+        cells.append(
+            Cell('C' + str(2), linkid, 'A1', time_interval=5, vf=v_f, kjam=k_jam, qmax=q_max, length=0.08, w=w,
+                 arr_rate=0,
+                 dis_rate=flow_one))
+        cells.append(
+            Cell('C' + str(3), linkid, 'A1', time_interval=5, vf=v_f, kjam=2 * k_jam, qmax=2 * q_max, length=0.08, w=w,
+                 arr_rate=0,
+                 dis_rate=flow_two))
+        cells.append(
+            Cell('C' + str(4), linkid, 'A1', time_interval=5, vf=v_f, kjam=2 * k_jam, qmax=2 * q_max, length=0.08, w=w,
+                 arr_rate=0,
+                 dis_rate=flow_two))
+        cells.append(
+            Cell('C' + str(0), linkid, 'A1', time_interval=5, vf=v_f, kjam=2 * k_jam, qmax=99999, length=0.08, w=w,
+                 arr_rate=0,
+                 dis_rate=99999))
+
+        cells[0].addConnection(cells[2])  # 1-3
+        cells[1].addConnection(cells[2])  # 2-3
+        cells[2].addConnection(cells[3])  # 3-4
+        cells[3].addConnection(cells[4])  # 4-dummy
+
+    return cells
+
+
+def notifyThreads(condition):
+    with condition:
+        condition.notify()
+
+
+def timeDependentDemand(order, t, miu, gamma, t0, t2=0, t3=0):
+    if order == 1:
+        return gamma * t + t0 + miu
+    elif order == 2:
+        return gamma * (t - t0) * (t2 - t) + miu
+    elif order == 3:
+        tbar = t0 + (3 * (t3 - t0) ** 2 - 4 * (t2 - t0) * (t3 - t0)) / (4 * (t3 - t0) - 6 * (t2 - t0))
+        return miu + gamma * (t - t0) * (t - t2) * (t - tbar)
+    else:
+        raise Exception("Invaild input parameter! Order of time dependtent demand formula must be 1, 2 or 3")
+
+
+def initializeCTM():
+    event = threading.Event()
+    sim = CTMSim(6, 50, event)
+    sim.start()
+    event.wait()
+    return sim
+
+
+def simulation_run_step(sim):
+    sim.simulationStep()
+    sim.mainthread_event.clear()
+    sim.mainthread_event.wait()
+
+
+class CTM():
+    def __init__(self, ctm_fd, network, demand_mode, tick_interval, demand_gt=None):
+        super().__init__()
+        self.current_step = 0
+        self.tick = tick_interval  # time interval for CTM calculation
+        self.net = network  # current network input is based on SUMO, the input format is net.xml
+        self.link_ls = {}
+        self.ctm_fd = ctm_fd
+        self.demand_mode = demand_mode
+        if self.demand_mode == "dynamic":
+            self.demand_gt = np.load(demand_gt)
+
+
+    def init(self, max_flow):
+        print(f'Initializing CTM for network{self.net.net_config}...')
+        # self.link_ls = [i[0] + i[1] for i in np.array(self.net.G.edges)] # get link index for ctm model
+        link_info = {'link_id': [],
+                     'from_link_id': [],
+                     'to_link_id': [],
+                     'length': [],
+                     }
+        for e in self.net.sumonet.getEdges():  # enumerate all edges in the sumo net file
+            # 1. get link id and length
+            link_info['link_id'].append(e.getID())
+            link_info['length'].append(e.getLength())
+            # 2. get from link id
+            from_node_id = e.getFromNode().getID()
+            if from_node_id in self.net.node_list.keys():
+                inter = self.net.node_list[from_node_id]  # get intersection class by given node ID
+                tmp = []
+                for e_f in inter.link_idx['in']:
+                    if re.findall(r'[0-9]+|[a-z]+', e_f.getID()) != re.findall(r'[0-9]+|[a-z]+', e.getID()):
+                        tmp.append(e_f.getID())
+                link_info['from_link_id'].append(tmp)
+            else:
+                link_info['from_link_id'].append('0')  # when link is the start link
+            # 3. get to link id
+            to_node_id = e.getToNode().getID()
+            if to_node_id in self.net.node_list.keys():
+                inter = self.net.node_list[to_node_id]  # get intersection class by given node ID
+                tmp = []
+                for e_t in inter.link_idx['in']:
+                    if re.findall(r'[0-9]+|[a-z]+', e_t.getID())[0] != re.findall(r'[0-9]+|[a-z]+', e.getID())[0]:
+                        tmp.append(e_t.getID())
+                link_info['to_link_id'].append(tmp)
+            else:
+                link_info['to_link_id'].append('0')  # when link is the start link
+
+        linkdf = pd.DataFrame(link_info)
+        """next is create unified cells for each corridos"""
+
+        # linkdf1 = pd.read_csv('link.csv', dtype={'link_id': object, 'to_link_id': object, 'from_link_id': object})
+        # demand = pd.read_csv('demand.csv', index_col=0)
+        # supply = pd.read_csv('supply.csv', dtype={'to_node_id': object, 'from_node_id': object})
+
+        # corridors = linkdf['corridor_id'].drop_duplicates()
+        # link = {}  # 20240222 update: save for future development on link cell list
+        for i in range(len(linkdf)):
+            # if the links is the entry link, creat two big cell for each lane
+            if linkdf.iloc[i]['from_link_id'] == '0' and linkdf.iloc[i]['to_link_id'] != '0':
+                print('creating cells for entry link {}'.format(linkdf.iloc[i]['link_id']))
+                linkCreateCells(self.ctm_fd, linkdf.iloc[i]['link_id'], link_type='entry', max_laneFlow=max_flow)
+            # normal link, need connections from both side with 8 cells for one link
+            elif linkdf.iloc[i]['from_link_id'] != '0' and linkdf.iloc[i]['to_link_id'] != '0':
+                print('creating cells for normal link {}'.format(linkdf.iloc[i]['link_id']))
+                linkCreateCells(self.ctm_fd, linkdf.iloc[i]['link_id'], link_type='normal', max_laneFlow=max_flow)
+            elif linkdf.iloc[i]['from_link_id'] != '0' and linkdf.iloc[i]['to_link_id'] == '0':
+                print('creating cells for exit link {}'.format(linkdf.iloc[i]['link_id']))
+                linkCreateCells(self.ctm_fd, linkdf.iloc[i]['link_id'], link_type='exit', max_laneFlow=max_flow)
+            # tmpp = linkdf.iloc[i]['link_id']
+            print('cells has been created')
+        # aa = Cell.idcase
+
+        print('start to get turn ratio')
+
+        # add conncetions and add turn ratio on each intersection
+        for node_key in self.net.node_list.keys():
+            node = self.net.node_list[node_key]
+            link_in, link_out = node.link_idx.values()
+
+            # get node tepology, by default it should be (up, right, down, left), the output is a serise
+            link_tplgy = node.link_node.loc[node.link_node['node_id'] == node_key].values.tolist()[0][1:]
+
+            turn_counts = {'from_node': [],
+                           'left': [],
+                           'thr': [],
+                           'right': []}
+
+            for l_idx in range(len(link_tplgy)):
+                # get edge id in
+                e_id = next((edge.getID() for edge in link_in if
+                             int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[l_idx]), None)
+                # get cell id in
+                c6_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C6')
+                c7_id = '{}.{}.{}'.format('A1' if link_tplgy[l_idx] > 100 else 'A0', e_id, 'C7')
+
+                # get other connected edge id, external out
+
+                # idx = l_idx + 1, left turn
+                lidx_tmp = (l_idx + 1) % 4
+                ex_id_left = next((edge.getID() for edge in link_out if
+                                   int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[lidx_tmp]), None)
+                c1_ex1_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id_left, 'C1')
+
+                # idx = l_idx + 2, through
+                lidx_tmp = (l_idx + 2) % 4
+                ex_id_thr = next((edge.getID() for edge in link_out if
+                                  int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[(l_idx + 2) % 4]),
+                                 None)
+                c1_ex2_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id_thr, 'C1')
+                c2_ex2_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id_thr, 'C2')
+
+                # idx = l_idx + 3, right turn
+                lidx_tmp = (l_idx + 3) % 4
+                ex_id_right = next((edge.getID() for edge in link_out if
+                                    int(re.findall(r'[0-9]+|[a-z]+', edge.getID())[0]) == link_tplgy[(l_idx + 3) % 4]),
+                                   None)
+                c2_ex3_id = '{}.{}.{}'.format('A1' if link_tplgy[lidx_tmp] > 100 else 'A0', ex_id_right, 'C2')
+
+                """
+                Next, update turning ratio, for each link phase, there are three merging cells and three diverging cell
+                the turning ratio is calculated by the number of vehicles in turning table
+                """
+
+                turn_count_tmpdf = self.net.turn_rate.where(self.net.turn_rate['from'] == e_id).dropna(subset=['from'])
+
+                turn_counts['from_node'].append(e_id)
+                turn_counts['left'].append(0)
+                turn_counts['right'].append(0)
+                turn_counts['thr'].append(0)
+
+                for i in range(len(turn_count_tmpdf)):
+                    if ex_id_left == turn_count_tmpdf.iloc[i]['to']:
+                        turn_counts['left'][-1] = turn_count_tmpdf.iloc[i]['count']
+                    elif ex_id_thr == turn_count_tmpdf.iloc[i]['to']:
+                        turn_counts['thr'][-1] = turn_count_tmpdf.iloc[i]['count']
+                    elif ex_id_right == turn_count_tmpdf.iloc[i]['to']:
+                        turn_counts['right'][-1] = turn_count_tmpdf.iloc[i]['count']
+
+                # add connections in the intersection, on both side, distribute the turning ratio as a equal ratio
+                total_veh = turn_counts['left'][-1] + turn_counts['thr'][-1] + turn_counts['right'][-1]
+                right_thr = max(0, 0.5 * total_veh - turn_counts['right'][-1])
+                left_thr = max(0, 0.5 * total_veh - turn_counts['left'][-1])
+                # right lane through
+                Cell.getCell(c7_id).addConnectionCounts(Cell.getCell(c2_ex2_id), right_thr)
+                # right lane right
+                Cell.getCell(c7_id).addConnectionCounts(Cell.getCell(c2_ex3_id), turn_counts['right'][-1])
+                # left lane left
+                Cell.getCell(c6_id).addConnectionCounts(Cell.getCell(c1_ex1_id), turn_counts['left'][-1])
+                # left lane through
+                Cell.getCell(c6_id).addConnectionCounts(Cell.getCell(c1_ex2_id), left_thr)
+
+            # print('start to shift')
+            del c1_ex1_id, c1_ex2_id, c2_ex2_id, c2_ex3_id, ex_id_thr, ex_id_right, ex_id_left
+
+            turn_countsdf = pd.DataFrame(turn_counts)
+            # then we need to:
+            # 1. check all the cell 6 and cell 7 for connection correctness
+            # 2. update the in link cells counts
+            for l in link_in:
+                # 2024 0722: the connection confirmation is only important to sending cells (cell 6 and cell7)\
+
+                c6_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                                          l.getID(), 'C6')
+                Cell.getCell(c6_id).checkConnection()
+
+                c7_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                                          l.getID(), 'C7')
+                Cell.getCell(c7_id).checkConnection()
+
+                # e_id = l.getID()
+                # c2_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                #                           l.getID(), 'C2')
+                # Cell.getCell(c2_id).switchConnection()
+
+                c5_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                                          l.getID(), 'C5')
+                Cell.getCell(c5_id).connection_counts_his.append(sum(Cell.getCell(c5_id).cto[0].connection_counts_his))
+                Cell.getCell(c5_id).connection_counts_his.append(sum(Cell.getCell(c5_id).cto[1].connection_counts_his))
+                del c5_id
+
+            for l in link_out:
+                # e_id = l.getID()
+
+                # c1_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                #                           l.getID(), 'C1')
+                # Cell.getCell(c1_id).switchConnection()
+                #
+                # c2_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                #                           l.getID(), 'C2')
+                # Cell.getCell(c2_id).switchConnection()
+
+                c3_id = '{}.{}.{}'.format('A1' if int(re.findall(r'[0-9]+|[a-z]+', l.getID())[0]) > 100 else 'A0',
+                                          l.getID(), 'C3')
+                # c3 = Cell.getCell(c3_id)
+                Cell.getCell(c3_id).connection_counts_his.append(
+                    sum(Cell.getCell(c3_id).cfrom[0].connection_counts_his))
+                Cell.getCell(c3_id).connection_counts_his.append(
+                    sum(Cell.getCell(c3_id).cfrom[1].connection_counts_his))
+                del c3_id
+
+        self.cells_dic = Cell.idcase
+        for c in self.cells_dic.values():
+            c.initialCellType()
+            c.connection_counts_now = copy.deepcopy(c.connection_counts_his)
+        # for c in self.cells_dic.values():
+        #     c.updateRatio()
+        print('network established')
+        # initial demand flow.
+        self.demand = self.net.demand
+        self.links = linkdf
+
+        for i in range(len(self.demand)):
+            Cell.getFirstCell(self.demand.iloc[i]['link_id']).arr_rate = self.demand.iloc[i]['demand']
+
+        print("Initialize Complete!")
+        # get connection matrix (numpy array, 760*760)
+        cell_id_ls = [k for k in self.cells_dic.keys()]
+        self.connection_matrix = np.zeros((len(cell_id_ls), len(cell_id_ls)))
+        for idx in cell_id_ls:
+            c_curt = self.cells_dic[idx]
+            curt_idx = cell_id_ls.index(idx)
+            self.connection_matrix[curt_idx, curt_idx] = 0
+            if c_curt.cfrom:
+                # cfrom_ls = [c.getCompleteAddress for c in c_curt.cfrom]
+                cfrom_idxls = [cell_id_ls.index(c.getCompleteAddress()) for c in c_curt.cfrom]
+                # print('yes')
+                for cf_idx in cfrom_idxls:
+                    self.connection_matrix[curt_idx, cf_idx] = 0
+            if c_curt.cto:
+                cto_idxls = [cell_id_ls.index(c.getCompleteAddress()) for c in c_curt.cto]
+                # print('yes')
+                for ct_idx in cto_idxls:
+                    self.connection_matrix[curt_idx, ct_idx] = 1
+        self.cell_idx = cell_id_ls
+        print('get connection matrix finished')
+
+        self.demand_cell_list = []
+        for key in self.cells_dic.keys():
+            if key.split(".")[-1] == "C40":
+                self.demand_cell_list.append(key)
+        print("get demand cell list already")
+        return self.cell_idx
+
+    def resetValue(self, qmax, w):
+        for k, cell in self.cells_dic.items():
+            cell.resetValue()
+            cell.setParm(qmax=qmax, w=w)
+
+    def runCTM(self, time_current, time_range):
+        """
+        run CTM cell status from current status and stop at target time
+        """
+        number = {}
+        outflow = {}
+        inflow = {}
+        signal_flag = {}
+
+        steps = time_range // self.tick
+        time_start = time.time()
+        # cells_old = copy.deepcopy(self.cells_dic)
+        # print(f'time{steps}')
+        for t in range(steps+1):
+            # if t == 2:
+            #     print('yee')
+
+            # updating demand
+            if self.demand_mode == "static":
+                demand_current = self.getDemandByTime(time_current + t * self.tick)
+                for i in range(len(demand_current)):
+                    Cell.getFirstCell(demand_current.iloc[i]['link_id']).arr_rate = demand_current.iloc[i]['demand']
+            elif self.demand_mode == "dynamic":
+                # the input is the step for this loop, should be time_current + t* self.tick
+                # the input is the step for current
+                self.updateDynamicDemand(time=time_current + t * self.tick)
+            if t == 1:
+                # print("save old cells")
+                # cells_old = copy.deepcopy(self.cells_dic)
+                snapshot = {cid: cell.get_state() for cid, cell in self.cells_dic.items()}
+
+
+
+            # update signal timing for current step t
+            # print('start update signal')
+            for n in self.net.node_list.values():
+                n.getEdgeSignalPhase(t * 5)  # YW: the time current and input time here is absolute time.
+            # update current connection and pk
+            for cell in self.cells_dic.values():
+                cell.updateConnection()
+            for c in self.cells_dic.values():
+                c.updateRatio()
+            # update cell density
+            for cell in self.cells_dic.values():
+                # if cell.getCompleteAddress() == 'A1.E101.C0':
+                cell.updateInOutFlow()  #in a mode of density unit
+            for cell in self.cells_dic.values():
+                cell.updateDensity()
+            # print('yeyyyy')
+
+            # collect cell result
+            for cell in self.cells_dic.values():
+                cell_id = cell.getCompleteAddress()
+                # 1. record density
+                if cell_id not in number.keys():
+                    number[cell_id] = [cell.oldn]
+                else:
+                    number[cell_id].append(cell.oldn)
+                # 2. record outflow number
+                if cell_id not in outflow.keys():
+                    outflow[cell_id] = [cell.y_out]
+                else:
+                    outflow[cell_id].append(cell.y_out)
+                # 3. record norm density
+                if cell_id not in inflow.keys():
+                    inflow[cell_id] = [cell.y_in]
+                else:
+                    inflow[cell_id].append(cell.y_in)
+                cell.updated = False
+                # 4. record signal flag
+                if cell_id not in signal_flag.keys():
+                    signal_flag[cell_id] = [cell.sig_flag]
+                else:
+                    signal_flag[cell_id].append(cell.sig_flag)
+
+        time_end = time.time()
+        # numbers = density*0.08
+        print('time spend for {} steps: {}'.format(steps, time_end - time_start))
+        # density_df = pd.DataFrame(density).T
+        numberout_df = pd.DataFrame(outflow).T
+        numberin_df = pd.DataFrame(inflow).T
+        number_df = pd.DataFrame(number).T
+        sigflag_df = pd.DataFrame(signal_flag).T
+        # print('yes')
+        return snapshot, numberout_df, numberin_df, number_df, sigflag_df
+
+    def getDemandByTime(self, time):
+        df = self.demand
+        # Filter the dataframe to include only rows where time is less than or equal to the input time
+        filtered_df = df[df['time'] <= time]
+
+        # For each link_id, get the demand at the latest time before or equal to the input time
+        latest_demand = filtered_df.groupby('link_id').apply(lambda x: x.loc[x['time'].idxmax()])
+
+        # Drop the 'time' column since we're interested in the demand value at the input time
+        latest_demand = latest_demand.drop(columns='time').reset_index(drop=True)
+
+        return latest_demand
+
+    def updateSignalTime(self, time_index):
+        """
+        this function is to update related cell signal flag according to signal timing plan
+        """
+
+    def getVehDelay(self, route_info):
+        pass
+
+    def getCell(self, cell_id):
+        return self.cells_dic[cell_id]
+
+    def updateDynamicDemand(self, time):
+        """
+        self.cell_idx is the cell index list. --> [list]
+        self.demand_gt  is the demand ground truth for CTM format  [cell id, time step]
+        """
+        # self.cell_idx  this is
+        if time >= self.demand_gt.shape[1] * self.tick:
+            print(f'current time is {time}, time out of range')
+            demand = self.getDemandByTime(time)
+            for i in range(len(demand)):
+                Cell.getFirstCell(demand.iloc[i]['link_id']).arr_rate = demand.iloc[i]['demand']
+        else:
+            # print(f'current time is {time}, time within the range')
+            for cell_key in self.demand_cell_list:
+                # idx = self.cell_idx.index(cell_key)
+                # idxx = time//self.tick
+
+                # print(f'current time is {time}, with demand shape {self.demand_gt.shape}')
+                self.cells_dic[cell_key].n = self.demand_gt[self.cell_idx.index(cell_key), int(time//self.tick)]
+                # print('this has been updated')
+
+
+
+

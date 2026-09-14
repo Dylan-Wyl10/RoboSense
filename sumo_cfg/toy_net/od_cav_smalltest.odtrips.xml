@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-06-16 14:52:44 by Eclipse SUMO od2trips Version 1.17.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/od2tripsConfiguration.xsd">
+
+    <input>
+        <taz-files value="taz_all.taz.xml"/>
+        <od-matrix-files value="od_file_cav.od"/>
+    </input>
+
+    <output>
+        <output-file value="od_file_cav.odtrips.xml"/>
+    </output>
+
+    <processing>
+        <vtype value="cav"/>
+        <prefix value="cav"/>
+    </processing>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <trip id="cav0" depart="80.00" from="-E102" to="E113" type="cav" fromTaz="AA_in" toTaz="FF_out" departLane="free" departSpeed="max"/>
+    <trip id="cav1" depart="100.00" from="-E104" to="-E116" type="cav" fromTaz="AC_in" toTaz="FD_out" departLane="free" departSpeed="max"/>
+    <trip id="cav2" depart="100.50" from="E116" to="E104" type="cav" fromTaz="FD_in" toTaz="AC_out" departLane="free" departSpeed="max"/>
+    <trip id="cav3" depart="101.00" from="-E104" to="-E116" type="cav" fromTaz="AC_in" toTaz="FD_out" departLane="free" departSpeed="max"/>
+    <trip id="cav4" depart="102.50" from="-E104" to="-E116" type="cav" fromTaz="AC_in" toTaz="FD_out" departLane="free" departSpeed="max"/>
+    <trip id="cav5" depart="103.00" from="-E104" to="-E116" type="cav" fromTaz="AC_in" toTaz="FD_out" departLane="free" departSpeed="max"/>
+    <trip id="cav6" depart="103.50" from="-E104" to="-E116" type="cav" fromTaz="AC_in" toTaz="FD_out" departLane="free" departSpeed="max"/>
+
+
+
+<!--    <trip id="cav9" depart="18.39" from="-E102" to="E113" type="cav" fromTaz="AA_in" toTaz="FF_out" departLane="free" departSpeed="max"/>-->
+<!--    <trip id="cav111" depart="22.71" from="-E112" to="-E124" type="cav" fromTaz="EF_in" toTaz="BA_out" departLane="free" departSpeed="max"/>-->
+<!--    <trip id="cav58" depart="27.48" from="E124" to="E112" type="cav" fromTaz="BA_in" toTaz="EF_out" departLane="free" departSpeed="max"/>-->
+<!--    <trip id="cav135" depart="39.03" from="E117" to="E105" type="cav" fromTaz="FC_in" toTaz="AD_out" departLane="free" departSpeed="max"/>-->
+<!--    <trip id="cav5" depart="55.65" from="E101" to="-E114" type="cav" fromTaz="AA_in" toTaz="FF_out" departLane="free" departSpeed="max"/>-->
+<!--    <trip id="cav94" depart="89.60" from="-E111" to="-E123" type="cav" fromTaz="DF_in" toTaz="CA_out" departLane="free" departSpeed="max"/>-->
+<!--    <trip id="cav123" depart="116.59" from="E119" to="E108" type="cav" fromTaz="FA_in" toTaz="AF_out" departLane="free" departSpeed="max"/>-->
+<!--    <trip id="cav87" depart="169.75" from="E122" to="E110" type="cav" fromTaz="DA_in" toTaz="CF_out" departLane="free" departSpeed="max"/>-->
+<!--    <trip id="cav131" depart="179.52" from="E118" to="E106" type="cav" fromTaz="FB_in" toTaz="AE_out" departLane="free" departSpeed="max"/>-->
+<!--    <trip id="cav44" depart="188.13" from="-E107" to="-E119" type="cav" fromTaz="AF_in" toTaz="FA_out" departLane="free" departSpeed="max"/>-->
+<!--    <trip id="cav158" depart="211.05" from="-E113" to="E102" type="cav" fromTaz="FF_in" toTaz="AA_out" departLane="free" departSpeed="max"/>-->
+</routes>
