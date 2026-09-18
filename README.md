@@ -3,7 +3,8 @@
 **Leveraging robotaxi fleets as drive-by sensors for urban traffic monitoring.**
 
 > 📄 **Paper:** [RoboSense: Leveraging Robotaxi Fleets as Drive-by Sensors for Urban
-> Traffic Monitoring (PDF)](paper/RoboSense-preprint.pdf)
+> Traffic Monitoring](https://arxiv.org/abs/2609.06813) · arXiv:2609.06813 ·
+> [PDF](paper/RoboSense-preprint.pdf)  
 > Yilin Wang, Yiheng Feng · Purdue University
 
 Robotaxis are dispatched to carry passengers. But a centrally controlled fleet can do
@@ -466,9 +467,9 @@ See [`DATA.md`](DATA.md) for the exact tracked/untracked breakdown.
 
 ## Citation
 
-The paper is included as
-[`paper/RoboSense-preprint.pdf`](paper/RoboSense-preprint.pdf); please cite via
-[`CITATION.cff`](CITATION.cff).
+The paper is on arXiv: [arXiv:2609.06813](https://arxiv.org/abs/2609.06813) (a copy is
+included as [`paper/RoboSense-preprint.pdf`](paper/RoboSense-preprint.pdf)). Please cite
+via [`CITATION.cff`](CITATION.cff).
 
 ## License
 
