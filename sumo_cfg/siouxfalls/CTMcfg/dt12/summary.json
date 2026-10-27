@@ -1,0 +1,28 @@
+{
+ "cells": 1224,
+ "by_role": {
+  "lane_in": 194,
+  "merge": 97,
+  "full": 600,
+  "diverge": 97,
+  "lane_out": 194,
+  "source": 21,
+  "sink": 21
+ },
+ "unique_ids": true,
+ "links": 1531,
+ "intersection_links": 383,
+ "cells_without_input": [],
+ "cells_without_output": [],
+ "cells_not_covered_by_pieces": [],
+ "lane_cells_on_lane_change_pieces": [],
+ "full_cells_on_no_lane_change_pieces": [],
+ "receiving_cells_by_upstream_approaches": {
+  "1": 24,
+  "2": 151,
+  "3": 19
+ },
+ "dt": 12.0,
+ "cell_m": 192.0,
+ "lane_zone_positions": 1
+}

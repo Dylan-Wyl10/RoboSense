@@ -1,0 +1,24 @@
+<configuration>
+    <input>
+        <node-files value="sf.nod.xml"/>
+        <edge-files value="sf.edg.xml"/>
+        <connection-files value="sf.con.xml"/>
+    </input>
+    <output>
+        <output-file value="../siouxfalls.net.xml"/>
+    </output>
+    <processing>
+        <offset.disable-normalization value="true"/>
+    </processing>
+    <junctions>
+        <no-internal-links value="true"/>
+        <no-turnarounds value="true"/>
+    </junctions>
+    <tls_building>
+        <tls.default-type value="static"/>
+        <tls.layout value="incoming"/>
+        <tls.green.time value="20"/>
+        <tls.yellow.time value="2"/>
+        <tls.allred.time value="3"/>
+    </tls_building>
+</configuration>
