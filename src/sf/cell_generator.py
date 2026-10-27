@@ -82,6 +82,8 @@ def intra_links(cells):
     """connections inside one link"""
     by_pos = {}
     for c in cells:
+        if c['role'] in ('source', 'sink'):        # their arcs are added separately (types 'source' and 'sink')
+            continue
         by_pos.setdefault(c['position'], []).append(c)
     out = []
     for p in sorted(by_pos)[:-1]:
