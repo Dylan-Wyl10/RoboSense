@@ -1,0 +1,5 @@
+# generated demand: keep the inputs and summaries in git, not the large generated files (as the 5x5 od/flow*/)
+dualogs/
+*.rou.xml
+*.odtrips.xml
+*.rou.alt.xml

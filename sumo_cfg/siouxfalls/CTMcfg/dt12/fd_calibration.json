@@ -1,0 +1,26 @@
+{
+ "dt": 12.0,
+ "v_f": 57.6,
+ "k_jam": 133.33333333333334,
+ "start": 1800.0,
+ "duration": 3600.0,
+ "best_inner_cells": {
+  "q_max": 1700,
+  "delta_kc": 0,
+  "w": 16.375,
+  "mae_inner_cells": 0.6769075791657466,
+  "mae_entry_cells": 0.6078145661679702
+ },
+ "best_entry_cells_5x5_score": {
+  "q_max": 2050,
+  "delta_kc": 0,
+  "w": 20.973,
+  "mae_inner_cells": 0.6859799433405456,
+  "mae_entry_cells": 0.5563807346951817
+ },
+ "network_vehicles_truth_mean": 1063.0933333333332,
+ "network_vehicles_ctm_mean": 1033.6164186564647,
+ "network_vehicles_rel_err_mean": 0.02786948821746223,
+ "bench": "result/ctmResult/logs/siouxfalls/bench_vc085_due049 (od/vc085_7200s/od.rou.xml = DUE iteration 049)",
+ "note": "full grid and per-link errors in the bench folder (gitignored); MAE is insensitive to delta_kc on this bench"
+}

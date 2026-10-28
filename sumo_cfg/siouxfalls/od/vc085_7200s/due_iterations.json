@@ -1,0 +1,412 @@
+{
+ "iterations": [
+  {
+   "iteration": 0,
+   "end_s": 11158.0,
+   "teleports": 6,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 943.38
+  },
+  {
+   "iteration": 1,
+   "end_s": 8765.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 727.33
+  },
+  {
+   "iteration": 2,
+   "end_s": 8765.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 725.05
+  },
+  {
+   "iteration": 3,
+   "end_s": 8765.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 723.3
+  },
+  {
+   "iteration": 4,
+   "end_s": 8765.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 722.2
+  },
+  {
+   "iteration": 5,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 719.26
+  },
+  {
+   "iteration": 6,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 717.86
+  },
+  {
+   "iteration": 7,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 716.79
+  },
+  {
+   "iteration": 8,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 715.86
+  },
+  {
+   "iteration": 9,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 713.97
+  },
+  {
+   "iteration": 10,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 712.57
+  },
+  {
+   "iteration": 11,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 711.78
+  },
+  {
+   "iteration": 12,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 711.77
+  },
+  {
+   "iteration": 13,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 711.21
+  },
+  {
+   "iteration": 14,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 711.58
+  },
+  {
+   "iteration": 15,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 711.4
+  },
+  {
+   "iteration": 16,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 711.18
+  },
+  {
+   "iteration": 17,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 711.48
+  },
+  {
+   "iteration": 18,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.68
+  },
+  {
+   "iteration": 19,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.8
+  },
+  {
+   "iteration": 20,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.82
+  },
+  {
+   "iteration": 21,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.95
+  },
+  {
+   "iteration": 22,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.76
+  },
+  {
+   "iteration": 23,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.21
+  },
+  {
+   "iteration": 24,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.68
+  },
+  {
+   "iteration": 25,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.5
+  },
+  {
+   "iteration": 26,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.35
+  },
+  {
+   "iteration": 27,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.92
+  },
+  {
+   "iteration": 28,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.33
+  },
+  {
+   "iteration": 29,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.64
+  },
+  {
+   "iteration": 30,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.9
+  },
+  {
+   "iteration": 31,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 711.14
+  },
+  {
+   "iteration": 32,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 711.04
+  },
+  {
+   "iteration": 33,
+   "end_s": 8660.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.25
+  },
+  {
+   "iteration": 34,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.27
+  },
+  {
+   "iteration": 35,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.37
+  },
+  {
+   "iteration": 36,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.88
+  },
+  {
+   "iteration": 37,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.44
+  },
+  {
+   "iteration": 38,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.32
+  },
+  {
+   "iteration": 39,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.0
+  },
+  {
+   "iteration": 40,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.53
+  },
+  {
+   "iteration": 41,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.61
+  },
+  {
+   "iteration": 42,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.52
+  },
+  {
+   "iteration": 43,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.57
+  },
+  {
+   "iteration": 44,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.54
+  },
+  {
+   "iteration": 45,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.77
+  },
+  {
+   "iteration": 46,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.46
+  },
+  {
+   "iteration": 47,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 709.89
+  },
+  {
+   "iteration": 48,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.7
+  },
+  {
+   "iteration": 49,
+   "end_s": 8659.0,
+   "teleports": 0,
+   "arrived": 10505,
+   "loaded": 10505,
+   "mean_travel_time_s": 710.96
+  }
+ ],
+ "lowest_mean_travel_time_without_jams": {
+  "iteration": 46,
+  "end_s": 8659.0,
+  "teleports": 0,
+  "arrived": 10505,
+  "loaded": 10505,
+  "mean_travel_time_s": 709.46
+ }
+}

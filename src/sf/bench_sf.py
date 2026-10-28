@@ -9,7 +9,7 @@ link per step (the external flows the CTM is given in 'dynamic' mode).
 (dynamic mode), and reports how far its cell counts are from the ground truth.
 
 Run from src/:
-  python -m sf.bench_sf --routes <rou.xml> --out <dir> [--dt 12] [--end 7200] [--vtypes <add.xml>]
+  python -m sf.bench_sf --routes <rou.xml> --out <dir> [--dts 12,6] [--end <s>] [--vtypes <add.xml>]
 """
 import argparse
 import json
@@ -54,52 +54,89 @@ def turn_counts_from_routes(route_file):
     return counts
 
 
-def run_bench(route_file, out_dir, dt=12.0, end=7200.0, resolution=0.1, vtypes=None, seed=42):
+def run_bench(route_file, out_dir, dts=(12.0, 6.0), end=None, resolution=0.1, vtypes=None, seed=42):
+    """one SUMO run (no routing); for every dt in dts: ctm_gt [cells x steps] of that cell layout in <out_dir>/dt<dt>/.
+    Also: vehicles entering each entry link and leaving each exit link per step of the first dt (boundary flows),
+    turn counts of the route file. end=None runs until the network is empty."""
     os.makedirs(out_dir, exist_ok=True)
-    ctm = SFCTM(FD_5X5, dt)
-    ctm.init()
-    mapper = CellMapper(ctm)
-    entry_first = {ctm.link_of[ctm.idx[c]]: ctm.idx[c] for c in ctm.demand_cell_list}
-    files = [route_file] + ([vtypes] if vtypes else [])
-    cmd = ['sumo', '-n', NET, '-r', ','.join(files), '--step-length', str(resolution), '--no-step-log', 'true',
-           '--seed', str(seed), '--end', str(end), '--duration-log.statistics', 'true',
-           '--tripinfo-output', os.path.join(out_dir, 'tripinfo.xml')]
+    p2l = piece_to_link()
+    lay = []
+    for dt in dts:
+        ctm = SFCTM(FD_5X5, dt)
+        ctm.init()
+        lay.append({'dt': dt, 'ctm': ctm, 'mapper': CellMapper(ctm), 'every': int(round(dt / resolution)), 'gt': [], 'unmapped': 0})
+    cmd = ['sumo', '-n', NET, '-r', route_file] + (['--additional-files', vtypes] if vtypes else []) + [
+           '--step-length', str(resolution), '--no-step-log', 'true',
+           '--seed', str(seed), '--duration-log.statistics', 'true',
+           '--tripinfo-output', os.path.join(out_dir, 'tripinfo.xml')] + (['--end', str(end)] if end else [])
     traci.start(cmd)
-    steps = int(end // dt) + 1
-    gt = np.zeros((len(ctm.cell_idx), steps), dtype=np.int32)
-    unmapped = 0
-    every = int(round(dt / resolution))
-    k_step = 0
+    spec = json.load(open(SPEC))
+    entry_links = [lk['id'] for lk in spec['links'] if lk['role'] == 'entry']
+    exit_links = [lk['id'] for lk in spec['links'] if lk['role'] == 'exit']
+    e_idx, x_idx = {L: i for i, L in enumerate(entry_links)}, {L: i for i, L in enumerate(exit_links)}
+    dep, arr = [np.zeros(len(entry_links))], [np.zeros(len(exit_links))]
+    last_edge = {}
     tick = 0
+    first_every = lay[0]['every']
     while True:
-        if tick % every == 0 and k_step < steps:
-            for v in traci.vehicle.getIDList():
-                i = mapper.cell(traci.vehicle.getRoadID(v), traci.vehicle.getLaneIndex(v), traci.vehicle.getLanePosition(v))
-                if i is None:
-                    unmapped += 1
-                else:
-                    gt[i, k_step] += 1
-            k_step += 1
-        if traci.simulation.getTime() >= end or (traci.simulation.getMinExpectedNumber() == 0 and tick > 0):
+        for L in lay:
+            if tick % L['every'] == 0:
+                col = np.zeros(len(L['ctm'].cell_idx), dtype=np.int32)
+                for v in traci.vehicle.getIDList():
+                    i = L['mapper'].cell(traci.vehicle.getRoadID(v), traci.vehicle.getLaneIndex(v), traci.vehicle.getLanePosition(v))
+                    if i is None:
+                        L['unmapped'] += 1
+                    else:
+                        col[i] += 1
+                L['gt'].append(col)
+        if tick % first_every == 0 and tick > 0:
+            dep.append(np.zeros(len(entry_links)))
+            arr.append(np.zeros(len(exit_links)))
+        for v in traci.simulation.getDepartedIDList():
+            r = traci.vehicle.getRoute(v)
+            last_edge[v] = r[-1]
+            L = p2l.get(r[0])
+            if L in e_idx:
+                dep[-1][e_idx[L]] += 1
+        for v in traci.simulation.getArrivedIDList():
+            L = p2l.get(last_edge.pop(v, ''))
+            if L in x_idx:
+                arr[-1][x_idx[L]] += 1
+        if (end and traci.simulation.getTime() >= end) or (traci.simulation.getMinExpectedNumber() == 0 and tick > 0):
             break
         traci.simulationStep()
         tick += 1
     traci.close()
-    gt = gt[:, :k_step]
-    np.save(os.path.join(out_dir, 'ctm_gt.npy'), gt)
-    json.dump(ctm.cell_idx, open(os.path.join(out_dir, 'cell_index.json'), 'w'))
     tc = turn_counts_from_routes(route_file)
     json.dump([[a, b, c] for (a, b), c in sorted(tc.items())], open(os.path.join(out_dir, 'turn_counts.json'), 'w'))
-    info = {'route_file': os.path.abspath(route_file), 'dt': dt, 'end': end, 'resolution': resolution, 'seed': seed,
-            'steps': int(k_step), 'unmapped_vehicle_samples': int(unmapped), 'max_in_network': int(gt.sum(axis=0).max()),
-            'entry_cells': {L: ctm.cell_idx[i] for L, i in entry_first.items()}}
+    np.save(os.path.join(out_dir, 'entry_departures.npy'), np.array(dep).T)    # [entry links x steps of dts[0]]
+    np.save(os.path.join(out_dir, 'exit_arrivals.npy'), np.array(arr).T)
+    json.dump({'entry_links': entry_links, 'exit_links': exit_links, 'dt': dts[0]},
+              open(os.path.join(out_dir, 'boundary_index.json'), 'w'))
+    info = {'route_file': os.path.abspath(route_file), 'end': end, 'resolution': resolution, 'seed': seed,
+            'sim_end_s': tick * resolution, 'departed': int(sum(d.sum() for d in dep)), 'arrived': int(sum(a.sum() for a in arr)),
+            'layouts': {}}
+    for L in lay:
+        d = os.path.join(out_dir, f'dt{L["dt"]:g}')
+        os.makedirs(d, exist_ok=True)
+        gt = np.array(L['gt']).T
+        np.save(os.path.join(d, 'ctm_gt.npy'), gt)
+        json.dump(L['ctm'].cell_idx, open(os.path.join(d, 'cell_index.json'), 'w'))
+        info['layouts'][f'{L["dt"]:g}'] = {'steps': int(gt.shape[1]), 'unmapped_vehicle_samples': int(L['unmapped']),
+                                          'max_in_network': int(gt.sum(axis=0).max()),
+                                          'entry_cells': L['ctm'].demand_cell_list}
     json.dump(info, open(os.path.join(out_dir, 'bench_info.json'), 'w'), indent=1)
     return info
 
 
+def load_gt(out_dir, dt):
+    p = os.path.join(out_dir, f'dt{dt:g}', 'ctm_gt.npy')
+    return np.load(p if os.path.exists(p) else os.path.join(out_dir, 'ctm_gt.npy')).astype(float)
+
+
 def compare(out_dir, fd=None, dt=12.0, start=0, steps=None):
     """open-loop CTM fed with the observed first cells of the entry links; error against the ground truth"""
-    gt = np.load(os.path.join(out_dir, 'ctm_gt.npy')).astype(float)
+    gt = load_gt(out_dir, dt)
     tc = {(a, b): c for a, b, c in json.load(open(os.path.join(out_dir, 'turn_counts.json')))}
     ctm = SFCTM(fd or FD_5X5, dt, demand_mode='dynamic', demand_gt=gt)
     ctm.init()
@@ -132,9 +169,11 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--routes', required=True)
     ap.add_argument('--out', required=True)
-    ap.add_argument('--dt', type=float, default=12.0)
-    ap.add_argument('--end', type=float, default=7200.0)
+    ap.add_argument('--dts', default='12,6')
+    ap.add_argument('--end', type=float, default=None)
     ap.add_argument('--vtypes', default=None)
     a = ap.parse_args()
-    print(json.dumps(run_bench(a.routes, a.out, a.dt, a.end, vtypes=a.vtypes), indent=1))
-    print(json.dumps(compare(a.out, dt=a.dt), indent=1))
+    dts = tuple(float(x) for x in a.dts.split(','))
+    print(json.dumps(run_bench(a.routes, a.out, dts, a.end, vtypes=a.vtypes), indent=1))
+    for dt in dts:
+        print(dt, json.dumps(compare(a.out, dt=dt), indent=1))
