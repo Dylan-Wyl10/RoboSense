@@ -1,0 +1,26 @@
+{
+ "dt": 6.0,
+ "v_f": 57.6,
+ "k_jam": 133.33333333333334,
+ "start": 1800.0,
+ "duration": 3600.0,
+ "best_inner_cells": {
+  "q_max": 1650,
+  "delta_kc": 0,
+  "w": 15.761,
+  "mae_inner_cells": 0.4244808729499461,
+  "mae_entry_cells": 0.3673403831831262
+ },
+ "best_entry_cells_5x5_score": {
+  "q_max": 1900,
+  "delta_kc": 0,
+  "w": 18.934,
+  "mae_inner_cells": 0.4346133663026831,
+  "mae_entry_cells": 0.3421091450835985
+ },
+ "network_vehicles_truth_mean": 1063.2566666666667,
+ "network_vehicles_ctm_mean": 1012.6128755917132,
+ "network_vehicles_rel_err_mean": 0.04759136022850697,
+ "bench": "the first bench (SUMO default keep-right lane changing, routes of the first DUE, iteration 049); removed on 2026-11-01, the final setup uses lcKeepRight=\"0\" with a new DUE and bench (result/ctmResult/logs/siouxfalls/bench_vc085_due049)",
+ "note": "full grid in result/ctmResult/logs/siouxfalls/fd_calibration_source/dt6/CTMcali.json (gitignored); MAE is insensitive to delta_kc; the author kept this FD for the final setup without recalibrating"
+}

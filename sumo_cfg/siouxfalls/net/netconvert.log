@@ -1,0 +1,7 @@
+Success.
+Warning: The traffic light '1' has a high cycle time of 100.00.
+Warning: The traffic light '10' has a high cycle time of 125.00.
+Warning: The traffic light '11' has a high cycle time of 100.00.
+Warning: The traffic light '12' has a high cycle time of 100.00.
+Warning: The traffic light '13' has a high cycle time of 100.00.
+Warning: 24 total messages of type: The traffic light '%' has a high cycle time of %.
