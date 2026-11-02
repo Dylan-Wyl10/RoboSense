@@ -1,7 +1,11 @@
-# Source data of the Sioux Falls network (YIL-231)
+# Source data of the Sioux Falls network
 
-Copied unchanged from the TNTP repository `bstabler/TransportationNetworks`, folder `SiouxFalls`,
-commit `d1639b4ef218` (2025-06-19):
+The network and demand in this repository were built from four files of the TNTP repository
+`bstabler/TransportationNetworks`, folder `SiouxFalls`, commit `d1639b4ef218` (2025-06-19). The TNTP files are
+**not included** here because they carry no open-source licence. They are only needed to rebuild the network or
+the demand (`src/sf/build_net.py`, `src/sf/demand_sf.py`); the generated network, CTM cells and demand files are
+in `sumo_cfg/siouxfalls/` already. To rebuild, download the four files unchanged into this folder from
+https://github.com/bstabler/TransportationNetworks/tree/d1639b4ef218/SiouxFalls :
 
 | File | Content | Used for |
 |---|---|---|
