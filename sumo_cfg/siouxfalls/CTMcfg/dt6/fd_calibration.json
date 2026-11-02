@@ -21,6 +21,6 @@
  "network_vehicles_truth_mean": 1063.2566666666667,
  "network_vehicles_ctm_mean": 1012.6128755917132,
  "network_vehicles_rel_err_mean": 0.04759136022850697,
- "bench": "result/ctmResult/logs/siouxfalls/bench_vc085_due049 (od/vc085_7200s/od.rou.xml = DUE iteration 049)",
- "note": "full grid and per-link errors in the bench folder (gitignored); MAE is insensitive to delta_kc on this bench"
+ "bench": "the first bench (SUMO default keep-right lane changing, routes of the first DUE, iteration 049); removed on 2026-11-01, the final setup uses lcKeepRight=\"0\" with a new DUE and bench (result/ctmResult/logs/siouxfalls/bench_vc085_due049)",
+ "note": "full grid in result/ctmResult/logs/siouxfalls/fd_calibration_source/dt6/CTMcali.json (gitignored); MAE is insensitive to delta_kc; the author kept this FD for the final setup without recalibrating"
 }
